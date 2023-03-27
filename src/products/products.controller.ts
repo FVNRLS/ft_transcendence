@@ -6,20 +6,20 @@ import {
     Delete,
     Param,
     Body,
-    Redirect,
     HttpStatus,
     HttpCode,
-    Header,
+    Header
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create_product_dto';
 import { UpdateProductDto } from './dto/update_product_dto';
 import { ProductService } from './products_service';
-import { Product, ProductDocument } from './schemas/product_schema'
+import { Product, ProductDocument } from './schemas/product_schema';
 
 
 @Controller('products')
 export class ProductsController {
-    constructor(private readonly productsService: ProductService) {} //injects a service to controller
+    constructor(private readonly productsService: ProductService) {
+    } //injects a service to controller
 
 
     @Get()
@@ -48,5 +48,5 @@ export class ProductsController {
     @Put(':id')
     update(@Body() updateProductDto: UpdateProductDto, @Param('id') id: string): Promise<Product | null> {
         return this.productsService.update(id, updateProductDto);
-  }
+    }
 }
