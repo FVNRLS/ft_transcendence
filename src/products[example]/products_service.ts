@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Promise } from 'mongoose';
+import { Model } from 'mongoose';
 import { CreateProductDto } from './dto/create_product_dto';
 import { Product, ProductDocument } from './schemas/product_schema';
 import { UpdateProductDto } from './dto/update_product_dto';
@@ -33,4 +33,3 @@ export class ProductService {
         return this.productModel.findByIdAndUpdate(id, productDto, { new: true });
     }
 }
-

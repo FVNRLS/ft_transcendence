@@ -1,22 +1,11 @@
-import {
-    Controller,
-    Get,
-    Post,
-    Put,
-    Delete,
-    Param,
-    Body,
-    HttpStatus,
-    HttpCode,
-    Header
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Param, Post, Put } from '@nestjs/common';
 import { CreateProductDto } from './dto/create_product_dto';
 import { UpdateProductDto } from './dto/update_product_dto';
 import { ProductService } from './products_service';
-import { Product, ProductDocument } from './schemas/product_schema';
+import { Product } from './schemas/product_schema';
 
 
-@Controller('products')
+@Controller('products[example]')
 export class ProductsController {
     constructor(private readonly productsService: ProductService) {
     } //injects a service to controller

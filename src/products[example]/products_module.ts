@@ -18,3 +18,4 @@ import { Product, ProductSchema } from './schemas/product_schema';
 export class ProductsModule {
 
 }
+
