@@ -1,0 +1,63 @@
+version: "3.6"
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  postgre_vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./postgres_data
+
+  nest_vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ../backend
+
+services:
+
+  postgres:
+    container_name: postgres
+    image: postgres
+    volumes:
+    - postgre_vol:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: $POSTGRES_DB
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+    networks:
+    - internal
+    restart: unless-stopped
+
+  nest_js:
+    container_name: nest_js
+    build: .
+    environment:
+      POSTGRES_HOST: $POSTGRES_HOST
+      POSTGRES_DB: $POSTGRES_DB
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      PORT: $PORT
+      CHAT_PORT: $CHAT_PORT
+      GAME_PORT: $GAME_PORT
+      42_APP_ID: $FORTYTWO_APP_ID
+      42_APP_SECRET: $FORTYTWO_APP_SECRET
+      42_CALLBACK_URL: $FORTYTWO_CALLBACK_URL
+      JWT_SECRET: $JWT_SECRET
+      JWT_EXPIRES_IN: $JWT_EXPIRES_IN
+    volumes:
+    - nest_vol:/nest/
+    ports:
+      - ${PORT}:${PORT}
+      - ${CHAT_PORT}:${CHAT_PORT}
+      - ${GAME_PORT}:${GAME_PORT}
+    networks:
+    - internal
+    depends_on:
+    - postgres
+    restart: unless-stopped
