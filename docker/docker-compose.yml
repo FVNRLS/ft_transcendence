@@ -70,18 +70,18 @@ services:
     - postgres
     restart: unless-stopped
   
-  react_js:
-    container_name: react_js
-    build: ./frontend
-    networks:
-    - internal
-    environment:
-      REACT_PORT: $REACT_PORT
-    ports:
-    - ${REACT_PORT}:${REACT_PORT}
-    volumes:
-    - nest_vol:/nest/
-    - react_vol:/react/
-    depends_on:
-    - nest_js
-    restart: unless-stopped
+  # react_js:
+  #   container_name: react_js
+  #   build: ./frontend
+  #   networks:
+  #   - internal
+  #   environment:
+  #     REACT_PORT: $REACT_PORT
+  #   ports:
+  #   - ${REACT_PORT}:${REACT_PORT}
+  #   volumes:
+  #   - nest_vol:/nest/
+  #   - react_vol:/react/
+  #   depends_on:
+  #   - nest_js
+  #   restart: unless-stopped
