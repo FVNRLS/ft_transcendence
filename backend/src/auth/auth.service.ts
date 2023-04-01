@@ -1,61 +1,35 @@
 import { Injectable } from '@nestjs/common';
-import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
-    private readonly _clientId: string = process.env['42_APP_ID'];
-    private readonly _clientSecret: string = process.env['42_APP_SECRET'];
-    private readonly _callbackURL: string = process.env['42_CALLBACK_URL'];
+  private readonly authorizationCodes: Map<string, any> = new Map();
 
-    async authenticate(code: string): Promise<{ token: string; user: any }> {
-        try {
-            // Exchange authorization code for access token
-            const tokenResponse = await axios.post('https://api.intra.42.fr/oauth/token', null, {
-                params: {
-                    grant_type: 'authorization_code',
-                    client_id: this._clientId,
-                    client_secret: this._clientSecret,
-                    code: code,
-                    redirect_uri: this._callbackURL,
-                },
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+  private readonly accessTokenSecret = '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'; // replace with your own secret key
+  private readonly accessTokenExpirationTime = 3600; // access token expiration time in seconds
 
-            const accessToken = tokenResponse.data.access_token;
+  async issueAccessToken(user: any): Promise<string> {
+    const payload = { sub: user.id, name: user.name, email: user.email };
+    const accessToken = jwt.sign(payload, this.accessTokenSecret, {
+      expiresIn: this.accessTokenExpirationTime,
+    });
+    return accessToken;
+  }
 
-            // Retrieve user information
-            const userResponse = await axios.get('https://api.intra.42.fr/v2/me', {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            });
+  async generateAuthorizationCode(user: any, clientId: string): Promise<string> {
+    const code = uuidv4();
+    this.authorizationCodes.set(code, { user, clientId });
+    return code;
+  }
 
-            const user = userResponse.data;
-
-            return {
-                token: accessToken,
-                user: user,
-            };
-        } catch (error) {
-            console.error(error);
-            throw new Error('Failed to authenticate with 42 API');
-        }
+  async exchangeAuthorizationCodeForToken(code: string): Promise<any> {
+    const authCode = this.authorizationCodes.get(code);
+    if (!authCode) {
+      throw new Error('Invalid authorization code');
     }
-
-    async getUser(accessToken: string): Promise<any> {
-        try {
-            const userResponse = await axios.get('https://api.intra.42.fr/v2/me', {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            });
-
-            return userResponse.data;
-        } catch (error) {
-            console.error(error);
-            throw new Error('Failed to retrieve user from 42 API');
-        }
-    }
+    this.authorizationCodes.delete(code);
+    const accessToken = await this.issueAccessToken(authCode.user);
+    return { access_token: accessToken };
+  }
 }
