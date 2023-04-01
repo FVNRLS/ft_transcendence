@@ -2,4 +2,4 @@ FROM node:latest
 
 WORKDIR /react
 
-CMD npm install && npm start
+CMD npm install && npm starta
