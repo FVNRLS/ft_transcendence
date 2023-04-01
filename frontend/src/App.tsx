@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const CLIENT_ID = 'u-s4t2ud-b6bbfd6ea348daf72fd11cc6fbe63bad9d5e492ecae19cd689883a6b0f3fdabd';
-const REDIRECT_URI = 'http%3A%2F%2Flocalhost%3A3000%2F';
-const SECRET = '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'
+const REDIRECT_URI = 'http://localhost:3000';
+const SECRET = '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'
 
 function App() {
   const [accessToken, setAccessToken] = useState('');
@@ -37,10 +37,23 @@ function App() {
     window.location.href = authUrl;
   }
 
+  if (accessToken)
+  {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    axios.get('http://localhost:5000/auth') // provide valid auth path
+      .then(response => {
+        // Handle the response
+        console.log(response.data);
+      })
+      .catch(error => {
+        // Handle the error
+        console.error(error);
+      });
+  }
   return (
     <div>
       {accessToken ? (
-        <p>You are logged in!</p>
+        <p>Token: {accessToken}</p>
       ) : (
         <button onClick={handleLogin}>Log in with 42</button>
       )}
