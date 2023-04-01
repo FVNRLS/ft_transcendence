@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "@types/node": "^18.15.11"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.0"
   }
 }
