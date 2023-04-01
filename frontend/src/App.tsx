@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import './App.css'
 
 const CLIENT_ID = 'u-s4t2ud-b6bbfd6ea348daf72fd11cc6fbe63bad9d5e492ecae19cd689883a6b0f3fdabd';
 const REDIRECT_URI = 'http://localhost:3000';
@@ -51,11 +52,11 @@ function App() {
       });
   }
   return (
-    <div>
+    <div className='App'>
       {accessToken ? (
-        <p>Token: {accessToken}</p>
+        <h1 className='App-header'>Token: {accessToken}</h1>
       ) : (
-        <button onClick={handleLogin}>Log in with 42</button>
+        <button className='Auth-btn' onClick={handleLogin}>Log in with 42</button>
       )}
     </div>
   );
