@@ -1,13 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
-// @ts-ignore
-async function bootstrap() : Promise<void> {
-    return NestFactory.create(AppModule)
-      .then((app) => app.listen(6969))
-      .catch((err) => console.error(err));
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  const PORT = process.env.PORT || 5000;
+  app.enableCors({
+		origin: true,
+		credentials: true,
+	});
+  await app.listen(PORT);
 }
-
-bootstrap()
-  .then(() => console.log('Application started successfully.'))
-  .catch((err) => console.error(`Error starting application: ${err}`));
+bootstrap();
