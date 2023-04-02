@@ -60,6 +60,7 @@ services:
       JWT_SECRET: $JWT_SECRET
       JWT_EXPIRES_IN: $JWT_EXPIRES_IN
     ports:
+      - "5555:5555"
       - ${PORT}:${PORT}
       - ${CHAT_PORT}:${CHAT_PORT}
       - ${GAME_PORT}:${GAME_PORT}
