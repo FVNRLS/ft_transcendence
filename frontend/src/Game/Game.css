@@ -1,0 +1,125 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-evenly;
+	height: 100vh;
+	width: 100vw;
+	background-color: rgb(49, 49, 49);
+	user-select: none;
+}
+
+.game-hdr {
+	color: white;
+	font-size: 3rem;
+	margin: 0 0;
+}
+
+.game-bg {
+	position: relative;
+	width: 70%;
+	height: 80%;
+	background: linear-gradient(315deg, rgba(60,132,206,1) 38%, rgba(255,25,25,1) 98%);
+	display: flex;
+	flex-direction: row;
+  	align-items: center;
+	justify-content: center;
+}
+
+.left-player {
+	position: absolute;
+	width: 2%;
+	height: 40%;
+	left: 3%;
+	background-color: rgba(255, 255, 255, 0.637);
+}
+
+.right-player {
+	position: absolute;
+	width: 2%;
+	height: 40%;
+	right: 3%;
+	background-color: rgba(255, 255, 255, 0.637);
+}
+
+.markup {
+	position: absolute;
+	width: 1%;
+	height: 45%;
+	left: 49.5%;
+	bottom: 0;
+	background: linear-gradient(to bottom, transparent 50%, rgba(255, 255, 255, 0.637) 50%);
+	background-size: 50% 20%;
+}
+
+.markup-top {
+	position: absolute;
+	width: 1%;
+	height: 45%;
+	left: 49.5%;
+	top: 0;
+	background: linear-gradient(to top, transparent 50%, rgba(255, 255, 255, 0.637) 50%);
+	background-size: 50% 20%;
+}
+
+.ball {
+	position: absolute;
+	width: 2rem;
+	height: 2rem;
+	background-color: rgba(255, 255, 255, 0.821);
+	border-radius: 100%;
+}
+
+.score-left {
+	position: absolute;
+	left: 20%;
+	color: rgba(255, 255, 255, 0.637);
+	font-size: 8rem;
+	font-weight: bold;
+	font-family: 'Montserrat', sans-serif;
+}
+
+.score-right {
+	position: absolute;
+	right: 20%;
+	color: rgba(255, 255, 255, 0.637);
+	font-size: 8rem;
+	font-weight: bold;
+	font-family: 'Montserrat', sans-serif;
+}
+
+.not-ready-bg {
+	height: 100vh;
+	width: 100vw;
+	background-color: rgb(49, 49, 49);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ready-btn {
+	text-decoration: none;
+	background-color: #dadadab0;
+	border: 0;
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-weight: bold;
+	height: 5rem;
+	width: 15rem;
+	font-size: 2rem;
+	color: rgba(81, 42, 42, 0.636);
+	box-shadow: 3px 3px 10px rgba(81, 42, 42, 0.47);
+	transition: scale 0.4s;
+}
+
+.ready-btn:hover {
+	cursor: pointer;
+	scale: 1.1;
+}
+  
+.ready-btn:active {
+	background-color:#dadadad8;
+}
+  
