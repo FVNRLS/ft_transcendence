@@ -25,6 +25,8 @@
     "@nestjs/mongoose": "^9.2.2",
     "@nestjs/platform-express": "^9.0.0",
     "@prisma/client": "^4.12.0",
+    "argon": "^2.0.21",
+    "argon2": "^0.30.3",
     "axios": "^1.3.4",
     "bcrypt": "^5.1.0",
     "class-transformer": "^0.5.1",
