@@ -21,7 +21,9 @@
   },
   "dependencies": {
     "@nestjs/common": "^9.3.12",
+    "@nestjs/config": "^2.3.1",
     "@nestjs/core": "^9.3.12",
+    "@nestjs/jwt": "^10.0.3",
     "@nestjs/mongoose": "^9.2.2",
     "@nestjs/platform-express": "^9.0.0",
     "@prisma/client": "^4.12.0",

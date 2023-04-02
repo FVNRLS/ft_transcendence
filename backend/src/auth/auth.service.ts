@@ -5,6 +5,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import * as argon from 'argon2';
 import { AuthDto } from './dto';
 import { Tokens } from 'src/auth/types';
+import { ConfigService } from '@nestjs/config';
 
 
 @Injectable()

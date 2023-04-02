@@ -1,3 +1,8 @@
+$(info Creating docker/postgres_data directory...)
+ifneq ("$(wildcard ./docker/postgres_data)","")
+$(shell mkdir ./docker/postgres_data)
+endif
+
 name = ft_transcendence
 
 # start the Docker Compose services using the configuration
