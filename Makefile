@@ -1,6 +1,8 @@
-$(info Creating docker/postgres_data directory...)
-ifneq ("$(wildcard ./docker/postgres_data)","")
-$(shell mkdir ./docker/postgres_data)
+ifneq (,$(wildcard ./docker/postgres_data))
+$(info Postgres data directory already exists.)
+else
+$(info Creating Postgres data directory...)
+$(shell mkdir -p ./docker/postgres_data)
 endif
 
 name = ft_transcendence
