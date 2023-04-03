@@ -17,6 +17,7 @@ model User {
   updatedAt           DateTime  @updatedAt
   username            String    @unique
   hashed_passwd       String    
+  salt                String
   token_42            String    @unique
 
   @@map("users")
