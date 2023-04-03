@@ -1,8 +1,8 @@
 import { ForbiddenException, HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
 import { JwtService } from '@nestjs/jwt';
-import argon2 from 'argon2';
+import argon2 from "argon2";
 import { AuthDto } from './dto';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';

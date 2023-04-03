@@ -15,7 +15,7 @@ export class AuthController {
 	@Post('/signup')
 	async signup(@Body() dto: AuthDto): Promise<{ success: boolean }> {
 		return this.authService.signup(dto);
-	  }
+	}
 
 	// @Post('/signin')
 	// signin(@Body() dto: AuthDto): Promise<Tokens> {
