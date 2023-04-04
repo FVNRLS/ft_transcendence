@@ -1,7 +1,6 @@
 import { ForbiddenException, HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
-import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
@@ -10,7 +9,6 @@ import { randomBytes } from 'crypto';
 export class AuthService {
   constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService,
   ) {}
 
   //protect versus sql injections!
