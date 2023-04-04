@@ -1,4 +1,5 @@
-import React, {useEffect, useState } from 'react'
+import React, {useEffect, useState, useContext } from 'react'
+import { AuthContext } from './AuthContext';
 import axios from 'axios';
 import './Form.css'
 
@@ -9,10 +10,14 @@ const SECRET = process.env.APP_SECRET || 's-s4t2ud-a9eeea28dcd29264b69556744b20c
 const Form = () => 
 {
 	const [accessToken, setAccessToken] = useState('');
+	const [signInError, setSignInError] = useState('');
+	const [signUpError, setSignUpError] = useState('');
 	const [switchUp, setSwitchUp] = useState(false);
 	const [file, setFile] = useState(null);
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
+
+	const {login} = useContext(AuthContext);
 
 	const handleFileChange = (event:any) => {
 		setFile(event.target.files[0]);
@@ -48,7 +53,13 @@ const Form = () =>
 				  password: password,
 				  token: accessToken
 				});
-				console.log(response.data);
+				if (response.data.status == 201)
+				{
+					login();
+					window.location.href =  "http://localhost:3000/dashboard";
+				}
+				else
+					setSignUpError(response.data.message);
 			} catch (error) {
 				console.error(error);
 		}
@@ -63,7 +74,13 @@ const Form = () =>
 				  password: password,
 				  token: accessToken
 				});
-				console.log(response.data);
+				if (response.data.status == 200)
+				{
+					login();
+					window.location.href =  "http://localhost:3000/dashboard";
+				}
+				else
+					setSignInError(response.data.message);
 			} catch (error) {
 				console.error(error);
 	}
@@ -88,10 +105,10 @@ const Form = () =>
 	return (
 		<div className='bg'>
 		<div className='form-cont' style={cont_style}>
-			{ switchUp ? 
-			(
+			{ switchUp ? (
 			<form name="signup" className='signup-form'>
 				<h1>Sign Up</h1>
+				{signUpError && <h2>{signUpError}</h2>}
 				<div className='img-cont'>
 				{file && <img src={URL.createObjectURL(file)} alt="uploaded image" />}
 				</div>
@@ -114,6 +131,7 @@ const Form = () =>
 			) : (
 			<form name="signin" className='signin-form'>
 				<h1>Sign In</h1>
+				{signInError && <h2>{signInError}</h2>}
 				<label className='label-text'>
 					Username:
 					<input className='input-text' type="text" name="name" value={username} onChange={handleUsernameChange}/>

@@ -5,6 +5,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	justify-content: center;
 	user-select: none;
 	transition: .4s;
 }
@@ -18,16 +19,29 @@ form {
 	justify-content: space-evenly;
 }
 
+.signup-form {
+	padding-bottom: 5rem;
+}
+
 .signin-form h1 {
 	font-weight: bold;
 	font-size: 3rem;
 	color: #39a0f5;
+	margin: 0;
+}
+
+h2 {
+	font-weight: bold;
+	margin: 0;
+	font-size: 1.5rem;
+	color: #f53939;
 }
 
 .signup-form h1 {
 	font-weight: bold;
 	font-size: 3rem;
 	color: #2ade9f;
+	margin: 0;
 }
 
 .switch {
