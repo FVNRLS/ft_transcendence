@@ -2,6 +2,12 @@ name = ft_transcendence
 
 # start the Docker Compose services using the configuration
 all:
+ifneq ($(wildcard ./docker/postgres_data),)
+	$(info Postgres data directory already exists.)
+else
+	$(info Creating Postgres data directory...)
+	$(shell mkdir -p ./docker/postgres_data)
+endif
 	@printf "Starting configuration ${name}...\n"
 	@cd docker && docker-compose up
 

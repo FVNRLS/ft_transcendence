@@ -28,47 +28,50 @@ volumes:
 
 services:
 
-  # postgres:
-  #   container_name: postgres
-  #   image: postgres
-  #   volumes:
-  #   - postgre_vol:/var/lib/postgresql/data/
-  #   environment:
-  #     POSTGRES_DB: $POSTGRES_DB
-  #     POSTGRES_USER: $POSTGRES_USER
-  #     POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-  #   networks:
-  #   - internal
-  #   restart: unless-stopped
+  postgres:
+    container_name: postgres
+    image: postgres
+    volumes:
+    - postgre_vol:/var/lib/postgresql/data/
+    environment:
+      DATABASE_URL: $DATABASE_URL
+      POSTGRES_DB: $POSTGRES_DB
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+    networks:
+    - internal
+    restart: unless-stopped
 
-  # nest_js:
-  #   container_name: nest_js
-  #   build: ./backend
-  #   environment:
-  #     POSTGRES_HOST: $POSTGRES_HOST
-  #     POSTGRES_DB: $POSTGRES_DB
-  #     POSTGRES_USER: $POSTGRES_USER
-  #     POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-  #     PORT: $PORT
-  #     CHAT_PORT: $CHAT_PORT
-  #     GAME_PORT: $GAME_PORT
-  #     APP_ID: $APP_ID
-  #     APP_SECRET: $APP_SECRET
-  #     CALLBACK_URL: $CALLBACK_URL
-  #     JWT_SECRET: $JWT_SECRET
-  #     JWT_EXPIRES_IN: $JWT_EXPIRES_IN
-  #   ports:
-  #     - ${PORT}:${PORT}
-  #     - ${CHAT_PORT}:${CHAT_PORT}
-  #     - ${GAME_PORT}:${GAME_PORT}
-  #   volumes:
-  #   - nest_vol:/nest/
-  #   - react_vol:/react/
-  #   networks:
-  #   - internal
-  #   depends_on:
-  #   - postgres
-  #   restart: unless-stopped
+  nest_js:
+    container_name: nest_js
+    build: ./backend
+    environment:
+      DATABASE_URL: $DATABASE_URL
+      POSTGRES_HOST: $POSTGRES_HOST
+      POSTGRES_DB: $POSTGRES_DB
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      PORT: $PORT
+      CHAT_PORT: $CHAT_PORT
+      GAME_PORT: $GAME_PORT
+      42_APP_ID: 42_APP_ID
+      42_APP_SECRET: 42_APP_SECRET
+      42_CALLBACK_URL: 42_CALLBACK_URL
+      JWT_SECRET: $JWT_SECRET
+      JWT_EXPIRES_IN: $JWT_EXPIRES_IN
+    ports:
+      - "5555:5555"
+      - ${PORT}:${PORT}
+      - ${CHAT_PORT}:${CHAT_PORT}
+      - ${GAME_PORT}:${GAME_PORT}
+    volumes:
+    - nest_vol:/nest/
+    - react_vol:/react/
+    networks:
+    - internal
+    depends_on:
+    - postgres
+    restart: unless-stopped
   
   react_js:
     container_name: react_js
@@ -85,6 +88,6 @@ services:
     volumes:
     - nest_vol:/nest/
     - react_vol:/react/
-    # depends_on:
-    # - nest_js
+    depends_on:
+    - nest_js
     restart: unless-stopped

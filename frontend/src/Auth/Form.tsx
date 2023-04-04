@@ -11,6 +11,8 @@ const Form = () =>
 	const [accessToken, setAccessToken] = useState('');
 	const [switchUp, setSwitchUp] = useState(false);
 	const [file, setFile] = useState(null);
+	const [username, setUsername] = useState('');
+	const [password, setPassword] = useState('');
 
 	const handleFileChange = (event:any) => {
 		setFile(event.target.files[0]);
@@ -36,19 +38,35 @@ const Form = () =>
 		});}
 	}, []);
 
+	const sendSignUpData = async (event:any) => {
+		event.preventDefault();
+		if (accessToken)
+		{
+			try {
+				const response = await axios.post('http://localhost:5000/auth/signup', {
+				  username: username,
+				  password: password,
+				  token: accessToken
+				});
+				console.log(response.data);
+			} catch (error) {
+				console.error(error);
+		}
+	}
+	}
 
-	if (accessToken)
-	{
-		axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-		axios.get('http://localhost:5000/auth') // provide valid auth path
-		.then(response => {
-			// Handle the response
-			console.log(response.data);
-		})
-		.catch(error => {
-			// Handle the error
-			console.error(error);
-		});
+	const sendSignInData = async (event:any) => {
+		event.preventDefault();
+			try {
+				const response = await axios.post('http://localhost:5000/auth/signin', {
+				  username: username,
+				  password: password,
+				  token: accessToken
+				});
+				console.log(response.data);
+			} catch (error) {
+				console.error(error);
+	}
 	}
 
 	const handleSwitch = () => {
@@ -58,6 +76,14 @@ const Form = () =>
 	const cont_style = {
 		height: switchUp ? '100vh' : '70vh',
 	};
+
+	const handleUsernameChange = (event:any) => {
+		setUsername(event.target.value);
+	}
+
+	const handlePasswordChange = (event:any) => {
+		setPassword(event.target.value);
+	}
 
 	return (
 		<div className='bg'>
@@ -75,14 +101,14 @@ const Form = () =>
 				</label>
 				<label className='label-text'>
 					Username:
-					<input className='input-text' type="text" name="name" />
+					<input className='input-text' type="text" name="name" value={username} onChange={handleUsernameChange} />
 				</label>
 				<label className='label-text'>
 					Password:
-					<input className='input-text' type="password" name="pass" />
+					<input className='input-text' type="password" name="pass" value={password} onChange={handlePasswordChange}/>
 				</label>
 				<label className='submit-lbl'>
-					<input className='submit-btn' type="submit" />
+					<input className='submit-btn' type="submit" onClick={sendSignUpData}/>
 				</label>
 			</form>
 			) : (
@@ -90,14 +116,14 @@ const Form = () =>
 				<h1>Sign In</h1>
 				<label className='label-text'>
 					Username:
-					<input className='input-text' type="text" name="name" />
+					<input className='input-text' type="text" name="name" value={username} onChange={handleUsernameChange}/>
 				</label>
 				<label className='label-text'>
 					Password:
-					<input className='input-text' type="password" name="pass" />
+					<input className='input-text' type="password" name="pass" value={password} onChange={handlePasswordChange}/>
 				</label>
 				<label className='submit-lbl'>
-					<input className='submit-btn' type="submit" />
+					<input className='submit-btn' type="submit" onClick={sendSignInData}/>
 				</label>
 			</form>
 			)}
