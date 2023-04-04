@@ -16,7 +16,7 @@ export class AuthService {
 
   async signup(dto: AuthDto): Promise<{ success: boolean }> {
 
-    // const authorized = await this.validateToken(token);
+    // const authorized = await this.validateToken(dto.token);
     // if (!authorized) {
     // 	throw new UnauthorizedException('Invalid token');
     // }
