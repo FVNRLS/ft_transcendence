@@ -4,6 +4,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
+import { Buffer } from 'buffer';
 
 @Injectable()
 export class AuthService {
@@ -20,24 +21,28 @@ export class AuthService {
     if (!salt || !hashedPassword)
       throw new HttpException('Failed to hash password', HttpStatus.INTERNAL_SERVER_ERROR);
 
-    try {
-      const user = await this.prisma.user.create({
-        data: {
-          username: dto.username,
-          hashed_passwd: hashedPassword,
-          salt: salt,
-          token: dto.token,
-        },
-      });
-      return { status: HttpStatus.CREATED };
-    } 
-    catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2002')
-          return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
-      }
-      throw error;
-    }
+      try {
+        const user = await this.prisma.user.create({
+          data: {
+            username: dto.username,
+            hashed_passwd: hashedPassword,
+            salt: salt,
+            token: dto.token,
+            profile_picture: dto.profile_picture,
+          },
+        });
+        return { status: HttpStatus.CREATED };
+      } 
+      catch (error) {
+          if (error.code === 'P2002') {
+            const target = error.meta.target as string;
+            if (target.includes('token'))
+              return { status: HttpStatus.CONFLICT, message: 'Token already exists' };
+            else if (target.includes('username'))
+              return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
+          }
+        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops...Something went wrong' };
+      }     
   }
 
   //here implement the token refreshing request for each hour!
@@ -55,6 +60,28 @@ export class AuthService {
       return { status: HttpStatus.UNAUTHORIZED, message: `Incorrect password for user ${dto.username}` };
     return { status: HttpStatus.OK };
   }
+
+  async logout(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        token: dto.token,
+      },
+    });
+
+    if (!user)
+      return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid access token' };
+  
+    await this.prisma.user.update({
+      where: {
+        username: user.username,
+      },
+      data: {
+        token: undefined,
+      },
+    });
+
+    return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
+  }  
 
   /* Checks if the token is 42 token: 
       Check if the token has the correct length

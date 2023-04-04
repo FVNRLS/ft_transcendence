@@ -48,10 +48,14 @@ const Form = () =>
 		if (accessToken)
 		{
 			try {
+				const formData = new FormData();
+				if (file)
+					formData.append('image', file);
 				const response = await axios.post('http://localhost:5000/auth/signup', {
 				  username: username,
 				  password: password,
-				  token: accessToken
+				  token: accessToken,
+				  profile_picture: formData
 				});
 				if (response.data.status == 201)
 				{
