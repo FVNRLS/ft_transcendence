@@ -2,7 +2,7 @@ import { ForbiddenException, HttpException, HttpStatus, Injectable, Unauthorized
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
 import { JwtService } from '@nestjs/jwt';
-import argon2 from "argon2";
+import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
@@ -15,9 +15,6 @@ export class AuthService {
   ) {}
 
   async signup(dto: AuthDto): Promise<{ success: boolean }> {
-    console.log('**********************');
-    console.log(dto.password);
-    // console.log(token);
 
     // const authorized = await this.validateToken(token);
     // if (!authorized) {
@@ -90,7 +87,7 @@ export class AuthService {
 
 	private async hashPassword(password: string): Promise<{ salt: string, hashedPassword: string }> {
 		const salt = randomBytes(32);
-		const hashedPassword = await argon2.hash(password, { salt });
-		return { salt: salt.toString(), hashedPassword };
+		const hashedPassword = await argon2.hash(password, { salt: salt });
+		return { salt: salt.toString(('hex')), hashedPassword };
 	}
 }		
