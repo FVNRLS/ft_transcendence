@@ -16,10 +16,9 @@ export class AuthService {
 
   async signup(dto: AuthDto): Promise<{ success: boolean }> {
 
-    // const authorized = await this.validateToken(dto.token);
-    // if (!authorized) {
-    // 	throw new UnauthorizedException('Invalid token');
-    // }
+    if (!this.validateAccessToken(dto.token))
+      return { success: false };
+
 
     const { salt, hashedPassword } = await this.hashPassword(dto.password);
     if (!salt || !hashedPassword) {
@@ -47,27 +46,17 @@ export class AuthService {
     }
   }
 
-  private async validateToken(token: string): Promise<boolean> {
-    if (!token) {
+  /* Checks if the token is 42 token: 
+      Check if the token has the correct length
+      Check if the token contains only hexadecimal characters
+      If the token passes all checks, it is valid 
+  */
+  private async validateAccessToken(token: string): Promise<boolean> {
+    if (typeof token !== 'string' || token.length !== 64)
       return false;
-    }
-
-    const tokenParts = token.split(' ');
-
-    if (tokenParts.length !== 2 || tokenParts[0] !== 'Bearer') {
+    if (!/^[0-9a-fA-F]+$/.test(token))
       return false;
-    }
-
-    const decodedToken = tokenParts[1];
-
-    try {
-      const decoded: string | jwt.JwtPayload = jwt.decode(decodedToken, { complete: true }) as string | jwt.JwtPayload;
-      console.log(decoded);
-      return true; // Token is valid
-    } catch (err) {
-      console.error(err);
-      return false; // Token is invalid
-    }
+    return true;
   }
 
   /*
