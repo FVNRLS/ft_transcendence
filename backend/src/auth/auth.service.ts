@@ -4,7 +4,6 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
-import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -14,16 +13,14 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signup(dto: AuthDto): Promise<{ success: boolean }> {
-
+  //protect versus sql injections!
+  async signup(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     if (!this.validateAccessToken(dto.token))
-      return { success: false };
-
+      return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid access token' };
 
     const { salt, hashedPassword } = await this.hashPassword(dto.password);
-    if (!salt || !hashedPassword) {
+    if (!salt || !hashedPassword)
       throw new HttpException('Failed to hash password', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
 
     try {
       const user = await this.prisma.user.create({
@@ -34,16 +31,31 @@ export class AuthService {
           token: dto.token,
         },
       });
-
-      return { success: true };
-    } catch (error) {
+      return { status: HttpStatus.CREATED };
+    } 
+    catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          throw new ForbiddenException('Credentials incorrect');
-        }
+        if (error.code === 'P2002')
+          return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
       }
       throw error;
     }
+  }
+
+  //here implement the token refreshing request for each hour!
+  //protect versus sql injections!
+  async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { username: dto.username },
+    });
+
+    if (!user)
+      return { status: HttpStatus.NOT_FOUND, message: `User with username ${dto.username} not found` };
+
+    const hashedPassword = await argon2.hash(dto.password, { salt: Buffer.from(user.salt, 'hex') });
+    if (hashedPassword !== user.hashed_passwd)
+      return { status: HttpStatus.UNAUTHORIZED, message: `Incorrect password for user ${dto.username}` };
+    return { status: HttpStatus.OK };
   }
 
   /* Checks if the token is 42 token: 
@@ -51,10 +63,8 @@ export class AuthService {
       Check if the token contains only hexadecimal characters
       If the token passes all checks, it is valid 
   */
-  private async validateAccessToken(token: string): Promise<boolean> {
-    if (typeof token !== 'string' || token.length !== 64)
-      return false;
-    if (!/^[0-9a-fA-F]+$/.test(token))
+  private validateAccessToken(token: string): boolean{
+    if (typeof token !== 'string' || token.length !== 64 || !/^[0-9a-fA-F]+$/.test(token))
       return false;
     return true;
   }
@@ -73,7 +83,6 @@ export class AuthService {
     the attacker would need to generate a new rainbow table for each user to have any chance of cracking the password.
     This makes it much harder and more time-consuming for attackers to gain access to user accounts.
   */
-
 	private async hashPassword(password: string): Promise<{ salt: string, hashedPassword: string }> {
 		const salt = randomBytes(32);
 		const hashedPassword = await argon2.hash(password, { salt: salt });

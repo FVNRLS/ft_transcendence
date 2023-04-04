@@ -7,20 +7,15 @@ import { AuthDto } from './dto';
 export class AuthController {
 	constructor(private authService: AuthService) {}
 
-	// @Post('/authorize')
-	// async authorize(token: string): Promise<boolean> {
-	// 	return this.authService.authorize(token);
-	// }
-
 	@Post('/signup')
-	async signup(@Body() dto: AuthDto): Promise<{ success: boolean }> {
+	async signup(@Body() dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
 		return this.authService.signup(dto);
 	}
 
-	// @Post('/signin')
-	// signin(@Body() dto: AuthDto): Promise<Tokens> {
-	// 	return this.authService.signin(dto);
-	// }
+	@Post('/signin')
+	signin(@Body() dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+		return this.authService.signin(dto);
+	}
 
 	// @Post('/logout')
 	// @HttpCode(HttpStatus.OK)
