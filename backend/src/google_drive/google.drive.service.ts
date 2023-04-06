@@ -8,6 +8,8 @@ export class GoogleDriveService {
   private readonly oauth2Client: OAuth2Client;
   private readonly drive: any;
 
+
+  //TODO: continue here with guthub tutorial!
   constructor() {
     // Initialize the OAuth2 client with the Google API credentials
     this.oauth2Client = new google.auth.OAuth2({
@@ -17,7 +19,9 @@ export class GoogleDriveService {
     });
 
     // Initialize the Google Drive API client with the OAuth2 client
-    this.drive = google.drive({
+    this.oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+
+    const drive = google.drive({
       version: 'v3',
       auth: this.oauth2Client,
     });
