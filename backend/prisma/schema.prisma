@@ -19,7 +19,7 @@ model User {
   hashed_passwd       String    
   salt                String
   token               String    @unique
-  profile_picture     Bytes?
+  profile_picture     String
 
   @@map("users")
 }

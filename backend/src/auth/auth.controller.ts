@@ -21,12 +21,6 @@ export class AuthController {
 	logout(@Body() dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
 		return this.authService.logout(dto);
 	}
-
-	// @Post('/logout')
-	// @HttpCode(HttpStatus.OK)
-	// logout(@GetCurrentUserId() userId: number): Promise<boolean> {
-	//   return this.authService.logout(userId);
-	// }
 }
 
 

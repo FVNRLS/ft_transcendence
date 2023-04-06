@@ -1,14 +1,17 @@
-import { ForbiddenException, HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, HttpException, HttpStatus, Injectable, UnauthorizedException, UploadedFile } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
+import { GoogleDriveService } from '../google_drive/google.drive.service';
+import { createReadStream } from 'fs';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
+    private googleDriveService: GoogleDriveService,
   ) {}
 
   //protect versus sql injections!
@@ -21,29 +24,36 @@ export class AuthService {
       throw new HttpException('Failed to hash password', HttpStatus.INTERNAL_SERVER_ERROR);
 
       try {
+        // Upload the file to Google Drive
+        const { createReadStream, originalname } = dto.profile_picture;
+        const uploadedFile = await this.googleDriveService.upload(createReadStream(), originalname);
+        if (!UploadedFile)
+          uploadedFile.id = "";
+  
         const user = await this.prisma.user.create({
           data: {
             username: dto.username,
             hashed_passwd: hashedPassword,
             salt: salt,
             token: dto.token,
-            profile_picture: dto.profile_picture,
+            profile_picture: uploadedFile.id,
           },
         });
-        return { status: HttpStatus.CREATED };
-      } 
-      catch (error) {
-        if (error instanceof PrismaClientKnownRequestError) {
-          if (error.code === 'P2002') {
-            const target = error.meta.target as string;
-            if (target.includes('token'))
-              return { status: HttpStatus.CONFLICT, message: 'Token already exists' };
-            else if (target.includes('username'))
-              return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
-          }
+
+      return { status: HttpStatus.CREATED };
+    } 
+    catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          const target = error.meta.target as string;
+          if (target.includes('token'))
+            return { status: HttpStatus.CONFLICT, message: 'Token already exists' };
+          else if (target.includes('username'))
+            return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
         }
-        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops...Something went wrong' };
-      }     
+      }
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops...Something went wrong' };
+    }
   }
 
   //here implement the token refreshing request for each hour!
@@ -61,6 +71,7 @@ export class AuthService {
       return { status: HttpStatus.UNAUTHORIZED, message: `Incorrect password for user ${dto.username}` };
     return { status: HttpStatus.OK };
   }
+
 
   async logout(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     const user = await this.prisma.user.findUnique({
@@ -82,7 +93,7 @@ export class AuthService {
     });
 
     return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
-  }  
+  }
 
   /* Checks if the token is 42 token: 
       Check if the token has the correct length
