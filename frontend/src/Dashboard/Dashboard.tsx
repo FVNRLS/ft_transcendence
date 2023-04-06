@@ -11,16 +11,28 @@ const Dashboard = (props:any) => {
 
 	return (
 		<div className="bg">
-			{/* <Header /> */}
+			<Header />
 			<div className="dashboard-cont">
 				<section>
-					<h1>Play game!</h1>
-					<Link className="link-btn" to='/game'>Start</Link>
+					<section>
+						<h1>Play game!</h1>
+						<Link className="link-btn" to='/game'>Start</Link>
+					</section>
+					<section>
+						<h1>See game statistics...</h1>
+						<Link className="link-btn" to='/game'>Open</Link>
+					</section>
 				</section>
 				<div className="line"/>
 				<section>
-					<h1>Chat with someone!</h1>
-					<Link className="link-btn" to='/chat'>Open</Link>
+					<section>
+						<h1>Find Friends</h1>
+						<Link className="link-btn" to='/chat'>Search</Link>
+					</section>
+					<section>
+						<h1>Chat with someone!</h1>
+						<Link className="link-btn" to='/chat'>Open</Link>
+					</section>
 				</section>
 			</div>
 		</div>

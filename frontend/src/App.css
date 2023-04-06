@@ -6,6 +6,7 @@
   align-items: center;
   width: 100vw;
   height: 100vh;
+  padding-top: 10vh;
   margin: auto;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   overflow: auto;

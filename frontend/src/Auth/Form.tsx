@@ -3,9 +3,9 @@ import { AuthContext } from './AuthContext';
 import axios from 'axios';
 import './Form.css'
 
-const CLIENT_ID = process.env.APP_ID || 'u-s4t2ud-b6bbfd6ea348daf72fd11cc6fbe63bad9d5e492ecae19cd689883a6b0f3fdabd';
+const CLIENT_ID = process.env.REACT_APP_ID;
 const REDIRECT_URI = 'http://localhost:3000/form';
-const SECRET = process.env.APP_SECRET || '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';
+const SECRET = process.env.REACT_APP_SECRET;
 
 const Form = () => 
 {
@@ -57,7 +57,7 @@ const Form = () =>
 				  token: accessToken,
 				  profile_picture: formData
 				});
-				if (response.data.status == 201)
+				if (response.data.status === 201)
 				{
 					login();
 					window.location.href =  "http://localhost:3000/dashboard";
@@ -78,7 +78,7 @@ const Form = () =>
 				  password: password,
 				  token: accessToken
 				});
-				if (response.data.status == 200)
+				if (response.data.status === 200)
 				{
 					login();
 					window.location.href =  "http://localhost:3000/dashboard";
@@ -95,7 +95,7 @@ const Form = () =>
 	  };
 
 	const cont_style = {
-		height: switchUp ? '100vh' : '70vh',
+		height: switchUp ? '100vh' : '40rem',
 	};
 
 	const handleUsernameChange = (event:any) => {
@@ -107,14 +107,14 @@ const Form = () =>
 	}
 
 	return (
-		<div className='bg'>
+		<div className='bg' style={{paddingTop: 0, height: '100vh'}}>
 		<div className='form-cont' style={cont_style}>
 			{ switchUp ? (
 			<form name="signup" className='signup-form'>
 				<h1>Sign Up</h1>
 				{signUpError && <h2>{signUpError}</h2>}
 				<div className='img-cont'>
-				{file && <img src={URL.createObjectURL(file)} alt="uploaded image" />}
+				{file && <img src={URL.createObjectURL(file)} alt="uploaded-img" />}
 				</div>
 				<label className='label-pic'>
 					Upload Profile Picture

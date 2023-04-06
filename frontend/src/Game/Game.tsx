@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import GameBox from './GameBox';
+import Header from '../Header/Header';
 import './Game.css';
 
 const Game = () => {
@@ -11,6 +12,7 @@ const Game = () => {
 
 	return (
 		<div >
+		<Header />
 		{!ready ? (
 			<div className='not-ready-bg'>
 				<button onClick={handleReadyBtn} className='ready-btn'>READY</button>

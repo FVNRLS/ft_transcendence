@@ -1,6 +1,5 @@
 .form-cont {
-	width: 40vw;
-	height: 70vh;
+	width: 40rem;
 	background-color: #ffffffce;
 	display: flex;
 	flex-direction: column;
@@ -47,7 +46,7 @@ h2 {
 .switch {
 	position: absolute;
 	display: inline-block;
-	width: 40vw;
+	width: 40rem;
 	height: 5rem;
 	bottom: 0;
 	/* margin-bottom: 1rem; */

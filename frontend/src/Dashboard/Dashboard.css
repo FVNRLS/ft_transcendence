@@ -42,3 +42,14 @@
 	color: white;
 	background-color: #476cd2;
 }
+
+.dashboard-btn {
+	text-decoration: none;
+	color:rgb(71, 71, 71);
+	font-size: 2.2rem;
+	transition: .4s;
+}
+
+.dashboard-btn:hover {
+	font-size: 2.3rem;
+}
