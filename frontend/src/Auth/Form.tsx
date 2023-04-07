@@ -1,7 +1,10 @@
 import React, {useEffect, useState, useContext } from 'react'
-import { AuthContext } from './AuthContext';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useDispatch } from 'react-redux';
+import { login } from './AuthSlice';
 import './Form.css'
+import { RootState } from './AuthStorage';
 
 const CLIENT_ID = process.env.REACT_APP_ID;
 const REDIRECT_URI = 'http://localhost:3000/form';
@@ -17,7 +20,8 @@ const Form = () =>
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
 
-	const {login} = useContext(AuthContext);
+	const navigate = useNavigate();
+	const dispatch = useDispatch();
 
 	const handleFileChange = (event:any) => {
 		setFile(event.target.files[0]);
@@ -41,6 +45,8 @@ const Form = () =>
 		.catch(error => {
 			console.error(error);
 		});}
+	
+	navigate('');
 	}, []);
 
 	const sendSignUpData = async (event:any) => {
@@ -59,35 +65,35 @@ const Form = () =>
 				});
 				if (response.data.status === 201)
 				{
-					login();
-					window.location.href =  "http://localhost:3000/dashboard";
+					dispatch(login());
+					navigate('/');
 				}
 				else
 					setSignUpError(response.data.message);
 			} catch (error) {
 				console.error(error);
+			}
 		}
-	}
 	}
 
 	const sendSignInData = async (event:any) => {
 		event.preventDefault();
-			try {
-				const response = await axios.post('http://localhost:5000/auth/signin', {
-				  username: username,
-				  password: password,
-				  token: accessToken
-				});
-				if (response.data.status === 200)
-				{
-					login();
-					window.location.href =  "http://localhost:3000/dashboard";
-				}
-				else
-					setSignInError(response.data.message);
-			} catch (error) {
-				console.error(error);
-	}
+		try {
+			const response = await axios.post('http://localhost:5000/auth/signin', {
+				username: username,
+				password: password,
+				token: accessToken
+			});
+			if (response.data.status === 200)
+			{
+				dispatch(login());
+				navigate('/');
+			}
+			else
+				setSignInError(response.data.message);
+		} catch (error) {
+			console.error(error);
+		}
 	}
 
 	const handleSwitch = () => {

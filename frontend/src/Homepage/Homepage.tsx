@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../Auth/AuthContext';
 import Dashboard from '../Dashboard/Dashboard';
 import Header from '../Header/Header';
+import { useSelector } from 'react-redux';
+import type {RootState} from '../Auth/AuthStorage'
 import './Homepage.css'
 
 const CLIENT_ID = process.env.REACT_APP_ID;
@@ -9,7 +9,7 @@ const REDIRECT_URI = 'http://localhost:3000/form';
 
 function Homepage() {
 
-  const {isLoggedIn} = useContext(AuthContext);
+  const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
 
   const handleLogin = () => {
     const clientId = CLIENT_ID;
@@ -19,7 +19,6 @@ function Homepage() {
     window.location.href = authUrl;
   }
 
-  console.log(isLoggedIn);
   return (
     <div>
     {isLoggedIn ? (<Dashboard />) :

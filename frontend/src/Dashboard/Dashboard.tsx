@@ -1,19 +1,15 @@
 import { Link } from 'react-router-dom';
 import { useContext } from 'react';
 import Header from "../Header/Header";
-import { AuthContext } from '../Auth/AuthContext';
 import './Dashboard.css'
 
-const Dashboard = (props:any) => {
-
-	const {isLoggedIn} = useContext(AuthContext);
-	console.log(isLoggedIn);
+const Dashboard = () => {
 
 	return (
 		<div className="bg">
 			<Header />
 			<div className="dashboard-cont">
-				<section>
+				<section className='big-sec'>
 					<section>
 						<h1>Play game!</h1>
 						<Link className="link-btn" to='/game'>Start</Link>
@@ -24,7 +20,7 @@ const Dashboard = (props:any) => {
 					</section>
 				</section>
 				<div className="line"/>
-				<section>
+				<section className='big-sec'>
 					<section>
 						<h1>Find Friends</h1>
 						<Link className="link-btn" to='/chat'>Search</Link>

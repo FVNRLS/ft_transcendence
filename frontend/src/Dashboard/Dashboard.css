@@ -16,13 +16,25 @@
 
 .dashboard-cont h1 {
 	font-weight: bold;
+	margin: 0;
 	font-size: 3rem;
 	color: rgb(71, 71, 71);
+	text-align: center;
 }
 
-.dashboard-cont section {
+.dashboard-cont .big-sec {
+	height: 100%;
 	display: flex;
 	flex-direction: column;
+	justify-content: space-evenly
+}
+
+.big-sec section {
+	height: 40%;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	align-items: center;
 }
 
 .dashboard-cont .link-btn {
@@ -53,3 +65,4 @@
 .dashboard-btn:hover {
 	font-size: 2.3rem;
 }
+

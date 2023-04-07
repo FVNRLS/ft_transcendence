@@ -51,27 +51,27 @@ const GameBox = () => {
 					(
 					newBallX <= (50) &&
 					newBallY >= (leftPlayerBar.top - 236) &&
-					newBallY <= (leftPlayerBar.bottom - 235) &&
+					newBallY <= (leftPlayerBar.bottom - 205) &&
 					newBallX >= (30)
 					)
 				) {
-					if (newBallX - ballPosition.x > newBallY - ballPosition.y &&
-						newBallX - ballPosition.x > ballPosition.y - newBallY) // check if it hit the top or bottom
-						setBallAngle(-ballAngle);
-					else // if it hit right or left
+					// if (newBallX - ballPosition.x > newBallY - ballPosition.y &&
+					// 	newBallX - ballPosition.x > ballPosition.y - newBallY) // check if it hit the top or bottom
+					// 	setBallAngle(-ballAngle);
+					// else // if it hit right or left
 						setBallAngle(Math.PI - ballAngle);
 				}
 
 				if (
 					newBallX >= (1280 - 50 - 30) &&
 					newBallY >= (rightPlayerBar.top - 236) &&
-					newBallY <= (rightPlayerBar.bottom - 235) &&
+					newBallY <= (rightPlayerBar.bottom - 205) &&
 					newBallX <= (1280 - 30 - 30)
 				  ) {
-					if (ballPosition.x - newBallX > ballPosition.y - newBallY &&
-						ballPosition.x - newBallX > ballPosition.y - newBallY)
-						setBallAngle(-ballAngle);
-					else
+					// if (ballPosition.x - newBallX > ballPosition.y - newBallY &&
+					// 	ballPosition.x - newBallX > ballPosition.y - newBallY)
+					// 	setBallAngle(-ballAngle);
+					// else
 						setBallAngle(Math.PI - ballAngle);
 				  }
 			}
