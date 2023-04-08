@@ -1,12 +1,12 @@
 .container {
 	display: flex;
+	background-color: #1e1e1e;
 	flex-direction: column;
 	align-items: center;
 	justify-content: space-evenly;
 	padding-top: 10vh;
 	height: 90vh;
 	width: 100vw;
-	background-color: rgb(49, 49, 49);
 	user-select: none;
 }
 
@@ -100,18 +100,17 @@
 
 .ready-btn {
 	text-decoration: none;
-	background-color: #dadadab0;
-	border: 0;
+	background-color: transparent;
+	border: .4rem solid rgb(255, 255, 255);
 	text-align: center;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	font-weight: bold;
 	height: 5rem;
-	width: 15rem;
+	width: 14rem;
 	font-size: 2rem;
-	color: rgba(81, 42, 42, 0.636);
-	box-shadow: 3px 3px 10px rgba(81, 42, 42, 0.47);
+	color: rgb(255, 255, 255);
 	transition: scale 0.4s;
 }
 
@@ -119,8 +118,3 @@
 	cursor: pointer;
 	scale: 1.1;
 }
-  
-.ready-btn:active {
-	background-color:#dadadad8;
-}
-  

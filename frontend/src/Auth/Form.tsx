@@ -1,10 +1,9 @@
-import React, {useEffect, useState, useContext } from 'react'
+import React, {useEffect, useState} from 'react'
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
 import { login } from './AuthSlice';
 import './Form.css'
-import { RootState } from './AuthStorage';
 
 const CLIENT_ID = process.env.REACT_APP_ID;
 const REDIRECT_URI = 'http://localhost:3000/form';
@@ -28,25 +27,25 @@ const Form = () =>
 	};
 
 	useEffect(() => {
-	const urlParams = new URLSearchParams(window.location.search);
-	const code = urlParams.get('code');
-	
-	if (code) {
-		axios.post('https://api.intra.42.fr/oauth/token', {
-			grant_type: 'authorization_code',
-			client_id: CLIENT_ID,
-			client_secret: SECRET,
-			code: code,
-			redirect_uri: REDIRECT_URI
-		})
-		.then(response => {
-			setAccessToken(response.data.access_token);
-		})
-		.catch(error => {
-			console.error(error);
-		});}
-	
-	navigate('');
+		const urlParams = new URLSearchParams(window.location.search);
+		const code = urlParams.get('code');
+		
+		if (code) {
+			axios.post('https://api.intra.42.fr/oauth/token', {
+				grant_type: 'authorization_code',
+				client_id: CLIENT_ID,
+				client_secret: SECRET,
+				code: code,
+				redirect_uri: REDIRECT_URI
+			})
+			.then(response => {
+				setAccessToken(response.data.access_token);
+			})
+			.catch(error => {
+				console.error(error);
+			});}
+		
+		navigate('');
 	}, []);
 
 	const sendSignUpData = async (event:any) => {

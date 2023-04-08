@@ -1,5 +1,4 @@
 import Dashboard from '../Dashboard/Dashboard';
-import Header from '../Header/Header';
 import { useSelector } from 'react-redux';
 import type {RootState} from '../Auth/AuthStorage'
 import './Homepage.css'
@@ -19,12 +18,13 @@ function Homepage() {
     window.location.href = authUrl;
   }
 
+  const homePageStyle = {paddingTop: isLoggedIn ? '10vh' : '0', height: isLoggedIn ? '90vh' : '100vh'};
+
   return (
     <div>
     {isLoggedIn ? (<Dashboard />) :
     (
-      <div className='bg'>
-        <Header />
+      <div className='bg' style={homePageStyle}>
           <h1 className='App-header'>42 Estonian Hedgehogs' Ping Pong</h1>
           <button className='Auth-btn' onClick={handleLogin}>Authorize</button>
       </div>
