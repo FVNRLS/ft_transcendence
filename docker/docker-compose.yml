@@ -54,6 +54,7 @@ services:
       PORT: $PORT
       CHAT_PORT: $CHAT_PORT
       GAME_PORT: $GAME_PORT
+      WEBSOCKET_PORT: $WEBSOCKET_PORT
       REACT_APP_ID: $REACT_APP_ID
       REACT_APP_SECRET: $REACT_APP_SECRET
       CALLBACK_URL: $CALLBACK_URL
@@ -61,6 +62,7 @@ services:
       JWT_EXPIRES_IN: $JWT_EXPIRES_IN
     ports:
       - "5555:5555"
+      - ${WEBSOCKET_PORT}:${WEBSOCKET_PORT}
       - ${PORT}:${PORT}
       - ${CHAT_PORT}:${CHAT_PORT}
       - ${GAME_PORT}:${GAME_PORT}
