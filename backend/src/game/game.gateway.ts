@@ -1,6 +1,6 @@
 import { WebSocketGateway, WebSocketServer} from '@nestjs/websockets'
-import { stat } from 'fs';
 import { Server, Socket } from 'socket.io';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Player {
 	id: string;
@@ -28,7 +28,7 @@ export class GameGateway {
 	private gameState = {
 		ball: { x:(1280 / 2 - 15), y: (720 / 2) - 15},
 		ballAngle: Math.random() * Math.PI * 2,
-		ballSpeed: 12,
+		ballSpeed: 4,
 		leftPaddleY: 720 / 2 - 125,
 		rightPaddleY: 720 / 2 - 125,
 		scoreLeft: 0,
@@ -36,8 +36,10 @@ export class GameGateway {
 		ready: false
 	};
 
+	private roomId = uuidv4;
+
 	handleConnection(client: Socket) {
-		client.join('test');
+		client.join(this.roomId);
 
 		if (!this.player1) {
 			this.player1 = { id: client.id, ready: false };
@@ -66,12 +68,13 @@ export class GameGateway {
 				this.gameState.ball.x = state.ball.x;
 				this.gameState.ball.y = state.ball.y;
 				this.gameState.ballAngle = state.ballAngle;
-				this.gameState.ballSpeed = state.ballSpeed;
+				// this.gameState.ballSpeed = state.ballSpeed;
 				this.gameState.scoreLeft = state.scoreLeft;
 				this.gameState.scoreRight = state.scoreRight;
+				this.server.to(this.roomId).emit('updateState', this.gameState);
 			}
-			if (this.gameState.ready)
-				this.server.to('test').emit('updateState', this.gameState);
+			// if (this.gameState.ready)
+			// 	this.server.to('test21').emit('updateState', this.gameState);
 		});
 	}
 

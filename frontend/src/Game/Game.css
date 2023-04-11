@@ -118,3 +118,16 @@
 	cursor: pointer;
 	scale: 1.1;
 }
+
+.end {
+	background-color: #1e1e1e;
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-weight: bold;
+	height: 10rem;
+	width: 25rem;
+	font-size: 3rem;
+	color: rgb(255, 255, 255);
+}

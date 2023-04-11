@@ -19,10 +19,18 @@ const Game = () => {
 	const [ready, setReady] = useState(false);
 	const [socket, setSocket] = useState<Socket | null>(null);
 	
+	const [ballPos, setBallPos] = useState({x:(1280 / 2 - 15), y: (720 / 2) - 15});
+	const [ballAngle, setBallAngle] = useState(Math.random() * Math.PI * 2);
+	const [cursorY, setCursorY] = useState(0);
+	const [scoreLeft, setScoreLeft] = useState(0);
+	const [scoreRight, setScoreRight] = useState(0);
+	const [ended, setEnded] = useState(false);
+
+
 	const [gameState, setGameState] = useState<serverState>({
 		ball: { x:(1280 / 2 - 15), y: (720 / 2) - 15},
 		ballAngle: Math.random() * Math.PI * 2,
-		ballSpeed: 12,
+		ballSpeed: 4,
 		leftPaddleY: 720 / 2 - 125,
 		rightPaddleY: 720 / 2 - 125,
 		scoreLeft: 0,
@@ -32,7 +40,7 @@ const Game = () => {
 	const [localState, setLocalState] = useState({
 		ball: {x: (1280 / 2 - 15), y: (720 / 2) - 15},
 		ballAngle: Math.random() * Math.PI * 2,
-		ballSpeed: 12,
+		ballSpeed: 4,
 		cursorY: 0,
 		scoreLeft: 0,
 		scoreRight: 0,
@@ -64,22 +72,40 @@ const Game = () => {
 	}, []);
 
 	useEffect(() => {
+		socket?.emit('move', localState);
+		socket?.on('updateState', (state) => setGameState(state));
+	
+		return () => {
+		  socket?.off('updateState');
+		};
+	  }, [gameState, localState, socket]);
 
-		socket?.on('updateState', (state) => {setGameState(state);});
-			const gameLoop = setInterval(() => {
+	useEffect(() => {
+		setLocalState(state => ({...state,
+			ball: ballPos,
+			ballAngle: ballAngle,
+			cursorY: cursorY,
+			scoreLeft: scoreLeft,
+			scoreRight: scoreRight}));
+	}, [ballPos, ballAngle, scoreLeft, scoreRight, cursorY])
+	
+	useEffect(() => {
+		if (gameState.scoreLeft < 10 && gameState.scoreRight < 10)
+		{
+			// const gameLoop = setInterval(() => {
 				const newBallX = gameState.ball.x + Math.cos(gameState.ballAngle) * gameState.ballSpeed;
 				const newBallY = gameState.ball.y + Math.sin(gameState.ballAngle) * gameState.ballSpeed;
-			
-				setLocalState(state => ({...state, ball: { x: newBallX, y: newBallY }}));
-			
+	
+				setBallPos({ x: newBallX, y: newBallY });
+				
 				const leftPlayer = leftPlayerRef.current;
 				const rightPlayer = rightPlayerRef.current;
-	
+		
 				if (leftPlayer && rightPlayer)
 				{
 					const leftPlayerBar = (leftPlayer as HTMLElement).getBoundingClientRect();
 					const rightPlayerBar = (rightPlayer as HTMLElement).getBoundingClientRect();
-
+	
 					if (
 						(
 						newBallX <= (50) &&
@@ -88,53 +114,58 @@ const Game = () => {
 						newBallX >= (30)
 						)
 					) {
-						// if (newBallX - ballPosition.x > newBallY - ballPosition.y &&
-						// 	newBallX - ballPosition.x > ballPosition.y - newBallY) // check if it hit the top or bottom
-						// 	setBallAngle(-ballAngle);
+						// if (newBallX - gameState.ball.x > newBallY - gameState.ball.y &&
+						// 	newBallX - gameState.ball.x > gameState.ball.y - newBallY) // check if it hit the top or bottom
+						// 	setBallAngle(-gameState.ballAngle);
 						// else // if it hit right or left
-							setLocalState(state => ({...state, ballAngle: (Math.PI - gameState.ballAngle)}));
+						setBallAngle(Math.PI - gameState.ballAngle);
 					}
-	
+		
 					if (
 						newBallX >= (1280 - 50 - 30) &&
 						newBallY >= (rightPlayerBar.top - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 - 5)) &&
 						newBallY <= (rightPlayerBar.bottom - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 + 5)) &&
 						newBallX <= (1280 - 30 - 30)
 					  ) {
-						// if (ballPosition.x - newBallX > ballPosition.y - newBallY &&
-						// 	ballPosition.x - newBallX > ballPosition.y - newBallY)
-						// 	setBallAngle(-ballAngle);
+						// if (gameState.ball.x - newBallX > gameState.ball.y - newBallY &&
+						// 	gameState.ball.x - newBallX > gameState.ball.y - newBallY)
+						// 	setBallAngle(-gameState.ballAngle);
 						// else
-						setLocalState(state => ({...state, ballAngle: (Math.PI - gameState.ballAngle)}));
+						setBallAngle(Math.PI - gameState.ballAngle);
 					  }
 				}
-	
+		
 				if (newBallX < 0 || newBallX > 1280 - 30) {
-					if (newBallX < 0)
-						setLocalState(state => ({...state, ball: {x: (1280 / 2 - 15), y: (720 / 2) - 15},
-							scoreRight: gameState.scoreRight + 1,
-							ballAngle: (Math.random() * Math.PI * 2)}));
+					if (newBallX < 0) {
+						setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
+						setBallAngle(Math.random() * Math.PI * 2);
+						setScoreRight(gameState.scoreRight + 1);
+					}
 					else
 					{
-						setLocalState(state => ({...state, ball: {x: (1280 / 2 - 15), y: (720 / 2) - 15},
-							scoreLeft: gameState.scoreLeft + 1,
-							ballAngle: (Math.random() * Math.PI * 2)}));
+						setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
+						setBallAngle(Math.random() * Math.PI * 2);
+						setScoreLeft(gameState.scoreLeft + 1);
 					}
 				}
-		
+			
 				if (newBallY < 0 || newBallY > 720 - 30) {
-					setLocalState(state => ({...state, ballAngle: -gameState.ballAngle}));
+					setBallAngle(-gameState.ballAngle);
 				}
-
-				socket?.emit('move', localState);
-			}, 1000 / 60);
-			return () => clearInterval(gameLoop);
-	  }, [localState, gameState, screenHeight, screenWidth, ready, socket]);
+				// socket?.emit('move', localState);
+			// }, 1000/120);
+	
+			// return () => {clearInterval(gameLoop);};
+		}
+		else
+			setEnded(true);
+	}, [gameState, screenHeight,
+		screenWidth, ready]);
 
 	const handleMouseMove = (event:any) => {
 			if ((event.clientY - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 + 125) > 0) && (event.clientY - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 - 125) <= 720))
-				setLocalState(state => ({...state, cursorY: event.clientY - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 + 125)}));
-			socket?.emit('move', localState);
+				setCursorY(event.clientY - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 + 125));
+			// socket?.emit('move', localState);
 	};
 
 	const bgStyle = {
@@ -147,14 +178,15 @@ const Game = () => {
 			<div className='container' onMouseMove={handleMouseMove}>
 				{!socket && <button onClick={connectToSocket}>CONNECT</button>}
 				<div className='game-bg' style={bgStyle}>
+					{ended && <div className='end'>Match ended<br />{scoreLeft} | {scoreRight}</div>}
 					{!ready && <button className='ready-btn' onClick={() => {setReady(true); setLocalState(state => ({...state, ready: true}));}}>READY</button>}
-					<div className='score-left'>{gameState.scoreLeft}</div>
-					<div className='score-right'>{gameState.scoreRight}</div>
-					<div className='markup'/>
-					<div className='markup-top'/>
-					<div className='left-player' ref={leftPlayerRef} style={{ top: gameState.leftPaddleY }} />
-					<div className='right-player' ref={rightPlayerRef} style={{ top: gameState.rightPaddleY }} />
-					{ready && <div className='ball' style={{ left: localState.ball.x, top: localState.ball.y }}/>}
+					{!ended && <div className='score-left'>{gameState.scoreLeft}</div>}
+					{!ended && <div className='score-right'>{gameState.scoreRight}</div>}
+					{!ended && <div className='markup'/>}
+					{!ended && <div className='markup-top'/>}
+					{!ended && <div className='left-player' ref={leftPlayerRef} style={{ top: gameState.leftPaddleY }} />}
+					{!ended && <div className='right-player' ref={rightPlayerRef} style={{ top: gameState.rightPaddleY }} />}
+					{ready && !ended && <div className='ball' style={{ left: gameState.ball.x, top: gameState.ball.y }}/>}
 				</div>
 			</div>
 		</div>
