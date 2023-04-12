@@ -14,7 +14,7 @@ export class AuthService {
   ) {}
 
   //protect versus sql injections!
-  async signup(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
     if (!this.validateAccessToken(dto.token))
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid access token' };
 
@@ -24,18 +24,24 @@ export class AuthService {
 
       // Upload the file to Google Drive
       try {
-        const pictureId = await this.upload(dto.profile_picture);
-
         const user = await this.prisma.user.create({
           data: {
             username: dto.username,
             hashed_passwd: hashedPassword,
             salt: salt,
             token: dto.token,
-            profile_picture: pictureId,
+            profile_picture: "",
           },
         });
-
+      if (file) {
+        try {
+          this.uploadProfilePicture(dto, file);
+        }
+        catch (error) {
+          return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error uploading file' };
+        }
+      }
+    
       return { status: HttpStatus.CREATED };
     } 
     catch (error) {
@@ -90,57 +96,86 @@ export class AuthService {
     return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
   }
   
-  async upload(@UploadedFile() file: Express.Multer.File): Promise<string> {
-    
-    if (!file)
-      return "";
+  async uploadProfilePicture(dto: AuthDto, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
+  
+    if (!file) {
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'File is required'
+      };
+    }
 
-    const { google } = require('googleapis');
-    const path = require('path');
+    // Check if file MIME type is not one of JPG, JPEG, or PNG
+    const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!allowedMimeTypes.includes(file.mimetype))
+      return { status: HttpStatus.BAD_REQUEST, message: "Invalid file type. Only JPG, JPEG, or PNG allowed" };
   
-    const oauth2Client = new google.auth.OAuth2({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri: process.env.GOOGLE_REDIRECT_URI,
-    });
-  
-    oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-  
-    const drive = google.drive({
-      version: 'v3',
-      auth: oauth2Client,
-    });
-  
-    const filePath = file.path;
-    const fileName = path.basename(filePath);
-    const fileMimeType = file.mimetype;
-    const fileSize = file.size;
-  
-    const media = {
-      mimeType: fileMimeType,
-      body: createReadStream(filePath),
-    };
-  
-    const res = await drive.files.create({
-      requestBody: {
-        name: fileName,
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { username: dto.username },
+      });
+      //TODO: implement deletion after creation of new picture!
+      // if (user.profile_picture)
+      //   this.deleteProfilePicture(dto);
+
+      const { google } = require('googleapis');
+      const path = require('path');
+
+      const oauth2Client = new google.auth.OAuth2({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI,
+      });
+
+      oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+
+      const drive = google.drive({
+        version: 'v3',
+        auth: oauth2Client,
+      });
+
+      const filePath = file.path;
+      const fileName = path.basename(filePath);
+      const fileMimeType = file.mimetype;
+      const fileSize = file.size;
+
+      const media = {
         mimeType: fileMimeType,
-      },
-      media,
-    }, {
-      // Use a resumable upload if the file is larger than 5MB
-      onUploadProgress: evt => console.log(`Uploaded ${evt.bytesRead} bytes of ${fileSize} bytes`)
-    });
-  
-    if (res.status === 200)
-      return res.data.id;
-    else {
-      console.error(`Failed to upload file to Google Drive. Response: ${res}`);
-      return "";
+        body: createReadStream(filePath),
+      };
+
+      const res = await drive.files.create({
+        requestBody: {
+          name: fileName,
+          mimeType: fileMimeType,
+        },
+        media,
+      }, {
+        // Use a resumable upload if the file is larger than 5MB
+        onUploadProgress: evt => console.log(`Uploaded ${evt.bytesRead} bytes of ${fileSize} bytes`)
+      });
+
+      if (res.status === 200) {
+        await this.prisma.user.update({
+          where: { username: dto.username },
+          data: { profile_picture: res.data.id },
+        });
+        return { status: HttpStatus.OK, message: res.data.id };
+      } 
+      else
+        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to upload file to Google Drive'};
+    } 
+    catch (err) {
+      console.error('Error uploading file:', err);
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to upload file'};
     }
   }
 
-  /* Checks if the token is 42 token: 
+  async deleteProfilePicture(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+    return;
+  }
+
+  /* Checks if the token is of 42 token type: 
       Check if the token has the correct length
       Check if the token contains only hexadecimal characters
       If the token passes all checks, it is valid 

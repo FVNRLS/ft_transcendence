@@ -10,7 +10,7 @@ export class AuthController {
 		) {}
 
 	@Post('/signup')
-	async signup(@Body() dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+	async signup(@Body() dto: AuthDto, @UploadedFile() file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
 		return this.authService.signup(dto);
 	}
 
@@ -26,7 +26,7 @@ export class AuthController {
 
 	@Post('/upload')
 	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
-	async upload(@UploadedFile() file): Promise<string> {
-		  return this.authService.upload(file);
+	async upload(@Body() dto: AuthDto, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
+		  return this.authService.uploadProfilePicture(dto, file);
 	}
 }

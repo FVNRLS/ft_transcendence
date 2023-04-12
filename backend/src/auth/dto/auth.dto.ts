@@ -11,6 +11,4 @@ export class AuthDto {
 
   @IsString()
   token: string;
-
-  profile_picture: Express.Multer.File;
 }
