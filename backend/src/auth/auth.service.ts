@@ -1,13 +1,10 @@
-import { ForbiddenException, HttpException, HttpStatus, Injectable, UnauthorizedException, UploadedFile } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UploadedFile } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
+import { empty, PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
 import { createReadStream } from 'fs';
-import { OAuth2Client } from 'google-auth-library';
-
-// import { GoogleDriveService } from '../google_drive/google.drive.service';
 
 @Injectable()
 export class AuthService {
@@ -25,20 +22,17 @@ export class AuthService {
     if (!salt || !hashedPassword)
       throw new HttpException('Failed to hash password', HttpStatus.INTERNAL_SERVER_ERROR);
 
+      // Upload the file to Google Drive
       try {
-        // Upload the file to Google Drive
-        // const { createReadStream, originalname } = dto.profile_picture;
-        // const uploadedFile = await this.googleDriveService.upload(createReadStream(), originalname);
-        // if (!UploadedFile)
-        //   uploadedFile.id = "";
-  
+        const pictureId = await this.upload(dto.profile_picture);
+
         const user = await this.prisma.user.create({
           data: {
             username: dto.username,
             hashed_passwd: hashedPassword,
             salt: salt,
             token: dto.token,
-            profile_picture: undefined,
+            profile_picture: pictureId,
           },
         });
 
@@ -95,6 +89,56 @@ export class AuthService {
 
     return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
   }
+  
+  async upload(@UploadedFile() file: Express.Multer.File): Promise<string> {
+    
+    if (!file)
+      return "";
+
+    const { google } = require('googleapis');
+    const path = require('path');
+  
+    const oauth2Client = new google.auth.OAuth2({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      redirectUri: process.env.GOOGLE_REDIRECT_URI,
+    });
+  
+    oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+  
+    const drive = google.drive({
+      version: 'v3',
+      auth: oauth2Client,
+    });
+  
+    const filePath = file.path;
+    const fileName = path.basename(filePath);
+    const fileMimeType = file.mimetype;
+    const fileSize = file.size;
+  
+    const media = {
+      mimeType: fileMimeType,
+      body: createReadStream(filePath),
+    };
+  
+    const res = await drive.files.create({
+      requestBody: {
+        name: fileName,
+        mimeType: fileMimeType,
+      },
+      media,
+    }, {
+      // Use a resumable upload if the file is larger than 5MB
+      onUploadProgress: evt => console.log(`Uploaded ${evt.bytesRead} bytes of ${fileSize} bytes`)
+    });
+  
+    if (res.status === 200)
+      return res.data.id;
+    else {
+      console.error(`Failed to upload file to Google Drive. Response: ${res}`);
+      return "";
+    }
+  }
 
   /* Checks if the token is 42 token: 
       Check if the token has the correct length
@@ -125,48 +169,5 @@ export class AuthService {
 		const salt = randomBytes(32);
 		const hashedPassword = await argon2.hash(password, { salt: salt });
 		return { salt: salt.toString(('hex')), hashedPassword };
-	}
-
-  async uploadFile(@UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }>  {
-    const { google } = require('googleapis');
-    const path = require('path');
-    const fs = require('fs');
-  
-    const oauth2Client = new google.auth.OAuth2({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri: process.env.GOOGLE_REDIRECT_URI,
-    });
-  
-    oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-  
-    const drive = google.drive({
-      version: 'v3',
-      auth: oauth2Client,
-    });
-  
-    const filePath = file.path;
-    console.log('filePath:', filePath);
-    const fileName = path.basename(filePath);
-    const fileMimeType = file.mimetype;
-  
-    try {
-      const response = await drive.files.create({
-        requestBody: {
-          name: fileName,
-          mimeType: fileMimeType,
-        },
-        media: {
-          mimeType: fileMimeType,
-          body: fs.createReadStream(filePath),
-        },
-      });
-  
-      console.log(response.data);
-  
-      return { status: HttpStatus.OK };
-    } catch (error) {
-      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops...Something went wrong' };
-    }
-  }
+	}  
 }		

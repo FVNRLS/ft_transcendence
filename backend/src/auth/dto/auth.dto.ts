@@ -1,5 +1,4 @@
 import { IsNotEmpty, IsString } from 'class-validator';
-import { File } from 'express-fileupload';
 
 export class AuthDto {
   @IsNotEmpty()
@@ -13,5 +12,5 @@ export class AuthDto {
   @IsString()
   token: string;
 
-  profile_picture: File;
+  profile_picture: Express.Multer.File;
 }
