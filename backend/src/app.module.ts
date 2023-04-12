@@ -6,7 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { GoogleDriveModule } from './google_drive/google.drive.module';
 
 @Module({
-    imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, PrismaModule, GoogleDriveModule],
+    imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, PrismaModule],
     controllers: [AppController],
     providers: [],
 })

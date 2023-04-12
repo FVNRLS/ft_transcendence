@@ -4,14 +4,16 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
-import { GoogleDriveService } from '../google_drive/google.drive.service';
 import { createReadStream } from 'fs';
+import { OAuth2Client } from 'google-auth-library';
+
+// import { GoogleDriveService } from '../google_drive/google.drive.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
-    private googleDriveService: GoogleDriveService,
+    // private googleDriveService: GoogleDriveService,
   ) {}
 
   //protect versus sql injections!
@@ -25,10 +27,10 @@ export class AuthService {
 
       try {
         // Upload the file to Google Drive
-        const { createReadStream, originalname } = dto.profile_picture;
-        const uploadedFile = await this.googleDriveService.upload(createReadStream(), originalname);
-        if (!UploadedFile)
-          uploadedFile.id = "";
+        // const { createReadStream, originalname } = dto.profile_picture;
+        // const uploadedFile = await this.googleDriveService.upload(createReadStream(), originalname);
+        // if (!UploadedFile)
+        //   uploadedFile.id = "";
   
         const user = await this.prisma.user.create({
           data: {
@@ -36,7 +38,7 @@ export class AuthService {
             hashed_passwd: hashedPassword,
             salt: salt,
             token: dto.token,
-            profile_picture: uploadedFile.id,
+            profile_picture: undefined,
           },
         });
 
@@ -71,7 +73,6 @@ export class AuthService {
       return { status: HttpStatus.UNAUTHORIZED, message: `Incorrect password for user ${dto.username}` };
     return { status: HttpStatus.OK };
   }
-
 
   async logout(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     const user = await this.prisma.user.findUnique({
@@ -125,4 +126,47 @@ export class AuthService {
 		const hashedPassword = await argon2.hash(password, { salt: salt });
 		return { salt: salt.toString(('hex')), hashedPassword };
 	}
+
+  async uploadFile(@UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }>  {
+    const { google } = require('googleapis');
+    const path = require('path');
+    const fs = require('fs');
+  
+    const oauth2Client = new google.auth.OAuth2({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      redirectUri: process.env.GOOGLE_REDIRECT_URI,
+    });
+  
+    oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+  
+    const drive = google.drive({
+      version: 'v3',
+      auth: oauth2Client,
+    });
+  
+    const filePath = file.path;
+    console.log('filePath:', filePath);
+    const fileName = path.basename(filePath);
+    const fileMimeType = file.mimetype;
+  
+    try {
+      const response = await drive.files.create({
+        requestBody: {
+          name: fileName,
+          mimeType: fileMimeType,
+        },
+        media: {
+          mimeType: fileMimeType,
+          body: fs.createReadStream(filePath),
+        },
+      });
+  
+      console.log(response.data);
+  
+      return { status: HttpStatus.OK };
+    } catch (error) {
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops...Something went wrong' };
+    }
+  }
 }		
