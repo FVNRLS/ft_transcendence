@@ -6,6 +6,7 @@ import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
 import { createReadStream } from 'fs';
 import { User } from '@prisma/client';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -13,7 +14,9 @@ export class AuthService {
     private prisma: PrismaService,
   ) {}
 
-  //protect versus sql injections!
+
+  //CONTROLLER FUNCTIONS
+  //TODO: protect versus sql injections!
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
     if (!this.validateAccessToken(dto.token))
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid access token' };
@@ -59,7 +62,7 @@ export class AuthService {
   //here implement the token refreshing request for each hour!
   //protect versus sql injections!
   async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
-    const user = await this.getVerifiedUserData(dto);
+    const user: User = await this.getVerifiedUserData(dto);
     if (!user)
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
     return { status: HttpStatus.OK };
@@ -96,7 +99,7 @@ export class AuthService {
       return { status: HttpStatus.BAD_REQUEST, message: "Invalid file type. Only JPG, JPEG, or PNG allowed" };
   
     try {
-      const user = await this.getVerifiedUserData(dto);
+      const user: User = await this.getVerifiedUserData(dto);
       if (!user)
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
       
@@ -126,7 +129,7 @@ export class AuthService {
 
   async deleteProfilePicture(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     try {
-      const user = await this.getVerifiedUserData(dto);
+      const user: User = await this.getVerifiedUserData(dto);
       if (!user)
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
   
@@ -148,6 +151,33 @@ export class AuthService {
     }
   }
   
+  async getGoogleDriveAcessToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+    try {
+      const user: User = await this.getVerifiedUserData(dto);
+      if (!user)
+        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
+      
+      const response = await axios.post('https://oauth2.googleapis.com/token', null, {
+        params: {
+          grant_type: "refresh_token",
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+          refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+        },
+      });
+      return { status: HttpStatus.OK, message: response.data.access_token };
+    }
+    catch (error) {
+      if (error.response && error.response.status === HttpStatus.UNAUTHORIZED)
+        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid client credentials' };
+      else
+        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to request access token from Google Drive' };
+    }
+  }
+
+
+  //HELPING MEMBER FUNCTIONS
   private async uploadFileToGoogleDrive(file: Express.Multer.File, drive: any) {
     const path = require('path');
     const filePath = file.path;
@@ -173,7 +203,7 @@ export class AuthService {
   
     return res;
   }
-  
+
   private async getVerifiedUserData(dto: AuthDto): Promise<User> | null {
     const user = await this.prisma.user.findUnique({
       where: { username: dto.username },
@@ -241,4 +271,4 @@ export class AuthService {
 		const hashedPassword = await argon2.hash(password, { salt: salt });
 		return { salt: salt.toString(('hex')), hashedPassword };
 	}  
-}		
+}
