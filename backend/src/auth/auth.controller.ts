@@ -3,6 +3,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service'
 import { AuthDto } from './dto';
 
+//TODO: implement SESSIONS with database!
+
 @Controller('/auth')
 export class AuthController {
 	constructor(

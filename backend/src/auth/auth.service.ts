@@ -176,6 +176,9 @@ export class AuthService {
     }
   }
 
+  //TODO: if this approach works, next step could be try to obtain list of usernames with appropriate picture id 
+  //to get all profile pictures --> new controller function!
+  // -- > so return a table or something like that, that frontend can parse and get all pictures
   async getProfilePicture(dto: AuthDto): Promise<{ fieldname: string; originalname: string; encoding: string; mimetype: string; buffer: any; size: number; }> | null {
     if (!dto.googleAccessToken)
       return null;
@@ -257,7 +260,7 @@ export class AuthService {
       return null;
 
     const isPasswdMatch = await argon2.verify(user.hashed_passwd, dto.password);
-    if (!isPasswdMatch || dto.token != user.token)
+    if (!isPasswdMatch || dto.token !== user.token)
       return null;
     
     return user;
