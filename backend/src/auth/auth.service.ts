@@ -5,6 +5,7 @@ import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
 import { createReadStream } from 'fs';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -103,8 +104,7 @@ export class AuthService {
         message: 'File is required'
       };
     }
-
-    // Check if file MIME type is not one of JPG, JPEG, or PNG
+    
     const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
     if (!allowedMimeTypes.includes(file.mimetype))
       return { status: HttpStatus.BAD_REQUEST, message: "Invalid file type. Only JPG, JPEG, or PNG allowed" };
@@ -172,19 +172,19 @@ export class AuthService {
 
   async deleteProfilePicture(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     try {
-      const user = await this.findUserInDatabase(dto);
-
-      const isTokenMatch = await argon2.verify(user.hashed_passwd, dto.password);
-      if (!isTokenMatch || dto.token != user.token)
-        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
-  
+      const user = await this.getUserData(dto);
       if (!user || !user.profile_picture)
         return { status: HttpStatus.NOT_FOUND, message: 'User or profile picture not found'};
+
+      const isPasswdMatch = await argon2.verify(user.hashed_passwd, dto.password);
+      if (!isPasswdMatch || dto.token != user.token)
+        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
   
       const drive = await this.getGoogleDriveClient();
-  
+      if (!drive)
+        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to connect to the storage' };
       await drive.files.delete({ fileId: user.profile_picture });
-  
+
       await this.prisma.user.update({
         where: { username: dto.username },
         data: { profile_picture: "" },
@@ -198,19 +198,24 @@ export class AuthService {
     }
   }
   
-  private async findUserInDatabase(dto: AuthDto) {
+  private async getUserData(dto: AuthDto): Promise<User> | null {
     const user = await this.prisma.user.findUnique({
       where: { username: dto.username },
       select: {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        username: true,
+        salt: true,
         hashed_passwd: true,
         token: true,
-        profile_picture: true, 
+        profile_picture: true,
       },
     });
     return user;
   }
 
-  private async getGoogleDriveClient() {
+  private async getGoogleDriveClient(): Promise<any> | null {
     const { google } = require('googleapis');
     const oauth2Client = new google.auth.OAuth2({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -219,7 +224,7 @@ export class AuthService {
     });
     oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
-    return drive;
+    return Promise.resolve(drive);
   }
 
   /* Checks if the token is of 42 token type: 
