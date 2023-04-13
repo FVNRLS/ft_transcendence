@@ -6,7 +6,7 @@ import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
 import { createReadStream } from 'fs';
 import { User } from '@prisma/client';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -173,6 +173,41 @@ export class AuthService {
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid client credentials' };
       else
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to request access token from Google Drive' };
+    }
+  }
+
+  async getProfilePicture(dto: AuthDto): Promise<{ fieldname: string; originalname: string; encoding: string; mimetype: string; buffer: any; size: number; }> | null {
+    if (!dto.googleAccessToken)
+      return null;
+
+    const user: User = await this.getVerifiedUserData(dto);
+      if (!user)
+        return null;
+    
+    const fileId = user.profile_picture;
+    const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&fields=mimeType,data`;
+
+    try {
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${dto.googleAccessToken}` },
+        responseType: 'arraybuffer',
+      });
+
+      const fileData = response.data;
+      const fileName = `profile_picture_${user.id}`;
+      const mimeType = response.headers['content-type'];
+
+      return {
+        fieldname: 'profilePicture',
+        originalname: fileName,
+        encoding: '7bit',
+        mimetype: mimeType,
+        buffer: fileData,
+        size: fileData.length,
+      };
+    } catch (error) {
+      console.error(error);
+      return null;
     }
   }
 

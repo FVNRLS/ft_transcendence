@@ -40,4 +40,9 @@ export class AuthController {
 	async getGoogleDriveAcessToken(@Body() dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
 		return this.authService.getGoogleDriveAcessToken(dto);
 	}
+
+	@Post('/get_profile_picture')
+	async getProfilePicture(@Body() dto: AuthDto): Promise<{ fieldname: string; originalname: string; encoding: string; mimetype: string; buffer: any; size: number; }> | null {
+		return this.authService.getProfilePicture(dto);
+	}
 }
