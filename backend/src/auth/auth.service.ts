@@ -98,71 +98,39 @@ export class AuthService {
   
   async uploadProfilePicture(dto: AuthDto, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
   
-    if (!file) {
-      return {
-        status: HttpStatus.BAD_REQUEST,
-        message: 'File is required'
-      };
-    }
-    
+    if (!file)
+      return { status: HttpStatus.BAD_REQUEST, message: 'File is required'};
+
     const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
     if (!allowedMimeTypes.includes(file.mimetype))
       return { status: HttpStatus.BAD_REQUEST, message: "Invalid file type. Only JPG, JPEG, or PNG allowed" };
   
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { username: dto.username },
-      });
+      const user = await this.getUserData(dto);
+      if (!user)
+        return { status: HttpStatus.NOT_FOUND, message: 'User not found'};
 
+      const isPasswdMatch = await argon2.verify(user.hashed_passwd, dto.password);
+      if (!isPasswdMatch || dto.token != user.token)
+        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
       if (user.profile_picture)
         this.deleteProfilePicture(dto);
+      
+      const drive = await this.getGoogleDriveClient();
+      if (!drive)
+        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to connect to the storage' };
 
-      const { google } = require('googleapis');
-      const path = require('path');
+      const response = await this.uploadFileToGoogleDrive(file, drive);
 
-      const oauth2Client = new google.auth.OAuth2({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        redirectUri: process.env.GOOGLE_REDIRECT_URI,
-      });
-
-      oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-
-      const drive = google.drive({
-        version: 'v3',
-        auth: oauth2Client,
-      });
-
-      const filePath = file.path;
-      const fileName = path.basename(filePath);
-      const fileMimeType = file.mimetype;
-      const fileSize = file.size;
-
-      const media = {
-        mimeType: fileMimeType,
-        body: createReadStream(filePath),
-      };
-
-      const res = await drive.files.create({
-        requestBody: {
-          name: fileName,
-          mimeType: fileMimeType,
-        },
-        media,
-      }, {
-        // Use a resumable upload if the file is larger than 5MB
-        onUploadProgress: evt => console.log(`Uploaded ${evt.bytesRead} bytes of ${fileSize} bytes`)
-      });
-
-      if (res.status === 200) {
+      if (response.status === HttpStatus.OK) {
         await this.prisma.user.update({
           where: { username: dto.username },
-          data: { profile_picture: res.data.id },
+          data: { profile_picture: response.data.id },
         });
-        return { status: HttpStatus.OK, message: res.data.id };
+        return { status: HttpStatus.OK, message: "File uploaded successfully!"};
       } 
       else
-        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to upload file to Google Drive'};
+        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to upload file'};
     } 
     catch (err) {
       console.error('Error uploading file:', err);
@@ -198,6 +166,32 @@ export class AuthService {
     }
   }
   
+  private async uploadFileToGoogleDrive(file: Express.Multer.File, drive: any) {
+    const path = require('path');
+    const filePath = file.path;
+    const fileName = path.basename(filePath);
+    const fileMimeType = file.mimetype;
+    const fileSize = file.size;
+
+    const media = {
+      mimeType: fileMimeType,
+      body: createReadStream(filePath),
+    };
+    
+    const res = await drive.files.create({
+      requestBody: {
+        name: fileName,
+        mimeType: fileMimeType,
+      },
+      media,
+    }, {
+      // Use a resumable upload if the file is larger than 5MB
+      onUploadProgress: evt => console.log(`Uploaded ${evt.bytesRead} bytes of ${fileSize} bytes`)
+    });
+  
+    return res;
+  }
+  
   private async getUserData(dto: AuthDto): Promise<User> | null {
     const user = await this.prisma.user.findUnique({
       where: { username: dto.username },
@@ -217,6 +211,7 @@ export class AuthService {
 
   private async getGoogleDriveClient(): Promise<any> | null {
     const { google } = require('googleapis');
+
     const oauth2Client = new google.auth.OAuth2({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -232,7 +227,7 @@ export class AuthService {
       Check if the token contains only hexadecimal characters
       If the token passes all checks, it is valid 
   */
-  private validateAccessToken(token: string): boolean{
+  private validateAccessToken(token: string): boolean {
     if (typeof token !== 'string' || token.length !== 64 || !/^[0-9a-fA-F]+$/.test(token))
       return false;
     return true;
