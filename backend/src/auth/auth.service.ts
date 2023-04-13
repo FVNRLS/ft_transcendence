@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable, UploadedFile } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { empty, PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
@@ -22,17 +22,16 @@ export class AuthService {
     if (!salt || !hashedPassword)
       throw new HttpException('Failed to hash password', HttpStatus.INTERNAL_SERVER_ERROR);
 
-      // Upload the file to Google Drive
-      try {
-        const user = await this.prisma.user.create({
-          data: {
-            username: dto.username,
-            hashed_passwd: hashedPassword,
-            salt: salt,
-            token: dto.token,
-            profile_picture: "",
-          },
-        });
+    try {
+      await this.prisma.user.create({
+        data: {
+          username: dto.username,
+          hashed_passwd: hashedPassword,
+          salt: salt,
+          token: dto.token,
+          profile_picture: "",
+        },
+      });
       if (file) {
         try {
           this.uploadProfilePicture(dto, file);
@@ -41,7 +40,6 @@ export class AuthService {
           return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error uploading file' };
         }
       }
-    
       return { status: HttpStatus.CREATED };
     } 
     catch (error) {
@@ -61,39 +59,31 @@ export class AuthService {
   //here implement the token refreshing request for each hour!
   //protect versus sql injections!
   async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
-    const user = await this.prisma.user.findUnique({
-      where: { username: dto.username },
-    });
-
+    const user = await this.getVerifiedUserData(dto);
     if (!user)
-      return { status: HttpStatus.NOT_FOUND, message: `User with username ${dto.username} not found` };
-
-    const hashedPassword = await argon2.hash(dto.password, { salt: Buffer.from(user.salt, 'hex') });
-    if (hashedPassword !== user.hashed_passwd)
-      return { status: HttpStatus.UNAUTHORIZED, message: `Incorrect password for user ${dto.username}` };
+      return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
     return { status: HttpStatus.OK };
   }
 
   async logout(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        token: dto.token,
-      },
-    });
-
+    const user = await this.getVerifiedUserData(dto);
     if (!user)
-      return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid access token' };
-  
-    await this.prisma.user.update({
-      where: {
-        username: user.username,
-      },
-      data: {
-        token: undefined,
-      },
-    });
+      return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
 
-    return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
+    try {
+      await this.prisma.user.update({
+        where: {
+          username: user.username,
+        },
+        data: {
+          token: "",
+        },
+      });
+      return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
+    }
+    catch {
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to update database' };
+    }
   }
   
   async uploadProfilePicture(dto: AuthDto, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
@@ -106,13 +96,10 @@ export class AuthService {
       return { status: HttpStatus.BAD_REQUEST, message: "Invalid file type. Only JPG, JPEG, or PNG allowed" };
   
     try {
-      const user = await this.getUserData(dto);
+      const user = await this.getVerifiedUserData(dto);
       if (!user)
-        return { status: HttpStatus.NOT_FOUND, message: 'User not found'};
-
-      const isPasswdMatch = await argon2.verify(user.hashed_passwd, dto.password);
-      if (!isPasswdMatch || dto.token != user.token)
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
+      
       if (user.profile_picture)
         this.deleteProfilePicture(dto);
       
@@ -121,7 +108,6 @@ export class AuthService {
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to connect to the storage' };
 
       const response = await this.uploadFileToGoogleDrive(file, drive);
-
       if (response.status === HttpStatus.OK) {
         await this.prisma.user.update({
           where: { username: dto.username },
@@ -140,12 +126,8 @@ export class AuthService {
 
   async deleteProfilePicture(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     try {
-      const user = await this.getUserData(dto);
-      if (!user || !user.profile_picture)
-        return { status: HttpStatus.NOT_FOUND, message: 'User or profile picture not found'};
-
-      const isPasswdMatch = await argon2.verify(user.hashed_passwd, dto.password);
-      if (!isPasswdMatch || dto.token != user.token)
+      const user = await this.getVerifiedUserData(dto);
+      if (!user)
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
   
       const drive = await this.getGoogleDriveClient();
@@ -192,7 +174,7 @@ export class AuthService {
     return res;
   }
   
-  private async getUserData(dto: AuthDto): Promise<User> | null {
+  private async getVerifiedUserData(dto: AuthDto): Promise<User> | null {
     const user = await this.prisma.user.findUnique({
       where: { username: dto.username },
       select: {
@@ -206,6 +188,13 @@ export class AuthService {
         profile_picture: true,
       },
     });
+    if (!user)
+      return null;
+
+    const isPasswdMatch = await argon2.verify(user.hashed_passwd, dto.password);
+    if (!isPasswdMatch || dto.token != user.token)
+      return null;
+    
     return user;
   }
 
