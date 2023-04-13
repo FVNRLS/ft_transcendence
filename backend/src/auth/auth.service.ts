@@ -10,7 +10,6 @@ import { createReadStream } from 'fs';
 export class AuthService {
   constructor(
     private prisma: PrismaService,
-    // private googleDriveService: GoogleDriveService,
   ) {}
 
   //protect versus sql injections!
@@ -114,9 +113,9 @@ export class AuthService {
       const user = await this.prisma.user.findUnique({
         where: { username: dto.username },
       });
-      //TODO: implement deletion after creation of new picture!
-      // if (user.profile_picture)
-      //   this.deleteProfilePicture(dto);
+
+      if (user.profile_picture)
+        this.deleteProfilePicture(dto);
 
       const { google } = require('googleapis');
       const path = require('path');
@@ -172,7 +171,55 @@ export class AuthService {
   }
 
   async deleteProfilePicture(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
-    return;
+    try {
+      const user = await this.findUserInDatabase(dto);
+
+      const isTokenMatch = await argon2.verify(user.hashed_passwd, dto.password);
+      if (!isTokenMatch || dto.token != user.token)
+        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
+  
+      if (!user || !user.profile_picture)
+        return { status: HttpStatus.NOT_FOUND, message: 'User or profile picture not found'};
+  
+      const drive = await this.getGoogleDriveClient();
+  
+      await drive.files.delete({ fileId: user.profile_picture });
+  
+      await this.prisma.user.update({
+        where: { username: dto.username },
+        data: { profile_picture: "" },
+      });
+  
+      return { status: HttpStatus.OK, message: 'Profile picture deleted successfully' };
+    } 
+    catch (err) {
+      console.error('Error deleting file:', err);
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to delete profile picture' };
+    }
+  }
+  
+  private async findUserInDatabase(dto: AuthDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { username: dto.username },
+      select: {
+        hashed_passwd: true,
+        token: true,
+        profile_picture: true, 
+      },
+    });
+    return user;
+  }
+
+  private async getGoogleDriveClient() {
+    const { google } = require('googleapis');
+    const oauth2Client = new google.auth.OAuth2({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      redirectUri: process.env.GOOGLE_REDIRECT_URI,
+    });
+    oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    return drive;
   }
 
   /* Checks if the token is of 42 token type: 

@@ -29,4 +29,10 @@ export class AuthController {
 	async upload(@Body() dto: AuthDto, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
 		  return this.authService.uploadProfilePicture(dto, file);
 	}
+
+	@Post('/delete')
+	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
+	async delete(@Body() dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+		  return this.authService.deleteProfilePicture(dto);
+	}
 }
