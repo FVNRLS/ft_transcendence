@@ -8,6 +8,7 @@ import { createReadStream } from 'fs';
 import { User } from '@prisma/client';
 import axios from 'axios';
 import { JwtService } from '@nestjs/jwt';
+import * as fs from 'fs';
 
 @Injectable()
 export class AuthService {
@@ -20,7 +21,11 @@ export class AuthService {
   //CONTROLLER FUNCTIONS
   //TODO: protect versus sql injections!
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string}> {
-    if (!this.validateAccessToken(dto.token_42))
+    
+    const token: string = await this.get42AccessToken();
+    if (!token)
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to obtain 42 access token' };
+    if (token !== dto.token_42)
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid access token' };
 
     const { salt, hashedPassword } = await this.hashPassword(dto.password);
@@ -36,16 +41,39 @@ export class AuthService {
           profile_picture: "",
         },
       });
+
+      let profilePicture = "";
       if (file) {
         try {
           this.uploadProfilePicture(dto, file);
-        }
+        } 
         catch (error) {
           return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error uploading file' };
         }
+      } 
+      else {
+        const defaultAvatars = fs.readdirSync('./default_avatars');
+        const randomIndex = Math.floor(Math.random() * defaultAvatars.length);
+        const randomPicturePath = `./default_avatars/${defaultAvatars[randomIndex]}`;
+        const buffer = fs.readFileSync(randomPicturePath);
+        const fakeFile = {
+          fieldname: 'profile_picture',
+          originalname: defaultAvatars[randomIndex],
+          encoding: '7bit',
+          mimetype: 'image/jpeg',
+          buffer: buffer,
+          path: randomPicturePath
+        };
+        try {
+          this.uploadProfilePicture(dto, fakeFile as Express.Multer.File);
+        } 
+        catch (error) {
+          return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error uploading file' };
+        }
+
+        return { status: HttpStatus.CREATED };
       }
-      return { status: HttpStatus.CREATED };
-    } 
+    }
     catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -293,6 +321,24 @@ export class AuthService {
     return user;
   }
 
+  private async get42AccessToken(): Promise<string> | null {
+    try {   
+      const response = await axios.post('https://api.intra.42.fr/oauth/token?&', null, {
+        params: {
+          grant_type: "client_credentials",
+          client_id: process.env.REACT_APP_ID,
+          client_secret: process.env.REACT_APP_SECRET,
+          redirect_uri: process.env.CALLBACK_URL,
+        },
+      });
+      return response.data.access_token;
+    }
+    catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
+
   private async getGoogleDriveClient(): Promise<any> | null {
     const { google } = require('googleapis');
 
@@ -304,17 +350,6 @@ export class AuthService {
     oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
     return Promise.resolve(drive);
-  }
-
-  /* Checks if the token is of 42 token type: 
-      Check if the token has the correct length
-      Check if the token contains only hexadecimal characters
-      If the token passes all checks, it is valid 
-  */
-  private validateAccessToken(token: string): boolean {
-    if (typeof token !== 'string' || token.length !== 64 || !/^[0-9a-fA-F]+$/.test(token))
-      return false;
-    return true;
   }
 
   /*
