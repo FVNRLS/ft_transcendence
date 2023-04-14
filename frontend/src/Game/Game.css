@@ -1,7 +1,7 @@
 .container {
 	display: flex;
 	background-color: #1e1e1e;
-	flex-direction: column;
+	flex-direction: row;
 	align-items: center;
 	justify-content: space-evenly;
 	padding-top: 10vh;
@@ -98,7 +98,7 @@
 	justify-content: center;
 }
 
-.ready-btn {
+/* .ready-btn {
 	text-decoration: none;
 	background-color: transparent;
 	border: .4rem solid rgb(255, 255, 255);
@@ -117,7 +117,7 @@
 .ready-btn:hover {
 	cursor: pointer;
 	scale: 1.1;
-}
+} */
 
 .end {
 	background-color: #1e1e1e;
@@ -130,4 +130,55 @@
 	width: 25rem;
 	font-size: 3rem;
 	color: rgb(255, 255, 255);
+}
+
+.connect-btn {
+	text-decoration: none;
+	background-color: transparent;
+	border: .4rem solid rgb(255, 255, 255);
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-weight: bold;
+	height: 4rem;
+	width: 10rem;
+	font-size: 1.5rem;
+	color: rgb(255, 255, 255);
+	transition: 0.4s;
+}
+
+.connect-btn:hover {
+	border: none;
+	cursor: pointer;
+	background-color: white;
+	color: #1e1e1e;
+}
+
+.powerup-cont {
+	width: 6rem;
+	height: 30rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	align-items: center;
+}
+
+.powerup-cont .pup {
+	transition: .3s;
+}
+
+.powerup-cont .pup:hover {
+	scale: 1.2;
+	cursor: pointer;
+}
+
+.invis {
+	opacity: 1;
+	animation: fade .5s infinite alternate;
+}
+  
+@keyframes fade {
+	from { opacity: 1; }
+	to { opacity: 0; }
 }

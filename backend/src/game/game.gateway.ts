@@ -14,6 +14,8 @@ interface initialState {
 	cursorY: number,
 	scoreLeft: number,
 	scoreRight: number,
+	bgColor: string,
+	invisibility: boolean,
 	ready: boolean
 }
 
@@ -28,11 +30,13 @@ export class GameGateway {
 	private gameState = {
 		ball: { x:(1280 / 2 - 15), y: (720 / 2) - 15},
 		ballAngle: Math.random() * Math.PI * 2,
-		ballSpeed: 4,
+		ballSpeed: 3,
 		leftPaddleY: 720 / 2 - 125,
 		rightPaddleY: 720 / 2 - 125,
 		scoreLeft: 0,
 		scoreRight: 0,
+		bgColor: 'linear-gradient(315deg, rgba(60,132,206,1) 38%, rgba(255,25,25,1) 98%)',
+		invisibility: false,
 		ready: false
 	};
 
@@ -68,13 +72,13 @@ export class GameGateway {
 				this.gameState.ball.x = state.ball.x;
 				this.gameState.ball.y = state.ball.y;
 				this.gameState.ballAngle = state.ballAngle;
-				// this.gameState.ballSpeed = state.ballSpeed;
 				this.gameState.scoreLeft = state.scoreLeft;
 				this.gameState.scoreRight = state.scoreRight;
-				this.server.to(this.roomId).emit('updateState', this.gameState);
+				this.gameState.ballSpeed = state.ballSpeed;
+				this.gameState.bgColor = state.bgColor;
+				this.gameState.invisibility = state.invisibility;
 			}
-			// if (this.gameState.ready)
-			// 	this.server.to('test21').emit('updateState', this.gameState);
+			this.server.to(this.roomId).emit('updateState', this.gameState);
 		});
 	}
 

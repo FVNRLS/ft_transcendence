@@ -46,21 +46,18 @@ const Form = () =>
 			});}
 		
 		navigate('');
-	}, []);
+	}, [navigate]);
 
 	const sendSignUpData = async (event:any) => {
 		event.preventDefault();
 		if (accessToken)
 		{
 			try {
-				const formData = new FormData();
-				if (file)
-					formData.append('image', file);
 				const response = await axios.post('http://localhost:5000/auth/signup', {
 				  username: username,
 				  password: password,
 				  token: accessToken,
-				  profile_picture: formData
+				  profile_picture: file
 				});
 				if (response.data.status === 201)
 				{
@@ -127,11 +124,11 @@ const Form = () =>
 				</label>
 				<label className='label-text'>
 					Username:
-					<input className='input-text' type="text" name="name" value={username} onChange={handleUsernameChange} />
+					<input className='input-text' type="text" name="name" onChange={handleUsernameChange} />
 				</label>
 				<label className='label-text'>
 					Password:
-					<input className='input-text' type="password" name="pass" value={password} onChange={handlePasswordChange}/>
+					<input className='input-text' type="password" name="pass" onChange={handlePasswordChange}/>
 				</label>
 				<label className='submit-lbl'>
 					<input className='submit-btn' type="submit" onClick={sendSignUpData}/>
@@ -143,11 +140,11 @@ const Form = () =>
 				{signInError && <h2>{signInError}</h2>}
 				<label className='label-text'>
 					Username:
-					<input className='input-text' type="text" name="name" value={username} onChange={handleUsernameChange}/>
+					<input className='input-text' type="text" name="name" onChange={handleUsernameChange}/>
 				</label>
 				<label className='label-text'>
 					Password:
-					<input className='input-text' type="password" name="pass" value={password} onChange={handlePasswordChange}/>
+					<input className='input-text' type="password" name="pass" onChange={handlePasswordChange}/>
 				</label>
 				<label className='submit-lbl'>
 					<input className='submit-btn' type="submit" onClick={sendSignInData}/>
