@@ -29,7 +29,6 @@ const Form = () =>
 	useEffect(() => {
 		const urlParams = new URLSearchParams(window.location.search);
 		const code = urlParams.get('code');
-		
 		if (code) {
 			axios.post('https://api.intra.42.fr/oauth/token', {
 				grant_type: 'authorization_code',
@@ -50,15 +49,19 @@ const Form = () =>
 
 	const sendSignUpData = async (event:any) => {
 		event.preventDefault();
+		let formData = new FormData();
+		formData.append('username', username);
+		formData.append('password', password);
+		formData.append('token_42', accessToken);
+		if (file)
+			formData.append('file', file);
 		if (accessToken)
 		{
 			try {
-				const response = await axios.post('http://localhost:5000/auth/signup', {
-				  username: username,
-				  password: password,
-				  token: accessToken,
-				  profile_picture: file
-				});
+				const response = await axios.post('http://localhost:5000/auth/signup', formData, {
+					headers: {
+					  "Content-Type": "multipart/form-data",
+					}});
 				if (response.data.status === 201)
 				{
 					dispatch(login());
@@ -69,6 +72,21 @@ const Form = () =>
 			} catch (error) {
 				console.error(error);
 			}
+			// fetch('http://localhost:5000/auth/signup', {
+			// 	method: 'POST',
+			// 	headers: {"Content-Type": "multipart/form-data"},
+			// 	body: formData,
+			//   })
+			// 	.then(response => response.json())
+			// 	.then(data => {
+			// 	  if (data.status === 201) {
+			// 		dispatch(login());
+			// 		navigate('/');
+			// 	  } else {
+			// 		setSignUpError(data.message);
+			// 	  }
+			// 	})
+			// 	.catch(error => console.error(error));
 		}
 	}
 
@@ -77,8 +95,7 @@ const Form = () =>
 		try {
 			const response = await axios.post('http://localhost:5000/auth/signin', {
 				username: username,
-				password: password,
-				token: accessToken
+				password: password
 			});
 			if (response.data.status === 200)
 			{

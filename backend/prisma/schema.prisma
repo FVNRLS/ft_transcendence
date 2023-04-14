@@ -18,8 +18,20 @@ model User {
   username            String    @unique
   hashed_passwd       String    
   salt                String
-  token               String    @unique
-  profile_picture     Bytes?
+  profile_picture     String
+  sessions            Session[]
 
   @@map("users")
+}
+
+model Session {
+  id                  Int      @id @default(autoincrement())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  expiresAt           DateTime
+  userId              Int
+  user                User     @relation(fields: [userId], references: [id])
+  jwt_token           String   @unique
+
+  @@map("sessions")
 }
