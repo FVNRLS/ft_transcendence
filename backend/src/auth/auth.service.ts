@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable, UploadedFile } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/binary';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
@@ -42,46 +41,17 @@ export class AuthService {
         },
       });
 
-      let profilePicture = "";
-      if (file) {
-        try {
-          this.uploadProfilePicture(dto, file);
-        } 
-        catch (error) {
-          return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error uploading file' };
-        }
-      } 
-      else {
-        const defaultAvatars = fs.readdirSync('./default_avatars');
-        const randomIndex = Math.floor(Math.random() * defaultAvatars.length);
-        const randomPicturePath = `./default_avatars/${defaultAvatars[randomIndex]}`;
-        const buffer = fs.readFileSync(randomPicturePath);
-        const fakeFile = {
-          fieldname: 'profile_picture',
-          originalname: defaultAvatars[randomIndex],
-          encoding: '7bit',
-          mimetype: 'image/jpeg',
-          buffer: buffer,
-          path: randomPicturePath
-        };
-        try {
-          this.uploadProfilePicture(dto, fakeFile as Express.Multer.File);
-        } 
-        catch (error) {
-          return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error uploading file' };
-        }
-
-        return { status: HttpStatus.CREATED };
+      const result = await this.setFirstProfilePicture(dto, file);
+      if (result.status !== HttpStatus.CREATED) {
+        console.log("problems!!!1!\n");
+        return(result);
       }
+      
+      //TODO: cont with create session!
     }
     catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          const target = error.meta.target as string;
-          if (target.includes('username'))
-            return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
-        }
-      }
+      if (error.code === 'P2002')
+        return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops...Something went wrong' };
     }
   }
@@ -271,6 +241,34 @@ export class AuthService {
     }
   
     return token;
+  }
+
+  private async setFirstProfilePicture(dto: AuthDto, file?: Express.Multer.File) {
+    try {
+      if (file)
+        this.uploadProfilePicture(dto, file);
+      else {
+        const defaultAvatars = fs.readdirSync('./default_avatars');
+        const randomIndex = Math.floor(Math.random() * defaultAvatars.length);
+        const randomPicturePath = `./default_avatars/${defaultAvatars[randomIndex]}`;
+        const buffer = fs.readFileSync(randomPicturePath);
+        
+        const defaultFile = {
+          fieldname: 'profile_picture',
+          originalname: defaultAvatars[randomIndex],
+          encoding: '7bit',
+          mimetype: 'image/jpeg',
+          buffer: buffer,
+          path: randomPicturePath,
+        };
+        this.uploadProfilePicture(dto, defaultFile as Express.Multer.File);
+      }
+
+      return { status: HttpStatus.CREATED };
+    } 
+    catch (error) {
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error uploading file' };
+    }
   }
 
   private async uploadFileToGoogleDrive(file: Express.Multer.File, drive: any) {
