@@ -9,8 +9,9 @@ export class AuthDto {
   @IsString()
   password: string;
 
+  @IsOptional()
   @IsString()
-  token: string;
+  token_42?: string;
 
   @IsOptional()
   @IsString()

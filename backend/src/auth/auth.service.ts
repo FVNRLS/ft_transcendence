@@ -6,19 +6,21 @@ import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
 import { createReadStream } from 'fs';
 import { User } from '@prisma/client';
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
+    private jwtService: JwtService,
   ) {}
 
 
   //CONTROLLER FUNCTIONS
   //TODO: protect versus sql injections!
-  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
-    if (!this.validateAccessToken(dto.token))
+  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string}> {
+    if (!this.validateAccessToken(dto.token_42))
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid access token' };
 
     const { salt, hashedPassword } = await this.hashPassword(dto.password);
@@ -31,7 +33,6 @@ export class AuthService {
           username: dto.username,
           hashed_passwd: hashedPassword,
           salt: salt,
-          token: dto.token,
           profile_picture: "",
         },
       });
@@ -49,9 +50,7 @@ export class AuthService {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           const target = error.meta.target as string;
-          if (target.includes('token'))
-            return { status: HttpStatus.CONFLICT, message: 'Token already exists' };
-          else if (target.includes('username'))
+          if (target.includes('username'))
             return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
         }
       }
@@ -59,13 +58,20 @@ export class AuthService {
     }
   }
 
-  //here implement the token refreshing request for each hour!
   //protect versus sql injections!
   async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     const user: User = await this.getVerifiedUserData(dto);
-    if (!user)
+    if (!user) {
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
-    return { status: HttpStatus.OK };
+    }
+  
+    try {
+      await this.createSession(user);
+      return { status: HttpStatus.OK, message: 'Login successful' };
+    } 
+    catch (error) {
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
+    }
   }
 
   async logout(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
@@ -73,15 +79,16 @@ export class AuthService {
     if (!user)
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
 
+    //TODO: end session here!
     try {
-      await this.prisma.user.update({
-        where: {
-          username: user.username,
-        },
-        data: {
-          token: "",
-        },
-      });
+      // await this.prisma.user.update({
+      //   where: {
+      //     username: user.username,
+      //   },
+      //   data: {
+      //     token: "",
+      //   },
+      // });
       return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
     }
     catch {
@@ -184,8 +191,8 @@ export class AuthService {
       return null;
 
     const user: User = await this.getVerifiedUserData(dto);
-      if (!user)
-        return null;
+    if (!user)
+      return null;
     
     const fileId = user.profile_picture;
     const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&fields=mimeType,data`;
@@ -216,6 +223,28 @@ export class AuthService {
 
 
   //HELPING MEMBER FUNCTIONS
+  private async createSession(user: User): Promise<string> {
+    const payload = { userId: user.id };
+    const token = this.jwtService.sign(payload);
+    const sessionDuration = 4 * 60 * 60; // 4 hours in seconds
+  
+    try {
+      await this.prisma.session.create({
+        data: {
+          jwt_token: token,
+          userId: user.id,
+          createdAt: new Date(),
+          expiresAt: new Date(Date.now() + sessionDuration * 1000),
+        },
+      });
+    } catch (error) {
+      console.log('Error creating session:', error);
+      throw new Error('Failed to create session');
+    }
+  
+    return token;
+  }
+
   private async uploadFileToGoogleDrive(file: Express.Multer.File, drive: any) {
     const path = require('path');
     const filePath = file.path;
@@ -252,7 +281,6 @@ export class AuthService {
         username: true,
         salt: true,
         hashed_passwd: true,
-        token: true,
         profile_picture: true,
       },
     });
@@ -260,9 +288,8 @@ export class AuthService {
       return null;
 
     const isPasswdMatch = await argon2.verify(user.hashed_passwd, dto.password);
-    if (!isPasswdMatch || dto.token !== user.token)
+    if (!isPasswdMatch)
       return null;
-    
     return user;
   }
 
