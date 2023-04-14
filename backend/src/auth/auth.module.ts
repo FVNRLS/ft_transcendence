@@ -8,7 +8,7 @@ import { AuthController } from './auth.controller';
   imports: [
     PrismaModule,
     JwtModule.register({
-      secret: 'your_secret_key', // You should replace this with your own secret key
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '4h' }, // set token expiration time
     }),
   ],
