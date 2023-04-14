@@ -47,7 +47,18 @@ export class AuthService {
         return(result);
       }
       
-      //TODO: cont with create session!
+      const user: User = await this.getVerifiedUserData(dto);
+      if (!user) {
+        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
+      }
+      
+      try {
+        await this.createSession(user);
+        return { status: HttpStatus.OK, message: 'Login successful' };
+      } 
+      catch (error) {
+        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
+      }
     }
     catch (error) {
       if (error.code === 'P2002')
