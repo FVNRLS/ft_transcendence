@@ -23,8 +23,8 @@ export class AuthController {
 	}
 
 	@Post('/logout')
-	logout(@Body() dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
-		return this.authService.logout(dto);
+	logout(@Body('token') token: string): Promise<{ status: HttpStatus, message?: string }> {
+		return this.authService.logout(token);
 	}
 
 	@Post('/upload')

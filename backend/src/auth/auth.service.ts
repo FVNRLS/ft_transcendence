@@ -4,7 +4,7 @@ import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
 import { createReadStream } from 'fs';
-import { User } from '@prisma/client';
+import { Session, User } from '@prisma/client';
 import axios from 'axios';
 import { JwtService } from '@nestjs/jwt';
 import * as fs from 'fs';
@@ -19,7 +19,7 @@ export class AuthService {
 
   //CONTROLLER FUNCTIONS
   //TODO: protect versus sql injections!
-  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string}> {
+  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string, accessToken?: string }> {
     
     const token = await this.validateToken(dto);
     if (token.status !== HttpStatus.OK) {
@@ -43,7 +43,6 @@ export class AuthService {
 
       const result = await this.setFirstProfilePicture(dto, file);
       if (result.status !== HttpStatus.CREATED) {
-        console.log("problems!!!1!\n");
         return(result);
       }
       
@@ -53,8 +52,9 @@ export class AuthService {
       }
       
       try {
-        await this.createSession(user);
-        return { status: HttpStatus.CREATED, message: 'Login successful' };
+        const session: Session = await this.createSession(user);
+        const accessToken: string = session.jwt_token;
+        return { status: HttpStatus.CREATED, message: 'Login successful', accessToken };
       } catch (error) {
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
       }
@@ -67,31 +67,34 @@ export class AuthService {
   }
 
   //protect versus sql injections!∏
-  async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+  async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string, accessToken?: string }> {
     const user: User = await this.getVerifiedUserData(dto);
     if (!user) {
-      return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
     }
   
     try {
-      await this.createSession(user);
-      return { status: HttpStatus.OK, message: 'Login successful' };
+      const session: Session = await this.createSession(user);
+      const accessToken: string = session.jwt_token;
+      return { status: HttpStatus.OK, message: 'Login successful', accessToken};
     } catch (error) {
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
     }
   }
 
-  async logout(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
-    const user: User = await this.getVerifiedUserData(dto);
-    if (!user) {
-      return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
-    }
-  
+  async logout(token: string): Promise<{ status: HttpStatus, message?: string }> {
     try {
+      console.log("Token: ", token);
+      const decodedToken: any = this.jwtService.verify(String(token));
+      if (!decodedToken.userId) {
+        throw new Error('Invalid token');
+      }
+
       await this.prisma.session.deleteMany({
         where: {
-          userId: user.id
-        }
+          userId: decodedToken.userId,
+          jwt_token: token,
+        },
       });
   
       return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
@@ -100,7 +103,6 @@ export class AuthService {
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to end session' };
     }
   }
-  
   
   async uploadProfilePicture(dto: AuthDto, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
   
@@ -238,26 +240,26 @@ export class AuthService {
 
 
   //HELPING MEMBER FUNCTIONS
-  private async createSession(user: User): Promise<string> {
+  private async createSession(user: User): Promise<Session> {
     const payload = { userId: user.id };
     const token = this.jwtService.sign(payload);
     const sessionDuration = 4 * 60 * 60; // 4 hours in seconds
   
     try {
-      await this.prisma.session.create({
+      const session = await this.prisma.session.create({
         data: {
           jwt_token: token,
           userId: user.id,
           createdAt: new Date(),
           expiresAt: new Date(Date.now() + sessionDuration * 1000),
         },
+        include: { user: true },
       });
+      return session;
     } catch (error) {
       console.log('Error creating session:', error);
       throw new Error('Failed to create session');
     }
-  
-    return token;
   }
 
   private async setFirstProfilePicture(dto: AuthDto, file?: Express.Multer.File) {
