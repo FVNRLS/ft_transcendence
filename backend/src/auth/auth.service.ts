@@ -22,12 +22,14 @@ export class AuthService {
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string}> {
     
     const token = await this.validateToken(dto);
-    if (token.status !== HttpStatus.OK)
+    if (token.status !== HttpStatus.OK) {
       return token;
+    }
  
     const { salt, hashedPassword } = await this.hashPassword(dto.password);
-    if (!salt || !hashedPassword)
+    if (!salt || !hashedPassword) {
       throw new HttpException('Failed to hash password', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
     try {
       await this.prisma.user.create({
@@ -53,19 +55,18 @@ export class AuthService {
       try {
         await this.createSession(user);
         return { status: HttpStatus.CREATED, message: 'Login successful' };
-      } 
-      catch (error) {
+      } catch (error) {
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
       }
-    }
-    catch (error) {
-      if (error.code === 'P2002')
+    } catch (error) {
+      if (error.code === 'P2002') {
         return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
+      }
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops...Something went wrong' };
     }
   }
 
-  //protect versus sql injections!
+  //protect versus sql injections!∏
   async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     const user: User = await this.getVerifiedUserData(dto);
     if (!user) {
@@ -75,50 +76,55 @@ export class AuthService {
     try {
       await this.createSession(user);
       return { status: HttpStatus.OK, message: 'Login successful' };
-    } 
-    catch (error) {
+    } catch (error) {
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
     }
   }
 
   async logout(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
-    const user = await this.getVerifiedUserData(dto);
-    if (!user)
+    const user: User = await this.getVerifiedUserData(dto);
+    if (!user) {
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
-
-    //TODO: end session here!
-    try {
-      // await this.prisma.user.update({
-      //   where: {
-      //     username: user.username,
-      //   },
-      //   data: {
-      //     token: "",
-      //   },
-      // });
-      return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
     }
-    catch {
-      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to update database' };
+  
+    try {
+      await this.prisma.session.deleteMany({
+        where: {
+          userId: user.id
+        }
+      });
+  
+      return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
+    } catch (error) {
+      console.log('Error ending session:', error);
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to end session' };
     }
   }
   
+  
   async uploadProfilePicture(dto: AuthDto, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
   
-    if (!file)
+    if (!file) {
       return { status: HttpStatus.BAD_REQUEST, message: 'File is required'};
+    }
 
     const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-    if (!allowedMimeTypes.includes(file.mimetype))
+    if (!allowedMimeTypes.includes(file.mimetype)) {
       return { status: HttpStatus.BAD_REQUEST, message: "Invalid file type. Only JPG, JPEG, or PNG allowed" };
+    }
   
     try {
       const user: User = await this.getVerifiedUserData(dto);
-      if (!user)
+      if (!user) {
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
+      }
       
-      if (user.profile_picture)
-        this.deleteProfilePicture(dto);
+      if (user.profile_picture) {
+        const res = await this.deleteProfilePicture(dto);
+        if (res.status !== HttpStatus.OK) {
+          return (res);
+        }
+      }
       
       const drive = await this.getGoogleDriveClient();
       if (!drive)
@@ -134,8 +140,7 @@ export class AuthService {
       } 
       else
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to upload file'};
-    } 
-    catch (err) {
+    } catch (err) {
       console.error('Error uploading file:', err);
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to upload file'};
     }
@@ -144,12 +149,14 @@ export class AuthService {
   async deleteProfilePicture(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     try {
       const user: User = await this.getVerifiedUserData(dto);
-      if (!user)
+      if (!user) {
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
+      }
   
       const drive = await this.getGoogleDriveClient();
-      if (!drive)
+      if (!drive) {
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to connect to the storage' };
+      }
       await drive.files.delete({ fileId: user.profile_picture });
 
       await this.prisma.user.update({
@@ -158,8 +165,7 @@ export class AuthService {
       });
   
       return { status: HttpStatus.OK, message: 'Profile picture deleted successfully' };
-    } 
-    catch (err) {
+    } catch (err) {
       console.error('Error deleting file:', err);
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to delete profile picture' };
     }
@@ -181,10 +187,10 @@ export class AuthService {
         },
       });
       return { status: HttpStatus.OK, message: response.data.access_token };
-    }
-    catch (error) {
-      if (error.response && error.response.status === HttpStatus.UNAUTHORIZED)
+    } catch (error) {
+      if (error.response && error.response.status === HttpStatus.UNAUTHORIZED) {
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid client credentials' };
+      }
       else
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to request access token from Google Drive' };
     }
@@ -194,12 +200,14 @@ export class AuthService {
   //to get all profile pictures --> new controller function!
   // -- > so return a table or something like that, that frontend can parse and get all pictures
   async getProfilePicture(dto: AuthDto): Promise<{ fieldname: string; originalname: string; encoding: string; mimetype: string; buffer: any; size: number; }> | null {
-    if (!dto.googleAccessToken)
+    if (!dto.googleAccessToken) {
       return null;
+    }
 
     const user: User = await this.getVerifiedUserData(dto);
-    if (!user)
+    if (!user) {
       return null;
+    }
     
     const fileId = user.profile_picture;
     const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&fields=mimeType,data`;
@@ -254,8 +262,9 @@ export class AuthService {
 
   private async setFirstProfilePicture(dto: AuthDto, file?: Express.Multer.File) {
     try {
-      if (file)
-        this.uploadProfilePicture(dto, file);
+      if (file) {
+        await this.uploadProfilePicture(dto, file);
+      }
       else {
         const defaultAvatars = fs.readdirSync('./default_avatars');
         const randomIndex = Math.floor(Math.random() * defaultAvatars.length);
@@ -274,8 +283,7 @@ export class AuthService {
       }
 
       return { status: HttpStatus.CREATED };
-    } 
-    catch (error) {
+    } catch (error) {
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error uploading file' };
     }
   }
@@ -306,28 +314,41 @@ export class AuthService {
     return res;
   }
 
-  private async getVerifiedUserData(dto: AuthDto): Promise<User> | null {
-    const user = await this.prisma.user.findUnique({
+  private async getVerifiedUserData(dto: AuthDto): Promise<User | null> {
+    const user: User = await this.prisma.user.findUnique({
       where: { username: dto.username },
-      select: {
+      select: { 
         id: true,
+        username: true,
+        hashed_passwd: true,
+        salt: true,
+        profile_picture: true,
         createdAt: true,
         updatedAt: true,
-        username: true,
-        salt: true,
-        hashed_passwd: true,
-        profile_picture: true,
+        sessions: {
+          select: {
+            id: true,
+            createdAt: true,
+            updatedAt: true,
+            expiresAt: true,
+            jwt_token: true,
+          }
+        }
       },
     });
-    if (!user)
+  
+    if (!user) {
       return null;
-
+    }
+  
     const isPasswdMatch = await argon2.verify(user.hashed_passwd, dto.password);
-    if (!isPasswdMatch)
+    if (!isPasswdMatch) {
       return null;
+    }
+  
     return user;
   }
-
+  
   private async  validateToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     try {
       const url = 'https://api.intra.42.fr/v2/achievements';
@@ -336,8 +357,7 @@ export class AuthService {
         responseType: 'arraybuffer',
       });
       return { status: HttpStatus.OK, message: 'Token valid' };
-    }
-    catch(error){
+    } catch(error){
       return { status: HttpStatus.UNAUTHORIZED, message: 'Token invalid' };
     }
   }
