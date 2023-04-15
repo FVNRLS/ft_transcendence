@@ -20,6 +20,8 @@ model User {
   salt                String
   profile_picture     String
   sessions            Session[]
+  // score               Score[]
+  // messages            Messages[]
 
   @@map("users")
 }
@@ -35,3 +37,25 @@ model Session {
 
   @@map("sessions")
 }
+
+// model  Score {
+//    id            Int    @id @default(autoincrement())
+//    gameTime      DateTime @default(now())
+//    loosing       Int
+//    rating        Int
+//    wining        Int
+//    userId        Int
+//    Player   User   @relation(fields: [userId], references: [id])
+   
+//  @@map("score")
+// }
+
+// model Messages {
+//   id                    Int   @id @default(autoincrement())
+//   roomId                Int ---> get it from chat websocket!
+//   createdAt             DateTime @default(now())
+//   value                 String
+//   userId                Int
+//   user                  User  @relation(fields: [user_id], references: [id])
+//   @@map("messages")
+// }

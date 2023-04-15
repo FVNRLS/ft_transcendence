@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, UploadedFile } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Req, Res, UploadedFile } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
@@ -8,6 +8,15 @@ import { Session, User } from '@prisma/client';
 import axios from 'axios';
 import { JwtService } from '@nestjs/jwt';
 import * as fs from 'fs';
+import { Request } from 'express';
+
+const cookieOptions = {
+  httpOnly: true,
+  sameSite: 'strict',
+  secure: true,
+  maxAge: 4 * 60 * 60, // 4 hours
+};
+
 
 @Injectable()
 export class AuthService {
@@ -67,33 +76,49 @@ export class AuthService {
   }
 
   //protect versus sql injections!∏
-  async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string, accessToken?: string }> {
+  async signin(dto: AuthDto, @Req() request?: Request, @Res() res?: Response) {
+
+    if (request.cookies) {
+      const cookieParser = require('cookie-parser')
+      const parsedCookie = cookieParser.default.parse(request.cookies, cookieOptions);
+      const jwtToken = parsedCookie.jwt_token;
+
+      if (!jwtToken) {
+        return { status: HttpStatus.UNAUTHORIZED, message: 'JWT Token not found in cookies' };
+      }
+      const session: Session = await this.prisma.session.findUnique({ where: { jwt_token: jwtToken} });
+      if (!session) {
+        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid session cookie' };
+      }
+    }
+    
     const user: User = await this.getVerifiedUserData(dto);
     if (!user) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+      return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
     }
   
     try {
-      const session: Session = await this.createSession(user);
-      const accessToken: string = session.jwt_token;
-      return { status: HttpStatus.OK, message: 'Login successful', accessToken};
+      const newSession: Session = await this.createSession(user);
+      const newCookie: string = await this.createSessionCookie(newSession);
+      return { status: HttpStatus.OK, message: 'Login successful', cookie: newCookie};
     } catch (error) {
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
     }
   }
 
-  async logout(token: string): Promise<{ status: HttpStatus, message?: string }> {
+  //TODO: doesnt work yet!
+  async logout(@Req() request?: Request): Promise<{ status: HttpStatus, message?: string }> {
     try {
-      console.log("Token: ", token);
-      const decodedToken: any = this.jwtService.verify(String(token));
-      if (!decodedToken.userId) {
+      const cookieParser = require('cookie-parser')
+      const jwtToken = request.cookies.access_token;
+      console.log("Token: ", jwtToken);
+      if (!jwtToken) {
         throw new Error('Invalid token');
       }
 
       await this.prisma.session.deleteMany({
         where: {
-          userId: decodedToken.userId,
-          jwt_token: token,
+          jwt_token: jwtToken,
         },
       });
   
@@ -260,6 +285,15 @@ export class AuthService {
       console.log('Error creating session:', error);
       throw new Error('Failed to create session');
     }
+  }
+
+  private async createSessionCookie(session: Session): Promise<string> {
+    const cookieName = 'id';
+    const cookieId = session.id;
+    const cookieJWT = session.jwt_token;
+    return `${cookieName+cookieId}=${cookieJWT}; ${Object.entries(cookieOptions)
+      .map(([key, value]) => `${key}=${value};`)
+      .join(' ')}`;
   }
 
   private async setFirstProfilePicture(dto: AuthDto, file?: Express.Multer.File) {
