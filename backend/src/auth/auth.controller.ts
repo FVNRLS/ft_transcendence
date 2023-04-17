@@ -14,13 +14,13 @@ export class AuthController {
 
 	@Post('/signup')
 	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
-	async signup(@Body() dto: AuthDto, @UploadedFile() file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
+	async signup(@Body() dto: AuthDto, @UploadedFile() file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
 		return this.authService.signup(dto, file);
 	}
 
 	@Post('/signin')
-	signin(@Body() dto: AuthDto, @Req() request?: Request, @Res() res?: Response) {
-		return this.authService.signin(dto, request, res);
+	signin(@Body() dto: AuthDto, cookie?: string) {
+		return this.authService.signin(dto, cookie);
 	}
 
 	@Post('/logout')

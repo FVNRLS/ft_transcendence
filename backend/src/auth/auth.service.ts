@@ -2,19 +2,23 @@ import { HttpException, HttpStatus, Injectable, Req, Res, UploadedFile } from '@
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
-import { randomBytes } from 'crypto';
+import { randomBytes, createCipheriv, createDecipheriv  } from 'crypto';
 import { createReadStream } from 'fs';
 import { Session, User } from '@prisma/client';
 import axios from 'axios';
 import { JwtService } from '@nestjs/jwt';
 import * as fs from 'fs';
 import { Request } from 'express';
+import { serialize } from 'cookie';
+
+const COOKIE_NAME = 'session';
+const COOKIE_SECRET = process.env.COOKIE_SECRET;
 
 const cookieOptions = {
+  maxAge: 2 * 60 * 60, // 2 hours
   httpOnly: true,
-  sameSite: 'strict',
   secure: true,
-  maxAge: 4 * 60 * 60, // 4 hours
+  sameSite: 'strict' as const, // 'strict' is one of the allowed values for sameSite
 };
 
 
@@ -28,7 +32,7 @@ export class AuthService {
 
   //CONTROLLER FUNCTIONS
   //TODO: protect versus sql injections!
-  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string, accessToken?: string }> {
+  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
     
     const token = await this.validateToken(dto);
     if (token.status !== HttpStatus.OK) {
@@ -61,9 +65,12 @@ export class AuthService {
       }
       
       try {
-        const session: Session = await this.createSession(user);
-        const accessToken: string = session.jwt_token;
-        return { status: HttpStatus.CREATED, message: 'Login successful', accessToken };
+        const sessionPayload = { userId: user.id };
+        const jwt_token = this.jwtService.sign(sessionPayload);
+        const cookie = await this.createEncryptedCookie(user, jwt_token);
+        await this.createSession(user, jwt_token);
+
+        return { status: HttpStatus.CREATED, message: 'Login successful', cookie: cookie};
       } catch (error) {
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
       }
@@ -76,37 +83,25 @@ export class AuthService {
   }
 
   //protect versus sql injections!∏
-  async signin(dto: AuthDto, @Req() request?: Request, @Res() res?: Response) {
-
-    if (request.cookies) {
-      const cookieParser = require('cookie-parser')
-      const parsedCookie = cookieParser.default.parse(request.cookies, cookieOptions);
-      const jwtToken = parsedCookie.jwt_token;
-
-      if (!jwtToken) {
-        return { status: HttpStatus.UNAUTHORIZED, message: 'JWT Token not found in cookies' };
-      }
-      const session: Session = await this.prisma.session.findUnique({ where: { jwt_token: jwtToken} });
-      if (!session) {
-        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid session cookie' };
-      }
-    }
-    
+  async signin(dto: AuthDto, cookie?: string): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
     const user: User = await this.getVerifiedUserData(dto);
     if (!user) {
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
     }
   
     try {
-      const newSession: Session = await this.createSession(user);
-      const newCookie: string = await this.createSessionCookie(newSession);
-      return { status: HttpStatus.OK, message: 'Login successful', cookie: newCookie};
+      const sessionPayload = { userId: user.id };
+      const jwt_token = this.jwtService.sign(sessionPayload);
+      const cookie = await this.createEncryptedCookie(user, jwt_token);
+      await this.createSession(user, jwt_token);
+  
+      return { status: HttpStatus.OK, message: 'Login successful', cookie: cookie };
     } catch (error) {
+      console.log(error);
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
     }
   }
 
-  //TODO: doesnt work yet!
   async logout(@Req() request?: Request): Promise<{ status: HttpStatus, message?: string }> {
     try {
       const cookieParser = require('cookie-parser')
@@ -265,10 +260,27 @@ export class AuthService {
 
 
   //HELPING MEMBER FUNCTIONS
-  private async createSession(user: User): Promise<Session> {
-    const payload = { userId: user.id };
-    const token = this.jwtService.sign(payload);
-    const sessionDuration = 4 * 60 * 60; // 4 hours in seconds
+  private async createEncryptedCookie(user: User, token: string): Promise<string> {
+    const sessionDuration = 2 * 60 * 60; // 2 hours in seconds
+  
+    const cookieValue = JSON.stringify({
+      jwt_token: token,
+      userId: user.id,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + sessionDuration * 1000),
+    });
+  
+    const cookie = serialize(COOKIE_NAME, cookieValue, cookieOptions);
+    const encryptedCookie = await this.encryptCookie(cookie, COOKIE_SECRET);
+    if (!encryptedCookie) {
+      throw new Error('Failed to create encrypted cookie');
+    }
+
+    return encryptedCookie;
+  }
+  
+  private async createSession(user: User, token: string): Promise<Session> {
+    const sessionDuration = 2 * 60 * 60; // 2 hours in seconds
   
     try {
       const session = await this.prisma.session.create({
@@ -287,13 +299,45 @@ export class AuthService {
     }
   }
 
-  private async createSessionCookie(session: Session): Promise<string> {
-    const cookieName = 'id';
-    const cookieId = session.id;
-    const cookieJWT = session.jwt_token;
-    return `${cookieName+cookieId}=${cookieJWT}; ${Object.entries(cookieOptions)
-      .map(([key, value]) => `${key}=${value};`)
-      .join(' ')}`;
+  /* Hash the session string with argon2
+    Generate a random initialization vector
+    Create a cipher using the cookie secret as the key and the initialization vector
+    Encrypt the hashed session string with the cipher
+    Combine the encrypted session string and the initialization vector into a single buffer
+    Return the base64-encoded encrypted session string 
+  */
+
+  private async encryptCookie(cookie: string, cookieSecret: string) {
+    const hashedSession = await argon2.hash(cookie);
+    const iv = randomBytes(16);
+    const cipher = createCipheriv('aes-256-cbc', Buffer.from(cookieSecret, 'base64'), iv);
+    const encrypted = Buffer.concat([cipher.update(hashedSession), cipher.final()]);
+    const encryptedCookie = Buffer.concat([iv, encrypted]);
+
+    return encryptedCookie.toString('base64');
+  }
+  
+  /* Decode the base64-encoded encrypted session string
+    Extract the initialization vector from the buffer
+    Create a decipher using the cookie secret as the key and the initialization vector
+    Decrypt the session string with the decipher
+    Verify the decrypted string with argon2 
+    Return the decrypted session string
+  */
+  private async decryptCookie(cookie: string, cookieSecret: string) {
+    if (!cookie) {
+      throw new Error('Encrypted session is undefined');
+    }
+    const encryptedSessionBuffer = Buffer.from(cookie, 'base64');
+    const iv = encryptedSessionBuffer.slice(0, 16);
+    const decipher = createDecipheriv('aes-256-cbc', Buffer.from(cookieSecret, 'base64'), iv);
+    const decrypted = Buffer.concat([decipher.update(encryptedSessionBuffer.slice(16)), decipher.final()]);
+    const isValid = await argon2.verify(decrypted.toString(), decrypted.toString('ascii'));
+    if (!isValid) {
+      throw new Error('Invalid cookie');
+    }
+  
+    return decrypted.toString('ascii');
   }
 
   private async setFirstProfilePicture(dto: AuthDto, file?: Express.Multer.File) {
