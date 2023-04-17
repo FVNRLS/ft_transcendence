@@ -6,6 +6,8 @@ import Dashboard from './Dashboard/Dashboard';
 import Chat from './Chat/Chat';
 import Profile from './Profile/Profile';
 import NotFound from './404/NotFound';
+import Stats from './Stats/Stats';
+import Friends from './Friends/Friends';
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/stats" element={<Stats />} />
+        <Route path="/friends" element={<Friends />} />
         <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -52,6 +52,8 @@ export class GameGateway {
 			this.player2 = { id: client.id, ready: false };
 			console.log(`Player 2: ${this.player2.id}`);
 		}
+		if (this.player1 && this.player2)
+			this.roomId = uuidv4;
 
 		client.on('move', (state: initialState) => {
 			if (this.player1 && client.id == this.player1.id) {

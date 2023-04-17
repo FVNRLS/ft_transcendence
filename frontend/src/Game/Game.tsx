@@ -106,10 +106,11 @@ const Game = () => {
 	}, [ballPos, ballAngle, scoreLeft, scoreRight, cursorY, ballSpeed, bgColor, invisibility])
 	
 	useEffect(() => {
+		setEnded(false);
 		if (gameState.scoreLeft < 10 && gameState.scoreRight < 10)
 		{
 				const newBallX = gameState.ball.x + Math.cos(gameState.ballAngle) * gameState.ballSpeed;
-				const newBallY = gameState.ball.y + Math.sin(gameState.ballAngle) * -gameState.ballSpeed;
+				const newBallY = gameState.ball.y + -Math.sin(gameState.ballAngle) * gameState.ballSpeed;
 	
 				setBallPos({ x: newBallX, y: newBallY });
 				
@@ -121,6 +122,7 @@ const Game = () => {
 					const leftPlayerBar = (leftPlayer as HTMLElement).getBoundingClientRect();
 					const rightPlayerBar = (rightPlayer as HTMLElement).getBoundingClientRect();
 
+					console.log(leftPlayerBar.right, rightPlayerBar.left);
 					if (
 						(
 						newBallX <= (50) &&
@@ -129,11 +131,8 @@ const Game = () => {
 						newBallX > (0)
 						)
 					) {
-						const distX = newBallX + 15 - 40;
-						const distY = newBallY + 15 - (leftPlayerBar.top - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 - 125));
-						const dist = Math.sqrt(distX ** 2 + distY ** 2);
-						const angleDiff = dist * (Math.PI / 4);
-						setBallAngle(Math.PI / 4 + angleDiff); // DOESN'T WORK PROPERLY
+						const ballAngle = Math.PI - Math.atan2(gameState.leftPaddleY - gameState.ball.y, gameState.ball.x - leftPlayerBar.right);
+        				setBallAngle(ballAngle);
 					}
 		
 					if (
@@ -142,11 +141,8 @@ const Game = () => {
 						newBallY <= (rightPlayerBar.bottom - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2)) &&
 						newBallX < (1280 - 30)
 					  ) {
-						const distX = newBallX + 15 - 1280 - 40;
-						const distY = newBallY + 15 - (rightPlayerBar.top - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 - 125));
-						const dist = Math.sqrt(distX ** 2 + distY ** 2);
-						const angleDiff = dist * (Math.PI / 4);
-						setBallAngle(Math.PI / 4 + angleDiff); // DOESN'T WORK PROPERLY
+						const ballAngle = Math.PI - Math.atan2(gameState.rightPaddleY - gameState.ball.y, rightPlayerBar.left - gameState.ball.x);
+        				setBallAngle(ballAngle);
 					}
 				}
 		

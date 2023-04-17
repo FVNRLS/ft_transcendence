@@ -1,118 +1,175 @@
-.chat-cont {
-	width: 80%;
-	height: 90%;
-	background-color: #ffffffce;
-	display: flex;
-}
-
-.chat-cont .left-sect
+ul
 {
-	background-color: #476cd2c9;
-	width: 30%;
-	height: 100%;
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	align-items: center;
-}
-
-.left-sect h1 {
-	color: #ffffffce;
-	font-size: 3rem;
-}
-
-.left-sect section {
-	height: 90%;
-	width: 100%;
-	background-color: #476cd2;
-}
-
-.left-sect section ul {
 	list-style: none;
-	width: 100%;
-	height: 100%;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
 	padding: 0;
-	margin: 0;
 }
 
-.left-sect section ul li {
-	height: 20%;
-	width: 100%;
+.chat-container {
 	display: flex;
-	align-items: center;
-	justify-content: center;
-	text-align: center;
-	color: #ffffffce;
-	font-family: 'Montserrat', sans-serif;
-	font-weight: bold;
-	font-size: 2rem;
-	transition: .4s;
+	height: 70vh;
+	width: 70vw;
 }
 
-.left-sect section ul li:hover {
-	cursor: pointer;
-	box-shadow: 0 0 10px rgba(0, 0, 0, 0.271);
-}
-
-.plus-btn {
-	width: 4rem;
-	height: 4rem;
-	border: 0;
+  /* Sidebar */
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	flex: 1;
+	padding: 20px;
 	background-color: #ffffffce;
-	border-radius: 100%;
-	transition: .4s;
+}
+  
+.profile {
 	display: flex;
-	justify-content: center;
+	flex-direction: column;
 	align-items: center;
-	margin-top: 3rem;
+	margin-bottom: 20px;
 }
-
-.plus-btn::before {
-	content: "+";
-	color: #476cd2c9;
-	font-size: 4.5rem;
-	transition: .4s;
+  
+.profile img {
+	width: 100px;
+	height: 100px;
+	object-fit: cover;
+	border-radius: 50%;
+	margin-bottom: 10px;
+	border: #476cd2c9 solid 5px;
 }
-
-.plus-btn:hover {
-	cursor: pointer;
-	background-color: #ffffffdf;
-}
-
-.plus-btn:hover::before {
-	color: #476cd2;
-}
-
-.chat-cont .right-sect {
-	height: 100%;
+  
+.profile h2 {
+	margin-top: 1rem;
+	font-size: 24px;
+	padding: 0.5rem;
+	color: white;
+	background-color: #476cd2c9;
 	width: 70%;
+}
+  
+.profile button {
+	background-color: #333;
+	color: #fff;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 5px;
+	cursor: pointer;
+}
+  
+.channels, .direct-messages {
+	margin-bottom: 20px;
+}
+  
+.channels h3, .direct-messages h3 {
+	font-size: 20px;
+	color: white;
+	background-color: #476cd2c9;
+	padding: .5rem;
+	margin-bottom: 10px;
+}
+  
+.channels ul li, .direct-messages ul li {
+	margin-bottom: 5px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+  
+.channels ul li button, .direct-messages ul li button {
+	display: block;
+	padding: 5px;
+	border-radius: 5px;
+	color: rgb(71, 71, 71);
+	border: 0;
+	background-color: transparent;
+}
+  
+.channels ul li button:hover, .direct-messages ul li button:hover {
+	background-color: #0000000f;
+	cursor: pointer;
+}
+
+.chat {
+	flex: 4;
 	display: flex;
 	flex-direction: column;
 }
-
-.right-sect section {
-	height: 92%;
-	width: 100%;
+  
+.messages {
+	flex: 1;
+	padding: 20px;
+	overflow-y: scroll;
+}
+  
+.message {
+	display: flex;
+	margin-bottom: 20px;
+}
+  
+.message img {
+	width: 50px;
+	height: 50px;
+	object-fit: cover;
+	border-radius: 50%;
+	margin-right: 10px;
+}
+  
+.message-content {
+	background-color: #ffffffce;
+	padding: 20px;
+	border-radius: 10px;
+	color: rgb(71, 71, 71);
+}
+  
+.message-content h3 {
+	font-size: 18px;
+	margin-bottom: 5px;
+}
+  
+.message-content p {
+	font-size: 16px;
+}
+  
+.message-time {
+	font-size: 14px;
+	color: #999;
+	margin-left: auto;
+}
+  
+.message-user {
+	font-weight: bold;
+	color: #333;
+}
+  
+.message-input {
+	display: flex;
+	align-items: center;
+	padding: 20px;
+	background-color: #ffffffce;
 }
 
-.right-sect .msg-input {
-	justify-items: flex-end;
-	height: 8%;
-	border: 0;
-	background-color: #476cd2c9;
-	color: #ffffffdf;
-	font-size: 1.5rem;
-	padding-left: 1.3rem;
+.message-input input {
+	flex: 1;
+	padding: 10px;
+	border: none;
+	border-radius: 5px;
+	font-size: 16px;
+	margin-right: 10px;
+	color: rgb(71, 71, 71);
 }
 
-.right-sect .msg-input::placeholder {
-	color:#ffffff5b;
-}
-
-.right-sect .msg-input:focus {
-	/* background-color: #476cd2; */
+.message-input input:focus {
 	outline: none;
+}
+  
+.message-input button {
+	background-color: #476cd2c9;
+	color: #fff;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 5px;
+	cursor: pointer;
+	transition: .4s;
+}
+
+.message-input button:hover {
+	background-color: #476cd2;
 }

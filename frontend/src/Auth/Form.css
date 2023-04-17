@@ -212,3 +212,27 @@ input:checked + .slider:before {
 	justify-content: center;
 	align-items: center;
 }
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 5px solid transparent;
+  border-top-color: #0fc384;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+    border-top-color: #0fc384;
+  }
+  50% {
+    transform: rotate(180deg);
+    border-top-color: #476cd2;
+  }
+  100% {
+    transform: rotate(360deg);
+    border-top-color: #0fc384;
+  }
+}

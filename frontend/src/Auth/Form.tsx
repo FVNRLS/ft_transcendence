@@ -11,6 +11,7 @@ const SECRET = process.env.REACT_APP_SECRET;
 
 const Form = () => 
 {
+	const [isLoading, setIsLoading] = useState(false);
 	const [accessToken, setAccessToken] = useState('');
 	const [signInError, setSignInError] = useState('');
 	const [signUpError, setSignUpError] = useState('');
@@ -49,6 +50,7 @@ const Form = () =>
 
 	const sendSignUpData = async (event:any) => {
 		event.preventDefault();
+		setIsLoading(true);
 		let formData = new FormData();
 		formData.append('username', username);
 		formData.append('password', password);
@@ -71,27 +73,15 @@ const Form = () =>
 					setSignUpError(response.data.message);
 			} catch (error) {
 				console.error(error);
+			} finally {
+				setIsLoading(false);
 			}
-			// fetch('http://localhost:5000/auth/signup', {
-			// 	method: 'POST',
-			// 	headers: {"Content-Type": "multipart/form-data"},
-			// 	body: formData,
-			//   })
-			// 	.then(response => response.json())
-			// 	.then(data => {
-			// 	  if (data.status === 201) {
-			// 		dispatch(login());
-			// 		navigate('/');
-			// 	  } else {
-			// 		setSignUpError(data.message);
-			// 	  }
-			// 	})
-			// 	.catch(error => console.error(error));
 		}
 	}
 
 	const sendSignInData = async (event:any) => {
 		event.preventDefault();
+		setIsLoading(true);
 		try {
 			const response = await axios.post('http://localhost:5000/auth/signin', {
 				username: username,
@@ -106,7 +96,9 @@ const Form = () =>
 				setSignInError(response.data.message);
 		} catch (error) {
 			console.error(error);
-		}
+		} finally {
+            setIsLoading(false);
+        }
 	}
 
 	const handleSwitch = () => {
@@ -128,7 +120,9 @@ const Form = () =>
 	return (
 		<div className='bg' style={{paddingTop: 0, height: '100vh'}}>
 		<div className='form-cont' style={cont_style}>
-			{ switchUp ? (
+			{ isLoading ? (
+			<div className='spinner'/>
+			) : switchUp ? (
 			<form name="signup" className='signup-form'>
 				<h1>Sign Up</h1>
 				{signUpError && <h2>{signUpError}</h2>}

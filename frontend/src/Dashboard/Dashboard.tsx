@@ -19,11 +19,11 @@ const Dashboard = () => {
 				</section>
 				<section>
 					<h1>See game statistics...</h1>
-					<Link className="link-btn" to='/game'>Open</Link>
+					<Link className="link-btn" to='/stats'>Open</Link>
 				</section>
 				<section>
 					<h1>Find Friends</h1>
-					<Link className="link-btn" to='/chat'>Search</Link>
+					<Link className="link-btn" to='/friends'>Search</Link>
 				</section>
 				<section>
 					<h1>Chat with someone!</h1>
