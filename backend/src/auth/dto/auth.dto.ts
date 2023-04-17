@@ -16,4 +16,8 @@ export class AuthDto {
   @IsOptional()
   @IsString()
   googleAccessToken?: string;
+
+  @IsOptional()
+  @IsString()
+  cookie?: string;
 }

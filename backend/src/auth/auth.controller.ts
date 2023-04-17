@@ -19,8 +19,8 @@ export class AuthController {
 	}
 
 	@Post('/signin')
-	signin(@Body() dto: AuthDto, cookie?: string) {
-		return this.authService.signin(dto, cookie);
+	signin(@Body() dto: AuthDto) {
+		return this.authService.signin(dto);
 	}
 
 	@Post('/logout')

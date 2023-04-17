@@ -16,9 +16,9 @@ model User {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   username            String    @unique
-  hashed_passwd       String    
+  hashedPasswd        String    
   salt                String
-  profile_picture     String
+  profilePicture      String
   sessions            Session[]
   // score               Score[]
   // messages            Messages[]
@@ -28,12 +28,14 @@ model User {
 
 model Session {
   id                  Int      @id @default(autoincrement())
+  user                User     @relation(fields: [userId], references: [id])
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   expiresAt           DateTime
   userId              Int
-  user                User     @relation(fields: [userId], references: [id])
-  jwt_token           String   @unique
+  jwtToken            String   @unique
+  serializedCookie    String   @unique
+  hashedCookie        String   @unique
 
   @@map("sessions")
 }

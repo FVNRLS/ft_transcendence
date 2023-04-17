@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable, Req, Res, UploadedFile } from '@
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
-import { randomBytes, createCipheriv, createDecipheriv  } from 'crypto';
+import { randomBytes, createCipheriv, createDecipheriv, scrypt } from 'crypto';
 import { createReadStream } from 'fs';
 import { Session, User } from '@prisma/client';
 import axios from 'axios';
@@ -10,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as fs from 'fs';
 import { Request } from 'express';
 import { serialize } from 'cookie';
+import { promisify } from 'util';
 
 const COOKIE_NAME = 'session';
 const COOKIE_SECRET = process.env.COOKIE_SECRET;
@@ -48,9 +49,9 @@ export class AuthService {
       await this.prisma.user.create({
         data: {
           username: dto.username,
-          hashed_passwd: hashedPassword,
+          hashedPasswd: hashedPassword,
           salt: salt,
-          profile_picture: "",
+          profilePicture: "",
         },
       });
 
@@ -67,10 +68,17 @@ export class AuthService {
       try {
         const sessionPayload = { userId: user.id };
         const jwt_token = this.jwtService.sign(sessionPayload);
-        const cookie = await this.createEncryptedCookie(user, jwt_token);
-        await this.createSession(user, jwt_token);
+        const serializedCookie = await this.serializeCookie(user, jwt_token);
+        const hashedCookie = await argon2.hash(serializedCookie);
+        try {
+          const encryptedCookie = await this.encryptCookie(hashedCookie);
+          await this.createSession(user, jwt_token, hashedCookie, serializedCookie);
+          return { status: HttpStatus.CREATED, message: 'Login successful', cookie: encryptedCookie};
+        }
+        catch(error) {
+          return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to encrypt cookie' };          
+        }
 
-        return { status: HttpStatus.CREATED, message: 'Login successful', cookie: cookie};
       } catch (error) {
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
       }
@@ -83,23 +91,36 @@ export class AuthService {
   }
 
   //protect versus sql injections!∏
-  async signin(dto: AuthDto, cookie?: string): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
+  async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
     const user: User = await this.getVerifiedUserData(dto);
     if (!user) {
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
     }
-  
-    try {
-      const sessionPayload = { userId: user.id };
-      const jwt_token = this.jwtService.sign(sessionPayload);
-      const cookie = await this.createEncryptedCookie(user, jwt_token);
-      await this.createSession(user, jwt_token);
-  
-      return { status: HttpStatus.OK, message: 'Login successful', cookie: cookie };
-    } catch (error) {
-      console.log(error);
-      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
+   
+    
+    if (dto.cookie) {
+      try{
+        const decryptedCookie = await this.decryptCookie(dto.cookie);
+        console.log("Decrypted cookie: ", decryptedCookie);
+        return { status: HttpStatus.OK, message: 'Cookie decrypted successfully', cookie: decryptedCookie };
+      }
+      catch(error) {
+        console.log(error);
+        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to decrypt cookie' };
+      }
     }
+  
+    // try {
+    //   const sessionPayload = { userId: user.id };
+    //   const jwt_token = this.jwtService.sign(sessionPayload);
+    //   const cookie = await this.createEncryptedCookie(user, jwt_token);
+    //   await this.createSession(user, jwt_token);
+  
+    //   return { status: HttpStatus.OK, message: 'Login successful', cookie: cookie };
+    // } catch (error) {
+    //   console.log(error);
+    //   return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
+    // }
   }
 
   async logout(@Req() request?: Request): Promise<{ status: HttpStatus, message?: string }> {
@@ -113,7 +134,7 @@ export class AuthService {
 
       await this.prisma.session.deleteMany({
         where: {
-          jwt_token: jwtToken,
+          jwtToken: jwtToken,
         },
       });
   
@@ -141,7 +162,7 @@ export class AuthService {
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
       }
       
-      if (user.profile_picture) {
+      if (user.profilePicture) {
         const res = await this.deleteProfilePicture(dto);
         if (res.status !== HttpStatus.OK) {
           return (res);
@@ -156,7 +177,7 @@ export class AuthService {
       if (response.status === HttpStatus.OK) {
         await this.prisma.user.update({
           where: { username: dto.username },
-          data: { profile_picture: response.data.id },
+          data: { profilePicture: response.data.id },
         });
         return { status: HttpStatus.OK, message: "File uploaded successfully!"};
       } 
@@ -179,11 +200,11 @@ export class AuthService {
       if (!drive) {
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to connect to the storage' };
       }
-      await drive.files.delete({ fileId: user.profile_picture });
+      await drive.files.delete({ fileId: user.profilePicture });
 
       await this.prisma.user.update({
         where: { username: dto.username },
-        data: { profile_picture: "" },
+        data: { profilePicture: "" },
       });
   
       return { status: HttpStatus.OK, message: 'Profile picture deleted successfully' };
@@ -231,7 +252,7 @@ export class AuthService {
       return null;
     }
     
-    const fileId = user.profile_picture;
+    const fileId = user.profilePicture;
     const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&fields=mimeType,data`;
 
     try {
@@ -241,7 +262,7 @@ export class AuthService {
       });
 
       const fileData = response.data;
-      const fileName = `profile_picture_${user.id}`;
+      const fileName = `profilePicture_${user.id}`;
       const mimeType = response.headers['content-type'];
 
       return {
@@ -260,7 +281,7 @@ export class AuthService {
 
 
   //HELPING MEMBER FUNCTIONS
-  private async createEncryptedCookie(user: User, token: string): Promise<string> {
+  private async serializeCookie(user: User, token: string): Promise<string> {
     const sessionDuration = 2 * 60 * 60; // 2 hours in seconds
   
     const cookieValue = JSON.stringify({
@@ -269,26 +290,24 @@ export class AuthService {
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + sessionDuration * 1000),
     });
-  
-    const cookie = serialize(COOKIE_NAME, cookieValue, cookieOptions);
-    const encryptedCookie = await this.encryptCookie(cookie, COOKIE_SECRET);
-    if (!encryptedCookie) {
-      throw new Error('Failed to create encrypted cookie');
-    }
-
-    return encryptedCookie;
+    
+    const serializedCookie = serialize(COOKIE_NAME, cookieValue, cookieOptions);
+   
+    return serializedCookie;
   }
   
-  private async createSession(user: User, token: string): Promise<Session> {
+  private async createSession(user: User, token: string, hashedCookie: string, serializedCookie: string): Promise<Session> {
     const sessionDuration = 2 * 60 * 60; // 2 hours in seconds
   
     try {
       const session = await this.prisma.session.create({
         data: {
-          jwt_token: token,
-          userId: user.id,
           createdAt: new Date(),
           expiresAt: new Date(Date.now() + sessionDuration * 1000),
+          userId: user.id,
+          jwtToken: token,
+          serializedCookie: serializedCookie,
+          hashedCookie: hashedCookie
         },
         include: { user: true },
       });
@@ -307,15 +326,26 @@ export class AuthService {
     Return the base64-encoded encrypted session string 
   */
 
-  private async encryptCookie(cookie: string, cookieSecret: string) {
-    const hashedSession = await argon2.hash(cookie);
-    const iv = randomBytes(16);
-    const cipher = createCipheriv('aes-256-cbc', Buffer.from(cookieSecret, 'base64'), iv);
-    const encrypted = Buffer.concat([cipher.update(hashedSession), cipher.final()]);
-    const encryptedCookie = Buffer.concat([iv, encrypted]);
+ private async encryptCookie(hashedSession: string) {
+  const iv = randomBytes(16);
 
-    return encryptedCookie.toString('base64');
-  }
+  console.log("Hash:", hashedSession);
+
+
+  // The key length is dependent on the algorithm.
+  // In this case for aes256, it is 32 bytes.
+  const key = (await promisify(scrypt)(COOKIE_SECRET, 'salt', 32)) as Buffer;
+  const cipher = createCipheriv('aes-256-ctr', key, iv);
+
+  const encryptedCookie = Buffer.concat([
+    iv, // Prefix the IV to the encrypted data
+    cipher.update(hashedSession),
+    cipher.final(),
+  ]);
+
+  return encryptedCookie.toString('base64');
+}
+
   
   /* Decode the base64-encoded encrypted session string
     Extract the initialization vector from the buffer
@@ -324,20 +354,29 @@ export class AuthService {
     Verify the decrypted string with argon2 
     Return the decrypted session string
   */
-  private async decryptCookie(cookie: string, cookieSecret: string) {
-    if (!cookie) {
-      throw new Error('Encrypted session is undefined');
-    }
-    const encryptedSessionBuffer = Buffer.from(cookie, 'base64');
-    const iv = encryptedSessionBuffer.slice(0, 16);
-    const decipher = createDecipheriv('aes-256-cbc', Buffer.from(cookieSecret, 'base64'), iv);
-    const decrypted = Buffer.concat([decipher.update(encryptedSessionBuffer.slice(16)), decipher.final()]);
-    const isValid = await argon2.verify(decrypted.toString(), decrypted.toString('ascii'));
-    if (!isValid) {
+  private async decryptCookie(encryptedCookie: string) {
+    const encryptedData = Buffer.from(encryptedCookie, 'base64');
+  
+    const iv = encryptedData.slice(0, 16); // Extract the IV from the encrypted data
+    const encryptedText = encryptedData.slice(16);
+  
+    const key = (await promisify(scrypt)(COOKIE_SECRET, 'salt', 32)) as Buffer;
+    const decipher = createDecipheriv('aes-256-ctr', key, iv);
+  
+    const decryptedCookieHash = Buffer.concat([
+      decipher.update(encryptedText),
+      decipher.final(),
+    ]);
+
+    const databaseEntry = await this.prisma.session.findUnique({ where: { hashedCookie: decryptedCookieHash.toString() } });
+    const serializedCookie = databaseEntry.serializedCookie;    
+
+    const dehashedSession = await argon2.verify(decryptedCookieHash.toString(), serializedCookie);
+    if (!dehashedSession) {
       throw new Error('Invalid cookie');
     }
   
-    return decrypted.toString('ascii');
+    return serializedCookie;
   }
 
   private async setFirstProfilePicture(dto: AuthDto, file?: Express.Multer.File) {
@@ -352,7 +391,7 @@ export class AuthService {
         const buffer = fs.readFileSync(randomPicturePath);
         
         const defaultFile = {
-          fieldname: 'profile_picture',
+          fieldname: 'profilePicture',
           originalname: defaultAvatars[randomIndex],
           encoding: '7bit',
           mimetype: 'image/jpeg',
@@ -400,9 +439,9 @@ export class AuthService {
       select: { 
         id: true,
         username: true,
-        hashed_passwd: true,
+        hashedPasswd: true,
         salt: true,
-        profile_picture: true,
+        profilePicture: true,
         createdAt: true,
         updatedAt: true,
         sessions: {
@@ -411,7 +450,9 @@ export class AuthService {
             createdAt: true,
             updatedAt: true,
             expiresAt: true,
-            jwt_token: true,
+            jwtToken: true,
+            serializedCookie: true,
+            hashedCookie: true,
           }
         }
       },
@@ -421,7 +462,7 @@ export class AuthService {
       return null;
     }
   
-    const isPasswdMatch = await argon2.verify(user.hashed_passwd, dto.password);
+    const isPasswdMatch = await argon2.verify(user.hashedPasswd, dto.password);
     if (!isPasswdMatch) {
       return null;
     }
