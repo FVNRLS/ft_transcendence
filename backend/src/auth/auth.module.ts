@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthService } from './auth.service';
+import { SessionService } from './session.service';
 import { AuthController } from './auth.controller';
 
 @Module({
@@ -12,7 +13,7 @@ import { AuthController } from './auth.controller';
       signOptions: { expiresIn: '2h' }, // set token expiration time
     }),
   ],
-  providers: [AuthService],
+  providers: [AuthService, SessionService],
   controllers: [AuthController],
 })
 export class AuthModule {}
