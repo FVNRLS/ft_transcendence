@@ -45,20 +45,20 @@ export class SessionService {
 			});
 			return session;
 		} catch (error) {
-			throw new Error('Failed to create session');
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
 	async getSessionByCookieHash(decryptedCookieHash: string): Promise<any> {
 		const databaseEntry = await this.prisma.session.findUnique({ where: { hashedCookie: decryptedCookieHash.toString() } });
 		if (!databaseEntry) {
-			throw new HttpException({ status: HttpStatus.UNAUTHORIZED, message: 'Invalid cookie!' }, HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
 		}
 
 		const serializedCookie = databaseEntry.serializedCookie;
 		const dehashedSession = await argon2.verify(decryptedCookieHash.toString(), serializedCookie);
 		if (!dehashedSession) {
-			throw new HttpException({ status: HttpStatus.UNAUTHORIZED, message: 'Invalid cookie!' }, HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		return databaseEntry;

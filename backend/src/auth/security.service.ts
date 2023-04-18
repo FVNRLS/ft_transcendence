@@ -7,7 +7,6 @@ import { User } from '@prisma/client';
 import { serialize } from 'cookie';
 import axios from 'axios';
 import { AuthDto } from './dto';
-import { Session } from 'inspector';
 
 @Injectable()
 export class SecurityService {
@@ -17,9 +16,9 @@ export class SecurityService {
 
 	async verifyUsernamePassword(dto: AuthDto): Promise<void> {
 		if (!dto.username)
-			throw new Error ('Username is required!');
+		throw new HttpException('Username is required!', HttpStatus.UNAUTHORIZED);
 		else if (!dto.password)
-			throw new Error ('Password is required!');
+		throw new HttpException('Password is required!', HttpStatus.UNAUTHORIZED);
 		return;
 	}
 
@@ -56,41 +55,45 @@ export class SecurityService {
 		return { salt: salt.toString(('hex')), hashedPassword };
 	}
 
-	async getVerifiedUserData(dto: AuthDto): Promise<User | null> {
-		const user: User = await this.prisma.user.findUnique({
-		  where: { username: dto.username },
-		  select: { 
-			id: true,
-			username: true,
-			hashedPasswd: true,
-			salt: true,
-			profilePicture: true,
-			createdAt: true,
-			updatedAt: true,
-			sessions: {
-			  select: {
-				id: true,
-				createdAt: true,
-				updatedAt: true,
-				expiresAt: true,
-				jwtToken: true,
-				serializedCookie: true,
-				hashedCookie: true,
-			  }
+	async getVerifiedUserData(dto: AuthDto): Promise<User> {
+		try {
+			const user: User = await this.prisma.user.findUnique({
+				where: { username: dto.username },
+				select: { 
+					id: true,
+					username: true,
+					hashedPasswd: true,
+					salt: true,
+					profilePicture: true,
+					createdAt: true,
+					updatedAt: true,
+					sessions: {
+						select: {
+							id: true,
+							createdAt: true,
+							updatedAt: true,
+							expiresAt: true,
+							jwtToken: true,
+							serializedCookie: true,
+							hashedCookie: true,
+						}
+					}
+				},
+			});
+	
+			if (!user) {
+				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
 			}
-		  },
-		});
-	  
-		if (!user) {
-		  return null;
+	
+			const isPasswdMatch = await argon2.verify(user.hashedPasswd, dto.password);
+			if (!isPasswdMatch) {
+				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+			}
+	
+			return user;
+		} catch (error) {
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-	  
-		const isPasswdMatch = await argon2.verify(user.hashedPasswd, dto.password);
-		if (!isPasswdMatch) {
-		  return null;
-		}
-	  
-		return user;
 	}
 
 	async serializeCookie(user: User, token: string): Promise<string> {
@@ -128,23 +131,21 @@ Combine the encrypted session string and the initialization vector into a single
 Return the base64-encoded encrypted session string 
 */
 	async encryptCookie(hashedSession: string): Promise<string> {
-	const COOKIE_SECRET = process.env.COOKIE_SECRET;
-	try {
-		const iv = randomBytes(16);
-		const key = (await promisify(scrypt)(COOKIE_SECRET, 'salt', 32)) as Buffer;
-		const cipher = createCipheriv('aes-256-ctr', key, iv);
-		
-		const encryptedCookie = Buffer.concat([
-			iv, // Prefix the IV to the encrypted data
-			cipher.update(hashedSession),
-			cipher.final(),
-		]);
-		
-		return encryptedCookie.toString('base64');
-	} catch (error) {
-		const status = HttpStatus.INTERNAL_SERVER_ERROR;
-		const message = 'Failed to encrypt cookie';
-		throw new Error(`${status}: ${message}`);
+		const COOKIE_SECRET = process.env.COOKIE_SECRET;
+		try {
+			const iv = randomBytes(16);
+			const key = (await promisify(scrypt)(COOKIE_SECRET, 'salt', 32)) as Buffer;
+			const cipher = createCipheriv('aes-256-ctr', key, iv);
+			
+			const encryptedCookie = Buffer.concat([
+				iv, // Prefix the IV to the encrypted data
+				cipher.update(hashedSession),
+				cipher.final(),
+			]);
+			
+			return encryptedCookie.toString('base64');
+		} catch (error) {
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -163,7 +164,7 @@ Return the base64-encoded encrypted session string
 	
 			const COOKIE_SECRET = process.env.COOKIE_SECRET;
 			if (!COOKIE_SECRET) {
-				throw new HttpException({ status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops... There are problems with cookies from the server side' }, HttpStatus.UNAUTHORIZED);
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 
 			const encryptedData = Buffer.from(encryptedCookie, 'base64');
@@ -179,7 +180,7 @@ Return the base64-encoded encrypted session string
 
 			return decryptedCookieHash.toString();
 		} catch (error) {
-				throw new HttpException({ status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to decrypt cookie' }, HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 }

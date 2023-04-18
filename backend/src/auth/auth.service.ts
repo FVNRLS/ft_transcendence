@@ -25,7 +25,7 @@ export class AuthService {
       this.securityService.verifyUsernamePassword(dto);
     }
     catch(error) {
-      return {status: HttpStatus.UNAUTHORIZED, message: error};
+      throw error;
     }
 
     const token = await this.securityService.validateToken(dto);
@@ -63,7 +63,7 @@ export class AuthService {
         return { status: HttpStatus.CREATED, message: 'You signed up successfully', cookie: session.cookie };
 
       } catch (error) {
-        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
+        throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     } catch (error) {
       if (error.code === 'P2002') {
@@ -79,7 +79,7 @@ export class AuthService {
       this.securityService.verifyUsernamePassword(dto);
     }
     catch(error) {
-      return {status: HttpStatus.UNAUTHORIZED, message: error};
+      throw error;
     }
 
     const user: User = await this.securityService.getVerifiedUserData(dto);
@@ -105,7 +105,11 @@ export class AuthService {
       const session = await this.sessionService.createSession(user);
       return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };
     } catch (error) {
-      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException({ status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An error occurred during login' }, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
     }
   }
 
@@ -117,11 +121,11 @@ export class AuthService {
 
       return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
     } catch (error) {
-    if (error instanceof HttpException) {
-      throw error;
-    } else {
-      throw new HttpException({ status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An error occurred during logout.' }, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException({ status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An error occurred during logout' }, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
     }
   }
 }
