@@ -66,18 +66,8 @@ export class AuthService {
       }
       
       try {
-        const sessionPayload = { userId: user.id };
-        const jwt_token = this.jwtService.sign(sessionPayload);
-        const serializedCookie = await this.serializeCookie(user, jwt_token);
-        const hashedCookie = await argon2.hash(serializedCookie);
-        try {
-          const encryptedCookie = await this.encryptCookie(hashedCookie);
-          await this.createSession(user, jwt_token, hashedCookie, serializedCookie);
-          return { status: HttpStatus.CREATED, message: 'Login successful', cookie: encryptedCookie};
-        }
-        catch(error) {
-          return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to encrypt cookie' };          
-        }
+        const session = await this.createSession(user);
+        return { status: HttpStatus.CREATED, message: 'You signed up successfully', cookie: session.cookie };
 
       } catch (error) {
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
@@ -90,51 +80,30 @@ export class AuthService {
     }
   }
 
-  //protect versus sql injections!∏
+  //protect versus sql injections!
   async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
     const user: User = await this.getVerifiedUserData(dto);
     if (!user) {
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
     }
-   
-    if (dto.cookie) {
-      try {
-        const decryptedCookie = await this.decryptCookie(dto.cookie);
-        const databaseEntry = await this.prisma.session.findUnique({ where: { serializedCookie: decryptedCookie } });
-        const jwtToken = databaseEntry.jwtToken;
 
-        try {
-          this.jwtService.verify(jwtToken, { ignoreExpiration: false });
-          return { status: HttpStatus.ACCEPTED, message: 'You are already logged in' };
-        } catch (error) {
-          if (error.name === 'TokenExpiredError') {
-            await this.prisma.session.delete({ where: { id: databaseEntry.id } });
-            return { status: HttpStatus.UNAUTHORIZED, message: 'Your previous session has expired' };
-          } else {
-            console.log(error);
-            return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid token' };
-          }
+    const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id }, });
+    if (existingSession) {
+      try {
+        const jwtToken = existingSession.jwtToken;
+        this.jwtService.verify(jwtToken, { ignoreExpiration: false });
+        return { status: HttpStatus.ACCEPTED, message: 'You are already logged in' };
+      } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+          await this.prisma.session.delete({ where: { id: existingSession.id } });
+          return { status: HttpStatus.UNAUTHORIZED, message: 'Your previous session has expired' };
         }
-      }
-      catch(error) {
-        console.log(error);
-        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to decrypt cookie' };
       }
     }
   
     try {
-      const sessionPayload = { userId: user.id };
-      const jwt_token = this.jwtService.sign(sessionPayload);
-      const serializedCookie = await this.serializeCookie(user, jwt_token);
-      const hashedCookie = await argon2.hash(serializedCookie);
-      try {
-        const encryptedCookie = await this.encryptCookie(hashedCookie);
-        await this.createSession(user, jwt_token, hashedCookie, serializedCookie);
-        return { status: HttpStatus.CREATED, message: 'Login successful', cookie: encryptedCookie};
-      }
-      catch(error) {
-        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to encrypt cookie' };          
-      }
+      const session = await this.createSession(user);
+      return { status: HttpStatus.CREATED, message: 'You signed up successfully', cookie: session.cookie };
 
     } catch (error) {
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
@@ -299,22 +268,40 @@ export class AuthService {
 
 
   //HELPING MEMBER FUNCTIONS
+  private async createSession(user: User): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
+    try {
+        const sessionPayload = { userId: user.id };
+        const jwt_token = this.jwtService.sign(sessionPayload);
+        const serializedCookie = await this.serializeCookie(user, jwt_token);
+        const hashedCookie = await argon2.hash(serializedCookie);
+        const encryptedCookie = await this.encryptCookie(hashedCookie);
+        await this.pushSessionToDatabase(user, jwt_token, hashedCookie, serializedCookie);
+        return { status: HttpStatus.CREATED, message: 'Login successful', cookie: encryptedCookie };
+    }
+    catch (error) {
+      throw error;
+    }
+  } 
+
   private async serializeCookie(user: User, token: string): Promise<string> {
     const sessionDuration = 2 * 60 * 60; // 2 hours in seconds
-  
-    const cookieValue = JSON.stringify({
-      jwt_token: token,
-      userId: user.id,
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + sessionDuration * 1000),
-    });
-    
-    const serializedCookie = serialize(COOKIE_NAME, cookieValue, cookieOptions);
-   
-    return serializedCookie;
+    try {
+      const cookieValue = JSON.stringify({
+        jwt_token: token,
+        userId: user.id,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + sessionDuration * 1000),
+      });
+ 
+      const serializedCookie = serialize(COOKIE_NAME, cookieValue, cookieOptions);     
+      return serializedCookie;
+    }
+    catch(error) {
+      throw error;
+    }
   }
   
-  private async createSession(user: User, token: string, hashedCookie: string, serializedCookie: string): Promise<Session> {
+  private async pushSessionToDatabase(user: User, token: string, hashedCookie: string, serializedCookie: string): Promise<Session> {
     const sessionDuration = 2 * 60 * 60; // 2 hours in seconds
   
     try {
@@ -331,7 +318,6 @@ export class AuthService {
       });
       return session;
     } catch (error) {
-      console.log('Error creating session:', error);
       throw new Error('Failed to create session');
     }
   }
@@ -343,25 +329,25 @@ export class AuthService {
     Combine the encrypted session string and the initialization vector into a single buffer
     Return the base64-encoded encrypted session string 
   */
-
- private async encryptCookie(hashedSession: string) {
-  const iv = randomBytes(16);
-
-  console.log("Hash:", hashedSession);
-
-
-  // The key length is dependent on the algorithm.
-  // In this case for aes256, it is 32 bytes.
-  const key = (await promisify(scrypt)(COOKIE_SECRET, 'salt', 32)) as Buffer;
-  const cipher = createCipheriv('aes-256-ctr', key, iv);
-
-  const encryptedCookie = Buffer.concat([
-    iv, // Prefix the IV to the encrypted data
-    cipher.update(hashedSession),
-    cipher.final(),
-  ]);
-
-  return encryptedCookie.toString('base64');
+ private async encryptCookie(hashedSession: string): Promise<string> {
+  
+  try {
+    const iv = randomBytes(16);
+    const key = (await promisify(scrypt)(COOKIE_SECRET, 'salt', 32)) as Buffer;
+    const cipher = createCipheriv('aes-256-ctr', key, iv);
+  
+    const encryptedCookie = Buffer.concat([
+      iv, // Prefix the IV to the encrypted data
+      cipher.update(hashedSession),
+      cipher.final(),
+    ]);
+  
+    return encryptedCookie.toString('base64');
+  } catch (error) {
+    const status = HttpStatus.INTERNAL_SERVER_ERROR;
+    const message = 'Failed to encrypt cookie';
+    throw new Error(`${status}: ${message}`);
+  }
 }
 
   
