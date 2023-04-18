@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from './session.service';
 import { SecurityService } from './security.service';
 import { JwtService } from '@nestjs/jwt';
-import { GoogleDriveService } from './google.drive.service';
+import { GoogleDriveService } from './google_drive/google.drive.service';
 import { AuthDto } from './dto';
 import { User } from '@prisma/client';
 import { Request } from 'express';

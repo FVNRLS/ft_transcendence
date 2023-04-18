@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable, UploadedFile } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { SecurityService } from './security.service';
-import { AuthDto } from './dto';
+import { PrismaService } from '../../prisma/prisma.service';
+import { SecurityService } from '../security.service';
+import { AuthDto } from '../dto';
 import * as fs from 'fs';
 import { User } from '@prisma/client';
 import axios from 'axios';

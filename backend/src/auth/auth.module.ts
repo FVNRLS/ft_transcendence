@@ -5,8 +5,8 @@ import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import { SecurityService } from './security.service';
 import { AuthController } from './auth.controller';
-import { GoogleDriveService } from './google.drive.service';
-import { GoogleDriveController } from './google.drive.controller';
+import { GoogleDriveService } from './google_drive/google.drive.service';
+import { GoogleDriveController } from './google_drive/google.drive.controller';
 
 @Module({
   imports: [

@@ -1,6 +1,6 @@
 import { Body, Controller, HttpStatus, Post, UploadedFile, UseInterceptors, Req, Res } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { AuthDto } from './dto';
+import { AuthDto } from '../dto';
 import { GoogleDriveService } from './google.drive.service';
 
 @Controller('/storage')
