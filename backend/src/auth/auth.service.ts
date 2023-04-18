@@ -97,12 +97,24 @@ export class AuthService {
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
     }
    
-    
     if (dto.cookie) {
-      try{
+      try {
         const decryptedCookie = await this.decryptCookie(dto.cookie);
-        console.log("Decrypted cookie: ", decryptedCookie);
-        return { status: HttpStatus.OK, message: 'Cookie decrypted successfully', cookie: decryptedCookie };
+        const databaseEntry = await this.prisma.session.findUnique({ where: { serializedCookie: decryptedCookie } });
+        const jwtToken = databaseEntry.jwtToken;
+
+        try {
+          this.jwtService.verify(jwtToken, { ignoreExpiration: false });
+          return { status: HttpStatus.ACCEPTED, message: 'You are already logged in' };
+        } catch (error) {
+          if (error.name === 'TokenExpiredError') {
+            await this.prisma.session.delete({ where: { id: databaseEntry.id } });
+            return { status: HttpStatus.UNAUTHORIZED, message: 'Your previous session has expired' };
+          } else {
+            console.log(error);
+            return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid token' };
+          }
+        }
       }
       catch(error) {
         console.log(error);
@@ -110,17 +122,23 @@ export class AuthService {
       }
     }
   
-    // try {
-    //   const sessionPayload = { userId: user.id };
-    //   const jwt_token = this.jwtService.sign(sessionPayload);
-    //   const cookie = await this.createEncryptedCookie(user, jwt_token);
-    //   await this.createSession(user, jwt_token);
-  
-    //   return { status: HttpStatus.OK, message: 'Login successful', cookie: cookie };
-    // } catch (error) {
-    //   console.log(error);
-    //   return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
-    // }
+    try {
+      const sessionPayload = { userId: user.id };
+      const jwt_token = this.jwtService.sign(sessionPayload);
+      const serializedCookie = await this.serializeCookie(user, jwt_token);
+      const hashedCookie = await argon2.hash(serializedCookie);
+      try {
+        const encryptedCookie = await this.encryptCookie(hashedCookie);
+        await this.createSession(user, jwt_token, hashedCookie, serializedCookie);
+        return { status: HttpStatus.CREATED, message: 'Login successful', cookie: encryptedCookie};
+      }
+      catch(error) {
+        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to encrypt cookie' };          
+      }
+
+    } catch (error) {
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
+    }
   }
 
   async logout(@Req() request?: Request): Promise<{ status: HttpStatus, message?: string }> {
@@ -378,6 +396,8 @@ export class AuthService {
   
     return serializedCookie;
   }
+
+  
 
   private async setFirstProfilePicture(dto: AuthDto, file?: Express.Multer.File) {
     try {
