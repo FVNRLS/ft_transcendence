@@ -5,6 +5,8 @@ import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import { SecurityService } from './security.service';
 import { AuthController } from './auth.controller';
+import { GoogleDriveService } from './google.drive.service';
+import { GoogleDriveController } from './google.drive.controller';
 
 @Module({
   imports: [
@@ -14,7 +16,7 @@ import { AuthController } from './auth.controller';
       signOptions: { expiresIn: '2h' }, // set token expiration time
     }),
   ],
-  providers: [AuthService, SessionService, SecurityService],
-  controllers: [AuthController],
+  providers: [AuthService, SessionService, SecurityService, GoogleDriveService],
+  controllers: [AuthController, GoogleDriveController],
 })
 export class AuthModule {}
