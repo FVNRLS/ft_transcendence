@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon2 from 'argon2';
 import { randomBytes, createCipheriv, createDecipheriv, scrypt } from 'crypto';
@@ -7,6 +7,7 @@ import { User } from '@prisma/client';
 import { serialize } from 'cookie';
 import axios from 'axios';
 import { AuthDto } from './dto';
+import { Session } from 'inspector';
 
 @Injectable()
 export class SecurityService {
@@ -14,7 +15,15 @@ export class SecurityService {
 		private prisma: PrismaService,
 	) {}
 
-	async  validateToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+	async verifyUsernamePassword(dto: AuthDto): Promise<void> {
+		if (!dto.username)
+			throw new Error ('Username is required!');
+		else if (!dto.password)
+			throw new Error ('Password is required!');
+		return;
+	}
+
+	async validateToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
 		try {
 		  const url = 'https://api.intra.42.fr/v2/achievements';
 		  await axios.get(url, {
@@ -147,26 +156,30 @@ Return the base64-encoded encrypted session string
 	Return the decrypted session string
 	*/
 	async decryptCookie(encryptedCookie: string) {
-	const COOKIE_SECRET = process.env.COOKIE_SECRET;
-	const encryptedData = Buffer.from(encryptedCookie, 'base64');
-	const iv = encryptedData.slice(0, 16); // Extract the IV from the encrypted data
-	const encryptedText = encryptedData.slice(16);
-	const key = (await promisify(scrypt)(COOKIE_SECRET, 'salt', 32)) as Buffer;
-	const decipher = createDecipheriv('aes-256-ctr', key, iv);
-
-	const decryptedCookieHash = Buffer.concat([
-		decipher.update(encryptedText),
-		decipher.final(),
-	]);
-
-	const databaseEntry = await this.prisma.session.findUnique({ where: { hashedCookie: decryptedCookieHash.toString() } });
-	const serializedCookie = databaseEntry.serializedCookie;    
-
-	const dehashedSession = await argon2.verify(decryptedCookieHash.toString(), serializedCookie);
-	if (!dehashedSession) {
-		throw new Error('Invalid cookie');
-	}
+		try {
+			if (!encryptedCookie) {
+				throw new HttpException({ status: HttpStatus.UNAUTHORIZED, message: 'Cookie is required' }, HttpStatus.UNAUTHORIZED);
+			}
 	
-	return serializedCookie;
+			const COOKIE_SECRET = process.env.COOKIE_SECRET;
+			if (!COOKIE_SECRET) {
+				throw new HttpException({ status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops... There are problems with cookies from the server side' }, HttpStatus.UNAUTHORIZED);
+			}
+
+			const encryptedData = Buffer.from(encryptedCookie, 'base64');
+			const iv = encryptedData.slice(0, 16);
+			const encryptedText = encryptedData.slice(16);
+			const key = (await promisify(scrypt)(COOKIE_SECRET, 'salt', 32)) as Buffer;
+			const decipher = createDecipheriv('aes-256-ctr', key, iv);
+	
+			const decryptedCookieHash = Buffer.concat([
+				decipher.update(encryptedText),
+				decipher.final(),
+			]);
+
+			return decryptedCookieHash.toString();
+		} catch (error) {
+				throw new HttpException({ status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to decrypt cookie' }, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 }

@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Req } from '@nestjs/common';
+import { Body, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from './session.service';
 import { SecurityService } from './security.service';
@@ -6,7 +6,6 @@ import { JwtService } from '@nestjs/jwt';
 import { GoogleDriveService } from './google_drive/google.drive.service';
 import { AuthDto } from './dto';
 import { User } from '@prisma/client';
-import { Request } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -21,7 +20,14 @@ export class AuthService {
   //CONTROLLER FUNCTIONS
   //TODO: protect versus sql injections!
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
-    
+    const res = await this.securityService.verifyUsernamePassword(dto);
+    try {
+      this.securityService.verifyUsernamePassword(dto);
+    }
+    catch(error) {
+      return {status: HttpStatus.UNAUTHORIZED, message: error};
+    }
+
     const token = await this.securityService.validateToken(dto);
     if (token.status !== HttpStatus.OK) {
       return token;
@@ -69,12 +75,19 @@ export class AuthService {
 
   //protect versus sql injections!
   async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
+    try {
+      this.securityService.verifyUsernamePassword(dto);
+    }
+    catch(error) {
+      return {status: HttpStatus.UNAUTHORIZED, message: error};
+    }
+
     const user: User = await this.securityService.getVerifiedUserData(dto);
     if (!user) {
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
     }
 
-    const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id }, });
+    const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id } });
     if (existingSession) {
       try {
         const jwtToken = existingSession.jwtToken;
@@ -96,25 +109,19 @@ export class AuthService {
     }
   }
 
-  async logout(@Req() request?: Request): Promise<{ status: HttpStatus, message?: string }> {
+  async logout(@Body('cookie') cookie: string): Promise<{ status: HttpStatus, message?: string }> {
     try {
-      const cookieParser = require('cookie-parser')
-      const jwtToken = request.cookies.access_token;
-      console.log("Token: ", jwtToken);
-      if (!jwtToken) {
-        throw new Error('Invalid token');
-      }
+      const decryptedCookiehash = await this.securityService.decryptCookie(cookie);
+      const session = await this.sessionService.getSessionByCookieHash(decryptedCookiehash)
+      await this.prisma.session.deleteMany({ where: { userId: session.userId } });
 
-      await this.prisma.session.deleteMany({
-        where: {
-          jwtToken: jwtToken,
-        },
-      });
-  
       return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
     } catch (error) {
-      console.log('Error ending session:', error);
-      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to end session' };
+    if (error instanceof HttpException) {
+      throw error;
+    } else {
+      throw new HttpException({ status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An error occurred during logout.' }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
     }
   }
 }

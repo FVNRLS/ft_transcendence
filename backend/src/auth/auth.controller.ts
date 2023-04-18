@@ -1,10 +1,7 @@
-import { Body, Controller, HttpStatus, Post, UploadedFile, UseInterceptors, Req, Res } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, UploadedFile, UseInterceptors} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service'
-import { Request } from 'express';
 import { AuthDto } from './dto';
-
-//TODO: implement SESSIONS with database!
 
 @Controller('/auth')
 export class AuthController {
@@ -18,13 +15,13 @@ export class AuthController {
 		return this.authService.signup(dto, file);
 	}
 
-	@Post('/signin')
+	@Post('/login')
 	signin(@Body() dto: AuthDto) {
 		return this.authService.signin(dto);
 	}
 
 	@Post('/logout')
-	logout(@Req() request?: Request): Promise<{ status: HttpStatus, message?: string }> {
-		return this.authService.logout(request);
+	logout(@Body('cookie') cookie: string): Promise<{ status: HttpStatus, message?: string }> {
+		return this.authService.logout(cookie);
 	}
 }
