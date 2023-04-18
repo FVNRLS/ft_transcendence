@@ -103,8 +103,7 @@ export class AuthService {
   
     try {
       const session = await this.createSession(user);
-      return { status: HttpStatus.CREATED, message: 'You signed up successfully', cookie: session.cookie };
-
+      return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };
     } catch (error) {
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to create session' };
     }
