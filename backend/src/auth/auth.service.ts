@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Req, Res, UploadedFile } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from './session.service';
+import { SecurityService } from './security.service';
 import * as argon2 from 'argon2';
 import { AuthDto } from './dto';
 import { randomBytes } from 'crypto';
@@ -16,7 +17,8 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private sessionService: SessionService
+    private sessionService: SessionService,
+		private securityService: SecurityService,
   ) {}
 
 
@@ -24,12 +26,12 @@ export class AuthService {
   //TODO: protect versus sql injections!
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
     
-    const token = await this.validateToken(dto);
+    const token = await this.securityService.validateToken(dto);
     if (token.status !== HttpStatus.OK) {
       return token;
     }
  
-    const { salt, hashedPassword } = await this.hashPassword(dto.password);
+    const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
     if (!salt || !hashedPassword) {
       throw new HttpException('Failed to hash password', HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -49,7 +51,7 @@ export class AuthService {
         return(result);
       }
       
-      const user: User = await this.getVerifiedUserData(dto);
+      const user: User = await this.securityService.getVerifiedUserData(dto);
       if (!user) {
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
       }
@@ -71,7 +73,7 @@ export class AuthService {
 
   //protect versus sql injections!
   async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
-    const user: User = await this.getVerifiedUserData(dto);
+    const user: User = await this.securityService.getVerifiedUserData(dto);
     if (!user) {
       return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
     }
@@ -132,7 +134,7 @@ export class AuthService {
     }
   
     try {
-      const user: User = await this.getVerifiedUserData(dto);
+      const user: User = await this.securityService.getVerifiedUserData(dto);
       if (!user) {
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
       }
@@ -166,7 +168,7 @@ export class AuthService {
 
   async deleteProfilePicture(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     try {
-      const user: User = await this.getVerifiedUserData(dto);
+      const user: User = await this.securityService.getVerifiedUserData(dto);
       if (!user) {
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
       }
@@ -191,7 +193,7 @@ export class AuthService {
   
   async getGoogleDriveAcessToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     try {
-      const user: User = await this.getVerifiedUserData(dto);
+      const user: User = await this.securityService.getVerifiedUserData(dto);
       if (!user)
         return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
       
@@ -222,7 +224,7 @@ export class AuthService {
       return null;
     }
 
-    const user: User = await this.getVerifiedUserData(dto);
+    const user: User = await this.securityService.getVerifiedUserData(dto);
     if (!user) {
       return null;
     }
@@ -254,12 +256,7 @@ export class AuthService {
     }
   }
 
-
   //HELPING MEMBER FUNCTIONS
-
-
-  
-
   private async setFirstProfilePicture(dto: AuthDto, file?: Express.Multer.File) {
     try {
       if (file) {
@@ -314,56 +311,8 @@ export class AuthService {
     return res;
   }
 
-  private async getVerifiedUserData(dto: AuthDto): Promise<User | null> {
-    const user: User = await this.prisma.user.findUnique({
-      where: { username: dto.username },
-      select: { 
-        id: true,
-        username: true,
-        hashedPasswd: true,
-        salt: true,
-        profilePicture: true,
-        createdAt: true,
-        updatedAt: true,
-        sessions: {
-          select: {
-            id: true,
-            createdAt: true,
-            updatedAt: true,
-            expiresAt: true,
-            jwtToken: true,
-            serializedCookie: true,
-            hashedCookie: true,
-          }
-        }
-      },
-    });
   
-    if (!user) {
-      return null;
-    }
   
-    const isPasswdMatch = await argon2.verify(user.hashedPasswd, dto.password);
-    if (!isPasswdMatch) {
-      return null;
-    }
-  
-    return user;
-  }
-  
-  private async  validateToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
-    try {
-      const url = 'https://api.intra.42.fr/v2/achievements';
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${dto.token_42}` },
-        responseType: 'arraybuffer',
-      });
-      return { status: HttpStatus.OK, message: 'Token valid' };
-    } catch(error){
-      return { status: HttpStatus.UNAUTHORIZED, message: 'Token invalid' };
-    }
-  }
-
   private async getGoogleDriveClient(): Promise<any> | null {
     const { google } = require('googleapis');
 
@@ -377,23 +326,5 @@ export class AuthService {
     return Promise.resolve(drive);
   }
 
-  /*
-    A salt is a random sequence of characters that is added to a password before hashing it.
-    The salt makes it much harder for attackers to guess the original password by adding
-    a layer of complexity to the hashed password.
-    When you store a user's hashed password in the database, you should also store the salt that
-    was used to create the hash. Later, when the user logs in, you retrieve the salt from the database
-    and use it to generate the hash of the password they entered during login.
-    Then, you compare the generated hash with the hash stored in the database.
-    If they match, the user has entered the correct password.
-    Without a salt, an attacker could use a dictionary attack or a rainbow table attack to guess
-    the password based on the hashed value. But with a unique salt for each user,
-    the attacker would need to generate a new rainbow table for each user to have any chance of cracking the password.
-    This makes it much harder and more time-consuming for attackers to gain access to user accounts.
-  */
-	private async hashPassword(password: string): Promise<{ salt: string, hashedPassword: string }> {
-		const salt = randomBytes(32);
-		const hashedPassword = await argon2.hash(password, { salt: salt });
-		return { salt: salt.toString(('hex')), hashedPassword };
-	}  
+
 }
