@@ -106,9 +106,9 @@ const Game = () => {
 	}, [ballPos, ballAngle, scoreLeft, scoreRight, cursorY, ballSpeed, bgColor, invisibility])
 	
 	useEffect(() => {
-		setEnded(false);
 		if (gameState.scoreLeft < 10 && gameState.scoreRight < 10)
 		{
+			setEnded(false);
 				const newBallX = gameState.ball.x + Math.cos(gameState.ballAngle) * gameState.ballSpeed;
 				const newBallY = gameState.ball.y + -Math.sin(gameState.ballAngle) * gameState.ballSpeed;
 	
@@ -122,7 +122,6 @@ const Game = () => {
 					const leftPlayerBar = (leftPlayer as HTMLElement).getBoundingClientRect();
 					const rightPlayerBar = (rightPlayer as HTMLElement).getBoundingClientRect();
 
-					console.log(leftPlayerBar.right, rightPlayerBar.left);
 					if (
 						(
 						newBallX <= (50) &&
@@ -218,7 +217,7 @@ const Game = () => {
 				{!socket && <button className='connect-btn' onClick={connectToSocket}>Connect</button>}
 				{!ready && socket && <button className='connect-btn' onClick={() => {setReady(true); setLocalState(state => ({...state, ready: true}));}}>READY</button>}
 				<div className='game-bg' style={{opacity: bgStyle.opacity, background: gameState.bgColor}}>
-					{ended && <div className='end'>Match ended<br />{scoreLeft} | {scoreRight}</div>}
+					{ended && <div className='end'>Match ended<br />{gameState.scoreLeft} | {gameState.scoreRight}</div>}
 					{!ended && <div className='score-left'>{gameState.scoreLeft}</div>}
 					{!ended && <div className='score-right'>{gameState.scoreRight}</div>}
 					{!ended && <div className='markup'/>}

@@ -40,11 +40,10 @@ export class GameGateway {
 		ready: false
 	};
 
-	private roomId = uuidv4;
+	private roomId = uuidv4();
 
 	handleConnection(client: Socket) {
-		client.join(this.roomId);
-
+		// client.join(this.roomId);
 		if (!this.player1) {
 			this.player1 = { id: client.id, ready: false };
 			console.log(`Player 1: ${this.player1.id}`);
@@ -52,8 +51,16 @@ export class GameGateway {
 			this.player2 = { id: client.id, ready: false };
 			console.log(`Player 2: ${this.player2.id}`);
 		}
-		if (this.player1 && this.player2)
-			this.roomId = uuidv4;
+
+
+		if (this.player1 && this.player2 && client.id != this.player2.id) {
+			const newRoomId = uuidv4();
+			client.leave(this.roomId);
+			client.join(newRoomId);
+			this.roomId = newRoomId;
+		} else {
+			client.join(this.roomId);
+		}
 
 		client.on('move', (state: initialState) => {
 			if (this.player1 && client.id == this.player1.id) {

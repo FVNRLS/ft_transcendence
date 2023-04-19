@@ -12,7 +12,6 @@ const Chat = () =>
 			<div className="sidebar">
 				<div className="profile">
 				<img src={Pic} alt="Profile" />
-				<h2>Name</h2>
 				</div>
 				<div className="channels">
 				<h3>Channels</h3>
