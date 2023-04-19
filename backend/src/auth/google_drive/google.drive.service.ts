@@ -47,15 +47,14 @@ export class GoogleDriveService {
   }
 
   async uploadProfilePicture(cookie: string, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
-
     if (!file) {
       return { status: HttpStatus.BAD_REQUEST, message: 'File is required'};
     }
 
     const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-      if (!allowedMimeTypes.includes(file.mimetype)) {
-        return { status: HttpStatus.BAD_REQUEST, message: "Invalid file type. Only JPG, JPEG, or PNG allowed" };
-      }
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      return { status: HttpStatus.BAD_REQUEST, message: "Invalid file type. Only JPG, JPEG, or PNG allowed" };
+    }
 
     const decryptedCookieHash = await this.securityService.decryptCookie(cookie);
     const existingSession = await this.prisma.session.findFirst({ where: { hashedCookie: decryptedCookieHash } });
@@ -65,11 +64,10 @@ export class GoogleDriveService {
       const jwtToken = existingSession.jwtToken;
       this.jwtService.verify(jwtToken, { ignoreExpiration: false });
       
-      
       try {
         const user = await this.prisma.user.findFirst({ where: { id: existingSession.userId } });  
         if (user.profilePicture) {
-          const res = await this.deleteProfilePicture(user.username);
+          const res = await this.deleteProfilePicture(cookie);
           if (res.status !== HttpStatus.OK) {
             return (res);
           }
@@ -162,28 +160,24 @@ export class GoogleDriveService {
       if (!drive) {
         return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to connect to the storage' };
       }
-      try {
-        const user = await this.prisma.user.findFirst({ where: { id: existingSession.userId } });  
-        if (user.profilePicture) {
-          const res = await this.deleteProfilePicture(user.username);
-          if (res.status !== HttpStatus.OK) {
-            return (res);
-          }
+      const user = await this.prisma.user.findFirst({ where: { id: existingSession.userId } });  
+      if (user.profilePicture) {
+        const fileId = user.profilePicture;
+        try {
+          await drive.files.delete({ fileId: fileId });
+        } catch (err) {
+          console.error('Error deleting file:', err);
+          return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to delete profile picture' };
         }
-      await this.prisma.user.update({
-        where: { username: user.username },
-        data: { profilePicture: "" },
-      });
-  
+      }
+      await this.prisma.user.update({ where: { id: existingSession.userId }, data: { profilePicture: "" } });
       return { status: HttpStatus.OK, message: 'Profile picture deleted successfully' };
-    } catch (err) {
-      console.error('Error deleting file:', err);
+    } catch (error) {
+      console.error('Error deleting file:', error);
       return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to delete profile picture' };
     }
-  } catch (error) {
-    return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops...Something went wrong' };
   }
-}
+
   
   async getGoogleDriveAcessToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
     try {

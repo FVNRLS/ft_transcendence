@@ -16,7 +16,7 @@ export class GoogleDriveController {
 	}
 
 	@Post('/delete')
-	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
+	// @UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
 	async deleteProfilePicture(@Body('cookie') cookie: string): Promise<{ status: HttpStatus, message?: string }> {
 		return this.googleDriveService.deleteProfilePicture(cookie);
 	}

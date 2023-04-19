@@ -28,6 +28,21 @@ export class SessionService {
 		}
 	} 
 	
+	async getSessionByCookieHash(decryptedCookieHash: string): Promise<any> {
+		const databaseEntry = await this.prisma.session.findUnique({ where: { hashedCookie: decryptedCookieHash.toString() } });
+		if (!databaseEntry) {
+			throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+		}
+
+		const serializedCookie = databaseEntry.serializedCookie;
+		const dehashedSession = await argon2.verify(decryptedCookieHash.toString(), serializedCookie);
+		if (!dehashedSession) {
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+		return databaseEntry;
+	}
+
 	private async pushSessionToDatabase(user: User, token: string, hashedCookie: string, serializedCookie: string): Promise<Session> {
 		const sessionDuration = 2 * 60 * 60; // 2 hours in seconds
 		
@@ -47,20 +62,5 @@ export class SessionService {
 		} catch (error) {
 			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-	}
-
-	async getSessionByCookieHash(decryptedCookieHash: string): Promise<any> {
-		const databaseEntry = await this.prisma.session.findUnique({ where: { hashedCookie: decryptedCookieHash.toString() } });
-		if (!databaseEntry) {
-			throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-		}
-
-		const serializedCookie = databaseEntry.serializedCookie;
-		const dehashedSession = await argon2.verify(decryptedCookieHash.toString(), serializedCookie);
-		if (!dehashedSession) {
-			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-
-		return databaseEntry;
 	}
 }
