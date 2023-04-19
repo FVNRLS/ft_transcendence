@@ -11,14 +11,14 @@ export class GoogleDriveController {
 	
 	@Post('/upload')
 	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
-	async uploadProfilePicture(@Body() dto: AuthDto, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
-		return this.googleDriveService.uploadProfilePicture(dto, file);
+	async uploadProfilePicture(@Body('cookie') cookie: string, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
+		return this.googleDriveService.uploadProfilePicture(cookie, file);
 	}
 
 	@Post('/delete')
 	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
-	async deleteProfilePicture(@Body() dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
-		return this.googleDriveService.deleteProfilePicture(dto);
+	async deleteProfilePicture(@Body('cookie') cookie: string): Promise<{ status: HttpStatus, message?: string }> {
+		return this.googleDriveService.deleteProfilePicture(cookie);
 	}
 
 	@Post('/get_google_drive_access_token')

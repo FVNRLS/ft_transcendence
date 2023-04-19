@@ -16,9 +16,9 @@ export class SecurityService {
 
 	async verifyUsernamePassword(dto: AuthDto): Promise<void> {
 		if (!dto.username)
-		throw new HttpException('Username is required!', HttpStatus.UNAUTHORIZED);
+			throw new HttpException('Username is required!', HttpStatus.UNAUTHORIZED);
 		else if (!dto.password)
-		throw new HttpException('Password is required!', HttpStatus.UNAUTHORIZED);
+			throw new HttpException('Password is required!', HttpStatus.UNAUTHORIZED);
 		return;
 	}
 

@@ -19,26 +19,17 @@ export class AuthService {
 
   //CONTROLLER FUNCTIONS
   //TODO: protect versus sql injections!
-  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
-    const res = await this.securityService.verifyUsernamePassword(dto);
+  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string, cookie?: string } > {
     try {
+      await this.securityService.verifyUsernamePassword(dto);
       this.securityService.verifyUsernamePassword(dto);
-    }
-    catch(error) {
-      throw error;
-    }
+      await this.securityService.validateToken(dto);
+      
+      const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
+      if (!salt || !hashedPassword) {
+        throw new HttpException('An error occurred during logout', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
 
-    const token = await this.securityService.validateToken(dto);
-    if (token.status !== HttpStatus.OK) {
-      return token;
-    }
- 
-    const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
-    if (!salt || !hashedPassword) {
-      throw new HttpException('Failed to hash password', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    try {
       await this.prisma.user.create({
         data: {
           username: dto.username,
@@ -46,26 +37,18 @@ export class AuthService {
           salt: salt,
           profilePicture: "",
         },
-      });
+      })
 
-      const result = await this.googleDriveService.setFirstProfilePicture(dto, file);
-      if (result.status !== HttpStatus.CREATED) {
-        return(result);
-      }
-      
       const user: User = await this.securityService.getVerifiedUserData(dto);
-      if (!user) {
-        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
-      }
-      
-      try {
-        const session = await this.sessionService.createSession(user);
-        return { status: HttpStatus.CREATED, message: 'You signed up successfully', cookie: session.cookie };
+      const session = await this.sessionService.createSession(user);
+      await this.googleDriveService.setFirstProfilePicture(session.cookie, file);
 
-      } catch (error) {
-        throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
-      }
+
+      return { status: HttpStatus.CREATED, message: 'You signed up successfully', cookie: session.cookie };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       if (error.code === 'P2002') {
         return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
       }
@@ -74,7 +57,7 @@ export class AuthService {
   }
 
   //protect versus sql injections!
-  async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
+  async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string, cookie?: string } | HttpException> {
     try {
       this.securityService.verifyUsernamePassword(dto);
     }
@@ -124,7 +107,7 @@ export class AuthService {
       if (error instanceof HttpException) {
         throw error;
       } else {
-        throw new HttpException({ status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An error occurred during logout' }, HttpStatus.INTERNAL_SERVER_ERROR);
+        throw new HttpException('An error occurred during logout', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }
