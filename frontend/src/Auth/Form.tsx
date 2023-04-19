@@ -66,7 +66,7 @@ const Form = () =>
 					}});
 				if (response.data.status === 201)
 				{
-					dispatch(login('sample'));
+					dispatch(login(response.data.cookie));
 					navigate('/');
 				}
 				else
@@ -83,13 +83,13 @@ const Form = () =>
 		event.preventDefault();
 		setIsLoading(true);
 		try {
-			const response = await axios.post('http://localhost:5000/auth/signin', {
+			const response = await axios.post('http://localhost:5000/auth/login', {
 				username: username,
 				password: password
 			});
-			if (response.data.status === 200)
+			if (response.data.status === 201)
 			{
-				dispatch(login('sample'));
+				dispatch(login(response.data.cookie));
 				navigate('/');
 			}
 			else

@@ -1,17 +1,39 @@
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import Header from "../Header/Header";
+import axios from 'axios';
+import type { RootState } from '../Auth/AuthStorage'
+import { logout } from '../Auth/AuthSlice'
+import { useDispatch } from 'react-redux';
 import './Dashboard.css'
 
 const Dashboard = () => {
 
-	const username = 'Sample Name';
+	const cookie = useSelector((state: RootState) => state.auth.cookie);
+
+	const dispatch = useDispatch();
+
+	const handleLogOut = async () => {
+		try {
+			const response = await axios.post('http://localhost:5000/auth/logout', 
+			{
+				cookie: cookie,
+			});
+			if (response.data.status === 200)
+			{
+				dispatch(logout());
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	}
 
 	return (
 		<div className="bg">
 			<Header />
 			<div className="dashboard-cont">
 				<section className='user-sec'>
-					<h1>{username}</h1>
+					{cookie && <button className='logout-btn' onClick={handleLogOut}>Log out</button>}
 				</section>
 				<section>
 					<h1>Play game!</h1>

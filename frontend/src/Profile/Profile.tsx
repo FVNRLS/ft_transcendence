@@ -1,6 +1,8 @@
 import './Profile.css';
 import Header from '../Header/Header';
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../Auth/AuthStorage'
 import axios from 'axios';
 
 const Profile = () => {
@@ -9,6 +11,8 @@ const Profile = () => {
 	const [signUpError, setSignUpError] = useState('');
 	const [file, setFile] = useState(null);
 	const [isLoading, setIsLoading] = useState(false);
+
+	const cookie = useSelector((state: RootState) => state.auth.cookie);
 
 	const handleFileChange = (event:any) => {
 		setFile(event.target.files[0]);
@@ -21,28 +25,26 @@ const Profile = () => {
 	const sendEditData = async (event:any) => {
 		event.preventDefault();
 		setIsLoading(true);
-		// // if (accessToken)
-		// // {
-		// 	try {
-		// 		const formData = new FormData();
-		// 		if (file)
-		// 			formData.append('image', file);
-		// 		const response = await axios.post('http://localhost:5000/auth/upload', {
-		// 		//   token: accessToken,
-		// 		  profile_picture: formData
-		// 		});
-		// 		if (response.data.status === 201)
-		// 		{
-		// 			console.log("good");
-		// 		}
-		// 		else
-		// 			setSignUpError(response.data.message);
-		// 	} catch (error) {
-		// 		console.error(error);
-		// 	} finally {
-		// 	setIsLoading(false);
-		// }
-		// // }
+			try {
+				const formData = new FormData();
+				formData.append('cookie', cookie);
+				if (file)
+					formData.append('file', file);
+				const response = await axios.post('http://localhost:5000/storage/upload', formData, {
+					headers: {
+					  "Content-Type": "multipart/form-data",
+					}});
+				if (response.data.status === 201)
+				{
+					console.log("good");
+				}
+				else
+					setSignUpError(response.data.message);
+			} catch (error) {
+				console.error(error);
+			} finally {
+			setIsLoading(false);
+		}
 	}
 
 	return (

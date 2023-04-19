@@ -3,7 +3,7 @@ import type { RootState } from './AuthStorage'
 
 interface BaseState {
 	isLoggedIn: boolean,
-	cookie: String
+	cookie: string
 };
 
 const initialState:BaseState = {

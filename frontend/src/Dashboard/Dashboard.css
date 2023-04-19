@@ -58,3 +58,23 @@
 	font-size: 2.3rem;
 }
 
+
+.logout-btn {
+	text-decoration: none;
+	background-color: #476cd2c9;
+	font-size: 2rem;
+	width: 12rem;
+	height: 4rem;
+	color: #ffffffce;
+	display: flex;
+	justify-content: center;
+	border: 0;
+	align-items: center;
+	transition: .4s;
+}
+
+.logout-btn:hover {
+	color: white;
+	background-color: #476cd2;
+	cursor: pointer;
+}
