@@ -3,25 +3,25 @@ import type { RootState } from './AuthStorage'
 
 interface BaseState {
 	isLoggedIn: boolean,
-	username: String
+	cookie: String
 };
 
 const initialState:BaseState = {
 	isLoggedIn: false,
-	username: ''
+	cookie: ''
 };
 
 export const AuthSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    login: (state) => {
+    login: (state, action) => {
       state.isLoggedIn = true;
-	  state.username = 'sample';
+	    state.cookie = action.payload;
     },
     logout: (state) => {
       state.isLoggedIn = false;
-	  state.username = '';
+	    state.cookie = '';
     }
   },
 })

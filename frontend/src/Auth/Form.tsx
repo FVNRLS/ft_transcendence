@@ -66,7 +66,7 @@ const Form = () =>
 					}});
 				if (response.data.status === 201)
 				{
-					dispatch(login());
+					dispatch(login('sample'));
 					navigate('/');
 				}
 				else
