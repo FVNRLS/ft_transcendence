@@ -16,22 +16,48 @@ model User {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   username            String    @unique
-  hashed_passwd       String    
+  hashedPasswd        String    
   salt                String
-  profile_picture     String
+  profilePicture      String
   sessions            Session[]
+  // score               Score[]
+  // messages            Messages[]
 
   @@map("users")
 }
 
 model Session {
   id                  Int      @id @default(autoincrement())
+  user                User     @relation(fields: [userId], references: [id])
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   expiresAt           DateTime
   userId              Int
-  user                User     @relation(fields: [userId], references: [id])
-  jwt_token           String   @unique
+  jwtToken            String   @unique
+  serializedCookie    String   @unique
+  hashedCookie        String   @unique
 
   @@map("sessions")
 }
+
+// model  Score {
+//    id            Int    @id @default(autoincrement())
+//    gameTime      DateTime @default(now())
+//    loosing       Int
+//    rating        Int
+//    wining        Int
+//    userId        Int
+//    Player   User   @relation(fields: [userId], references: [id])
+   
+//  @@map("score")
+// }
+
+// model Messages {
+//   id                    Int   @id @default(autoincrement())
+//   roomId                Int ---> get it from chat websocket!
+//   createdAt             DateTime @default(now())
+//   value                 String
+//   userId                Int
+//   user                  User  @relation(fields: [user_id], references: [id])
+//   @@map("messages")
+// }

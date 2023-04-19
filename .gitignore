@@ -146,4 +146,4 @@ docker/db_files/*
 
 tmp/*
 
-./docker/postgres_data/**
+docker/postgres_data/
