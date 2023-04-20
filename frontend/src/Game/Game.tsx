@@ -60,7 +60,7 @@ const Game = () => {
 	});
 
 	const connectToSocket = () => {
-		const newSocket = io("http://10.13.5.5:5005");
+		const newSocket = io("http://localhost:5005");
 		setSocket(newSocket);
 	};
 
