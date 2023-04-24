@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 13:54:29 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 16:13:15 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,7 +99,7 @@ export class AuthService {
   async logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
     try {
       const decryptedCookiehash = await this.securityService.decryptCookie(cookie);
-      const session = await this.sessionService.getSessionByCookieHash(decryptedCookiehash)
+      const session = await this.sessionService.getSessionByCookieHash(decryptedCookiehash);
       await this.prisma.session.deleteMany({ where: { userId: session.userId } });
 
       return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };

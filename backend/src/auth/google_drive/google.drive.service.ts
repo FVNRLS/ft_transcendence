@@ -6,19 +6,18 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 15:31:28 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 16:52:02 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Body, HttpException, HttpStatus, Injectable, UploadedFile } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SecurityService } from '../security.service';
-import { AuthDto } from '../dto';
 import * as fs from 'fs';
 import { Session, User } from '@prisma/client';
 import axios from 'axios';
-import { JwtService } from '@nestjs/jwt';
-import { ApiResponse } from '../dto/response.dto';
+import { ApiResponse, FileResponse } from '../dto/response.dto';
+import { SessionService } from '../session.service';
 
 
 @Injectable()
@@ -26,7 +25,7 @@ export class GoogleDriveService {
 	constructor(
 		private securityService: SecurityService,
     private prisma: PrismaService,
-    private jwtService: JwtService,
+    private sessionService: SessionService,
 	) {}
 
 	async setFirstProfilePicture(@Body('cookie') cookie: string, file?: Express.Multer.File): Promise<void> {
@@ -147,7 +146,7 @@ export class GoogleDriveService {
       const fileId = user.profilePicture;
       await drive.files.delete({ fileId: fileId });
 
-      await this.prisma.user.update({ where: { id: existingSession.userId }, data: { profilePicture: "" } });
+
       return { status: HttpStatus.OK, message: 'Profile picture deleted successfully' };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -158,51 +157,19 @@ export class GoogleDriveService {
     }
   }
 
-  
-  async getGoogleDriveAcessToken(dto: AuthDto): Promise<ApiResponse> {
+  async getProfilePicture(@Body('cookie') cookie: string): Promise<FileResponse> {
     try {
-      const user: User = await this.securityService.getVerifiedUserData(dto);
-      if (!user)
-        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
+      await this.securityService.verifyCookie(cookie);
+      const decryptedCookiehash = await this.securityService.decryptCookie(cookie);
+      const session: Session = await this.sessionService.getSessionByCookieHash(decryptedCookiehash);
+      const user: User = await this.prisma.user.findFirst({ where: { id: session.userId } });
       
-      const response = await axios.post('https://oauth2.googleapis.com/token', null, {
-        params: {
-          grant_type: "refresh_token",
-          client_id: process.env.GOOGLE_CLIENT_ID,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET,
-          redirect_uri: process.env.GOOGLE_REDIRECT_URI,
-          refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
-        },
-      });
-      return { status: HttpStatus.OK, message: response.data.access_token };
-    } catch (error) {
-      if (error.response && error.response.status === HttpStatus.UNAUTHORIZED) {
-        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid client credentials' };
-      }
-      else
-        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to request access token from Google Drive' };
-    }
-  }
-
-  //TODO: if this approach works, next step could be try to obtain list of usernames with appropriate picture id 
-  //to get all profile pictures --> new controller function!
-  // -- > so return a table or something like that, that frontend can parse and get all pictures
-  async getProfilePicture(dto: AuthDto): Promise<{ fieldname: string; originalname: string; encoding: string; mimetype: string; buffer: any; size: number; }> | null {
-    if (!dto.googleAccessToken) {
-      return null;
-    }
-
-    const user: User = await this.securityService.getVerifiedUserData(dto);
-    if (!user) {
-      return null;
-    }
-    
-    const fileId = user.profilePicture;
-    const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&fields=mimeType,data`;
-
-    try {
+      const googleAccessToken = await this.getGoogleDriveAcessToken();
+      
+      const fileId = user.profilePicture;
+      const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&fields=mimeType,data`;
       const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${dto.googleAccessToken}` },
+        headers: { Authorization: `Bearer ${googleAccessToken}` },
         responseType: 'arraybuffer',
       });
 
@@ -219,8 +186,29 @@ export class GoogleDriveService {
         size: fileData.length,
       };
     } catch (error) {
-      console.error(error);
-      return null;
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+  private async getGoogleDriveAcessToken(): Promise<string> {
+    try {      
+      const response = await axios.post('https://oauth2.googleapis.com/token', null, {
+        params: {
+          grant_type: "refresh_token",
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+          refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+        },
+      });
+      
+      return response.data.access_token;
+    } catch (error) {
+        throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

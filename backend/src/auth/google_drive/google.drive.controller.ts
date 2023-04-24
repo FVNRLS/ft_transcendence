@@ -6,14 +6,14 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:42 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 13:54:45 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 16:37:09 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Body, Controller, HttpStatus, Post, UploadedFile, UseInterceptors, Req, Res } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthDto } from '../dto';
-import { ApiResponse } from '../dto/response.dto';
+import { ApiResponse, FileResponse } from '../dto/response.dto';
 import { GoogleDriveService } from './google.drive.service';
 
 @Controller('/storage')
@@ -33,7 +33,6 @@ export class GoogleDriveController {
 	}
 
 	@Post('/delete')
-	// @UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
 	async deleteProfilePicture(@Body('cookie') cookie: string): Promise<ApiResponse> {
 		try {
 			return this.googleDriveService.deleteProfilePicture(cookie);
@@ -42,19 +41,10 @@ export class GoogleDriveController {
 		}
 	}
 
-	@Post('/get_google_drive_access_token')
-	async getGoogleDriveAcessToken(@Body() dto: AuthDto): Promise<ApiResponse> {
-		try {
-			return this.googleDriveService.getGoogleDriveAcessToken(dto);
-		} catch (error) {
-			return error;
-		}
-	}
-
 	@Post('/get_profile_picture')
-	async getProfilePicture(@Body() dto: AuthDto): Promise<{ fieldname: string; originalname: string; encoding: string; mimetype: string; buffer: any; size: number; }> {
+	async getProfilePicture(@Body('cookie') cookie: string): Promise<FileResponse> {
 		try {
-			return this.googleDriveService.getProfilePicture(dto);
+			return this.googleDriveService.getProfilePicture(cookie);
 		} catch (error) {
 			return error;
 		}
