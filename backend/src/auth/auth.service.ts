@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 18:07:49 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 20:09:59 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ import { GoogleDriveService } from './google_drive/google.drive.service';
 import { AuthDto } from './dto';
 import { ApiResponse } from './dto/response.dto'
 import { Session, User } from '@prisma/client';
+import { hash } from 'argon2';
 
 @Injectable()
 
@@ -99,6 +100,7 @@ export class AuthService {
   async logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
     try {
       const session: Session = await this.securityService.verifyCookie(cookie);
+      
       await this.prisma.session.deleteMany({ where: { userId: session.userId } });
 
       return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
@@ -111,26 +113,28 @@ export class AuthService {
     }
   }
 
+  //TODO: test more - also with expired cookie/token
 	async updateProfile(@Body('cookie') cookie: string, file?: Express.Multer.File, dto?: AuthDto): Promise<ApiResponse> {
     try {   
       if (file) {
         await this.googleDriveService.uploadProfilePicture(cookie, file);
       }
-  
-      const session: Session = await this.securityService.verifyCookie(cookie);
-      const user: User = await this.prisma.user.findFirst({ where: {id: session.userId} });
       
-      //TODO: cont here!
+      const session: Session = await this.securityService.verifyCookie(cookie);
+      const user: User = await this.prisma.user.findUnique({ where: {id: session.userId} });
+      
       if (dto.password) {
+        console.log(user.hashedPasswd);
         const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
+        
         await this.prisma.user.update({ where: { username: user.username }, data: { 
-          hashedPasswd: hashedPassword,  
+          hashedPasswd: hashedPassword, 
           salt: salt
         } });
       }
 
       if (dto.username) {
-        await this.prisma.user.update({ where: { username: user.username }, data: { username: user.username } });
+        await this.prisma.user.update({ where: { username: user.username }, data: { username: dto.username } });
       }
       
       return { status: HttpStatus.OK, message: 'Profile updated successfully' };

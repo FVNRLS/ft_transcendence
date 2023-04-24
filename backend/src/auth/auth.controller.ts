@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 17:54:01 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 20:07:48 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,7 @@ export class AuthController {
 
 	@Post('/update_profile')
 	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
-	updateProfile(@Body('cookie') cookie: string, @UploadedFile() file?: Express.Multer.File, dto?:AuthDto): Promise<ApiResponse> {
+	updateProfile(@Body('cookie') cookie: string, @UploadedFile() file?: Express.Multer.File, @Body() dto?:AuthDto): Promise<ApiResponse> {
 		try {
 			return this.authService.updateProfile(cookie, file, dto);
 		} catch (error) {
