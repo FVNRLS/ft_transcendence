@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 16:53:41 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 17:27:05 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,8 +84,7 @@ export class GoogleDriveService {
   async getProfilePicture(@Body('cookie') cookie: string): Promise<FileResponse> {
     try {
       await this.securityService.verifyCookie(cookie);
-      const decryptedCookiehash = await this.securityService.decryptCookie(cookie);
-      const session: Session = await this.sessionService.getSessionByCookieHash(decryptedCookiehash);
+      const session: Session = await this.securityService.verifyCookie(cookie);
       const user: User = await this.prisma.user.findFirst({ where: { id: session.userId } });
       
       const googleAccessToken = await this.getGoogleDriveAcessToken();

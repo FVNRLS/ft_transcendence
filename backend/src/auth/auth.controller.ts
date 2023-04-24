@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 16:54:31 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 17:54:01 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ export class AuthController {
 	@Post('/login')
 	signin(@Body() dto: AuthDto): Promise<ApiResponse> {
 		try {
-		return this.authService.signin(dto);
+			return this.authService.signin(dto);
 		} catch(error) {
 			throw error;
 		}
@@ -43,6 +43,20 @@ export class AuthController {
 
 	@Post('/logout')
 	logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
-		return this.authService.logout(cookie);
+		try {
+			return this.authService.logout(cookie);
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	@Post('/update_profile')
+	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
+	updateProfile(@Body('cookie') cookie: string, @UploadedFile() file?: Express.Multer.File, dto?:AuthDto): Promise<ApiResponse> {
+		try {
+			return this.authService.updateProfile(cookie, file, dto);
+		} catch (error) {
+			throw error;
+		}
 	}
 }

@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 14:28:18 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 17:34:29 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ export class SecurityService {
 		private jwtService: JwtService,
 	) {}
 
-	async verifyUsernamePassword(dto: AuthDto): Promise<void> {
+	async verifyDto(dto: AuthDto): Promise<void> {
 		if (!dto.username)
 			throw new HttpException('Username is required!', HttpStatus.UNAUTHORIZED);
 		else if (!dto.password)
@@ -166,7 +166,7 @@ Return the base64-encoded encrypted session string
 	Verify the decrypted string with argon2 
 	Return the decrypted session string
 	*/
-	async decryptCookie(encryptedCookie: string): Promise<string> {
+	private async decryptCookie(encryptedCookie: string): Promise<string> {
 		try {
 			if (!encryptedCookie) {
 				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);

@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 16:13:15 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 18:07:49 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ import { JwtService } from '@nestjs/jwt';
 import { GoogleDriveService } from './google_drive/google.drive.service';
 import { AuthDto } from './dto';
 import { ApiResponse } from './dto/response.dto'
-import { User } from '@prisma/client';
+import { Session, User } from '@prisma/client';
 
 @Injectable()
 
@@ -36,7 +36,7 @@ export class AuthService {
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<ApiResponse> {
     try {
       await this.securityService.validateToken(dto);
-      await this.securityService.verifyUsernamePassword(dto);
+      await this.securityService.verifyDto(dto);
       
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
       await this.prisma.user.create({
@@ -67,7 +67,7 @@ export class AuthService {
   //protect versus sql injections!
   async signin(dto: AuthDto): Promise<ApiResponse> {
     try {
-      this.securityService.verifyUsernamePassword(dto);
+      this.securityService.verifyDto(dto);
       const user: User = await this.securityService.getVerifiedUserData(dto);
       const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id } });
       if (existingSession) {
@@ -98,12 +98,44 @@ export class AuthService {
 
   async logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
     try {
-      const decryptedCookiehash = await this.securityService.decryptCookie(cookie);
-      const session = await this.sessionService.getSessionByCookieHash(decryptedCookiehash);
+      const session: Session = await this.securityService.verifyCookie(cookie);
       await this.prisma.session.deleteMany({ where: { userId: session.userId } });
 
       return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+	async updateProfile(@Body('cookie') cookie: string, file?: Express.Multer.File, dto?: AuthDto): Promise<ApiResponse> {
+    try {   
+      if (file) {
+        await this.googleDriveService.uploadProfilePicture(cookie, file);
+      }
+  
+      const session: Session = await this.securityService.verifyCookie(cookie);
+      const user: User = await this.prisma.user.findFirst({ where: {id: session.userId} });
+      
+      //TODO: cont here!
+      if (dto.password) {
+        const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
+        await this.prisma.user.update({ where: { username: user.username }, data: { 
+          hashedPasswd: hashedPassword,  
+          salt: salt
+        } });
+      }
+
+      if (dto.username) {
+        await this.prisma.user.update({ where: { username: user.username }, data: { username: user.username } });
+      }
+      
+      return { status: HttpStatus.OK, message: 'Profile updated successfully' };
+    }
+    catch (error) {
       if (error instanceof HttpException) {
         throw error;
       } else {
