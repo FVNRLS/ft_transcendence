@@ -24,7 +24,7 @@ export class SessionService {
 			
 			return { status: HttpStatus.CREATED, message: 'Login successful', cookie: encryptedCookie };
 		} catch (error) {
-		  throw error;
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	} 
 	

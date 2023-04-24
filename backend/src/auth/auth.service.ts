@@ -5,6 +5,7 @@ import { SecurityService } from './security.service';
 import { JwtService } from '@nestjs/jwt';
 import { GoogleDriveService } from './google_drive/google.drive.service';
 import { AuthDto } from './dto';
+import { ApiResponse } from './dto/response.dto'
 import { User } from '@prisma/client';
 
 @Injectable()
@@ -19,17 +20,12 @@ export class AuthService {
 
   //CONTROLLER FUNCTIONS
   //TODO: protect versus sql injections!
-  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string, cookie?: string } > {
+  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<ApiResponse> {
     try {
-      await this.securityService.verifyUsernamePassword(dto);
-      this.securityService.verifyUsernamePassword(dto);
       await this.securityService.validateToken(dto);
+      await this.securityService.verifyUsernamePassword(dto);
       
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
-      if (!salt || !hashedPassword) {
-        throw new HttpException('An error occurred during logout', HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-
       await this.prisma.user.create({
         data: {
           username: dto.username,
@@ -42,7 +38,6 @@ export class AuthService {
       const user: User = await this.securityService.getVerifiedUserData(dto);
       const session = await this.sessionService.createSession(user);
       await this.googleDriveService.setFirstProfilePicture(session.cookie, file);
-
 
       return { status: HttpStatus.CREATED, message: 'You signed up successfully', cookie: session.cookie };
     } catch (error) {
@@ -57,7 +52,7 @@ export class AuthService {
   }
 
   //protect versus sql injections!
-  async signin(dto: AuthDto): Promise<{ status: HttpStatus, message?: string, cookie?: string } | HttpException> {
+  async signin(dto: AuthDto): Promise<ApiResponse> {
     try {
       this.securityService.verifyUsernamePassword(dto);
     }
@@ -96,7 +91,7 @@ export class AuthService {
     }
   }
 
-  async logout(@Body('cookie') cookie: string): Promise<{ status: HttpStatus, message?: string }> {
+  async logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
     try {
       const decryptedCookiehash = await this.securityService.decryptCookie(cookie);
       const session = await this.sessionService.getSessionByCookieHash(decryptedCookiehash)

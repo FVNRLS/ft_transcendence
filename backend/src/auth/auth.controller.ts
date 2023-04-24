@@ -2,6 +2,7 @@ import { Body, Controller, HttpStatus, Post, UploadedFile, UseInterceptors} from
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service'
 import { AuthDto } from './dto';
+import { ApiResponse } from './dto/response.dto';
 
 @Controller('/auth')
 export class AuthController {
@@ -11,17 +12,25 @@ export class AuthController {
 
 	@Post('/signup')
 	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
-	async signup(@Body() dto: AuthDto, @UploadedFile() file?: Express.Multer.File): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
-		return this.authService.signup(dto, file);
+	async signup(@Body() dto: AuthDto, @UploadedFile() file?: Express.Multer.File): Promise<ApiResponse> {
+		try {
+			return this.authService.signup(dto, file);
+		} catch(error) {
+			throw error;
+		}
 	}
 
 	@Post('/login')
-	signin(@Body() dto: AuthDto) {
+	signin(@Body() dto: AuthDto): Promise<ApiResponse> {
+		try {
 		return this.authService.signin(dto);
+		} catch(error) {
+			throw error;
+		}
 	}
 
 	@Post('/logout')
-	logout(@Body('cookie') cookie: string): Promise<{ status: HttpStatus, message?: string }> {
+	logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
 		return this.authService.logout(cookie);
 	}
 }

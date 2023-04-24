@@ -29,9 +29,10 @@ export class SecurityService {
 			headers: { Authorization: `Bearer ${dto.token_42}` },
 			responseType: 'arraybuffer',
 		  });
+
 		  return { status: HttpStatus.OK, message: 'Token valid' };
 		} catch(error){
-		  return { status: HttpStatus.UNAUTHORIZED, message: 'Token invalid' };
+			throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
 		}
 	}
 
@@ -50,9 +51,14 @@ export class SecurityService {
     This makes it much harder and more time-consuming for attackers to gain access to user accounts.
   */
 	async hashPassword(password: string): Promise<{ salt: string, hashedPassword: string }> {
-		const salt = randomBytes(32);
-		const hashedPassword = await argon2.hash(password, { salt: salt });
-		return { salt: salt.toString(('hex')), hashedPassword };
+		try {
+			const salt = randomBytes(32);
+			const hashedPassword = await argon2.hash(password, { salt: salt });
+
+			return { salt: salt.toString(('hex')), hashedPassword };
+		} catch(error) {
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	async getVerifiedUserData(dto: AuthDto): Promise<User> {

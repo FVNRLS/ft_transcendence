@@ -1,4 +1,4 @@
-import { Body, HttpStatus, Injectable, UploadedFile } from '@nestjs/common';
+import { Body, HttpException, HttpStatus, Injectable, UploadedFile } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SecurityService } from '../security.service';
 import { AuthDto } from '../dto';
@@ -16,7 +16,7 @@ export class GoogleDriveService {
     private jwtService: JwtService,
 	) {}
 
-	async setFirstProfilePicture(@Body('cookie') cookie: string, file?: Express.Multer.File) {
+	async setFirstProfilePicture(@Body('cookie') cookie: string, file?: Express.Multer.File): Promise<void> {
 
     
     try {
@@ -40,9 +40,9 @@ export class GoogleDriveService {
         this.uploadProfilePicture(cookie, defaultFile as Express.Multer.File);
       }
 
-      return { status: HttpStatus.CREATED };
+      return ;
     } catch (error) {
-      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error uploading file' };
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
