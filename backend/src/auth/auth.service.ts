@@ -45,9 +45,9 @@ export class AuthService {
         throw error;
       }
       if (error.code === 'P2002') {
-        return { status: HttpStatus.CONFLICT, message: 'Username already exists' };
+				throw new HttpException('Username already exists', HttpStatus.CONFLICT);
       }
-      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ooops...Something went wrong' };
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -55,40 +55,32 @@ export class AuthService {
   async signin(dto: AuthDto): Promise<ApiResponse> {
     try {
       this.securityService.verifyUsernamePassword(dto);
-    }
-    catch(error) {
-      throw error;
-    }
+      const user: User = await this.securityService.getVerifiedUserData(dto);
+      const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id } });
+      if (existingSession) {
+        try {
+          const jwtToken = existingSession.jwtToken;
+          this.jwtService.verify(jwtToken, { ignoreExpiration: false });
 
-    const user: User = await this.securityService.getVerifiedUserData(dto);
-    if (!user) {
-      return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
-    }
-
-    const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id } });
-    if (existingSession) {
-      try {
-        const jwtToken = existingSession.jwtToken;
-        this.jwtService.verify(jwtToken, { ignoreExpiration: false });
-        return { status: HttpStatus.ACCEPTED, message: 'You are already logged in' };
-      } catch (error) {
-        if (error.name === 'TokenExpiredError') {
-          await this.prisma.session.delete({ where: { id: existingSession.id } });
-          return { status: HttpStatus.UNAUTHORIZED, message: 'Your previous session has expired' };
+					throw new HttpException('You are already signed in', HttpStatus.ACCEPTED);
+        } catch (error) {
+          if (error.name === 'TokenExpiredError') {
+            await this.prisma.session.delete({ where: { id: existingSession.id } });
+            throw new HttpException('Your previous session has expired', HttpStatus.UNAUTHORIZED);
+          }
         }
       }
-    }
-  
-    try {
-      const session = await this.sessionService.createSession(user);
-      return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };
+
+			const session = await this.sessionService.createSession(user);
+			return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       } else {
-        throw new HttpException({ status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An error occurred during login' }, HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
+
   }
 
   async logout(@Body('cookie') cookie: string): Promise<ApiResponse> {

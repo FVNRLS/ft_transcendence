@@ -7,6 +7,7 @@ import { User } from '@prisma/client';
 import axios from 'axios';
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
+import { ApiResponse } from '../dto/response.dto';
 
 @Injectable()
 export class GoogleDriveService {
@@ -46,7 +47,7 @@ export class GoogleDriveService {
     }
   }
 
-  async uploadProfilePicture(cookie: string, @UploadedFile() file: Express.Multer.File): Promise<{ status: HttpStatus, message?: string }> {
+  async uploadProfilePicture(cookie: string, @UploadedFile() file: Express.Multer.File): Promise<ApiResponse> {
     if (!file) {
       return { status: HttpStatus.BAD_REQUEST, message: 'File is required'};
     }
@@ -126,7 +127,7 @@ export class GoogleDriveService {
     return res;
   }
 
-  private async getGoogleDriveClient(): Promise<any> | null {
+  private async getGoogleDriveClient(): Promise<any> {
     const { google } = require('googleapis');
 
     const oauth2Client = new google.auth.OAuth2({
@@ -139,7 +140,7 @@ export class GoogleDriveService {
     return Promise.resolve(drive);
   }
 
-  async deleteProfilePicture(@Body('cookie') cookie: string): Promise<{ status: HttpStatus, message?: string }> {
+  async deleteProfilePicture(@Body('cookie') cookie: string): Promise<ApiResponse> {
     const decryptedCookieHash = await this.securityService.decryptCookie(cookie);
     const existingSession = await this.prisma.session.findFirst({ where: { hashedCookie: decryptedCookieHash } });
     try {
@@ -179,7 +180,7 @@ export class GoogleDriveService {
   }
 
   
-  async getGoogleDriveAcessToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+  async getGoogleDriveAcessToken(dto: AuthDto): Promise<ApiResponse> {
     try {
       const user: User = await this.securityService.getVerifiedUserData(dto);
       if (!user)

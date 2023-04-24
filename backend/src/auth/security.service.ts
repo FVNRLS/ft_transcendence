@@ -86,19 +86,11 @@ export class SecurityService {
 					}
 				},
 			});
-	
-			if (!user) {
-				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-			}
-	
-			const isPasswdMatch = await argon2.verify(user.hashedPasswd, dto.password);
-			if (!isPasswdMatch) {
-				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-			}
-	
+			await argon2.verify(user.hashedPasswd, dto.password);
+
 			return user;
 		} catch (error) {
-			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
 		}
 	}
 
