@@ -1,13 +1,26 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   google.drive.service.ts                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
+/*   Updated: 2023/04/24 13:54:16 by rmazurit         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 import { Body, HttpException, HttpStatus, Injectable, UploadedFile } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SecurityService } from '../security.service';
 import { AuthDto } from '../dto';
 import * as fs from 'fs';
-import { User } from '@prisma/client';
+import { Session, User } from '@prisma/client';
 import axios from 'axios';
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ApiResponse } from '../dto/response.dto';
+
 
 @Injectable()
 export class GoogleDriveService {
@@ -49,82 +62,63 @@ export class GoogleDriveService {
 
   async uploadProfilePicture(cookie: string, @UploadedFile() file: Express.Multer.File): Promise<ApiResponse> {
     if (!file) {
-      return { status: HttpStatus.BAD_REQUEST, message: 'File is required'};
+      throw new HttpException("File is required", HttpStatus.BAD_REQUEST);
     }
 
     const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      return { status: HttpStatus.BAD_REQUEST, message: "Invalid file type. Only JPG, JPEG, or PNG allowed" };
+      throw new HttpException("Invalid file type. Only JPG, JPEG, or PNG allowed", HttpStatus.BAD_REQUEST);
     }
 
-    const decryptedCookieHash = await this.securityService.decryptCookie(cookie);
-    const existingSession = await this.prisma.session.findFirst({ where: { hashedCookie: decryptedCookieHash } });
     try {
-      await argon2.verify(decryptedCookieHash.toString(), existingSession.serializedCookie);
-
-      const jwtToken = existingSession.jwtToken;
-      this.jwtService.verify(jwtToken, { ignoreExpiration: false });
+      const existingSession: Session = await this.securityService.verifyCookie(cookie);
+      const user = await this.prisma.user.findFirst({ where: { id: existingSession.userId } });
+      if (user.profilePicture)
+        await this.deleteProfilePicture(cookie);
       
-      try {
-        const user = await this.prisma.user.findFirst({ where: { id: existingSession.userId } });  
-        if (user.profilePicture) {
-          const res = await this.deleteProfilePicture(cookie);
-          if (res.status !== HttpStatus.OK) {
-            return (res);
-          }
-        }
-        
-        const drive = await this.getGoogleDriveClient();
-        if (!drive)
-          return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to connect to the storage' };
-  
-        const response = await this.uploadFileToGoogleDrive(file, drive);
-        if (response.status === HttpStatus.OK) {
-          await this.prisma.user.update({ where: { username: user.username }, data: { profilePicture: response.data.id } });
-          return { status: HttpStatus.OK, message: "File uploaded successfully!"};
-        } 
-        else
-          return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to upload file'};
-      } catch (err) {
-        console.error('Error uploading file:', err);
-        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to upload file'};
-      }
+      const drive = await this.getGoogleDriveClient();
 
+      const response = await this.uploadFileToGoogleDrive(file, drive);
+      await this.prisma.user.update({ where: { username: user.username }, data: { profilePicture: response.data.id } });
+
+      return { status: HttpStatus.OK, message: "File uploaded successfully!"};
     } catch (error) {
-      if (error.name === 'TokenExpiredError') {
-        await this.prisma.session.delete({ where: { id: existingSession.id } });
-        return { status: HttpStatus.UNAUTHORIZED, message: 'Your previous session has expired' };
-      }
-      else {
-        return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }
 
   private async uploadFileToGoogleDrive(file: Express.Multer.File, drive: any) {
-    const path = require('path');
-    const filePath = file.path;
-    const fileName = path.basename(filePath);
-    const fileMimeType = file.mimetype;
-    const fileSize = file.size;
-
-    const media = {
-      mimeType: fileMimeType,
-      body: fs.createReadStream(filePath),
-    };
-    
-    const res = await drive.files.create({
-      requestBody: {
-        name: fileName,
-        mimeType: fileMimeType,
-      },
-      media,
-    }, {
-      // Use a resumable upload if the file is larger than 5MB
-      onUploadProgress: evt => console.log(`Uploaded ${evt.bytesRead} bytes of ${fileSize} bytes`)
-    });
+    try {
+      const path = require('path');
+      const filePath = file.path;
+      const fileName = path.basename(filePath);
+      const fileMimeType = file.mimetype;
+      const fileSize = file.size;
   
-    return res;
+      const media = {
+        mimeType: fileMimeType,
+        body: fs.createReadStream(filePath),
+      };
+      
+      const res = await drive.files.create({
+        requestBody: {
+          name: fileName,
+          mimeType: fileMimeType,
+        },
+        media,
+      }, {
+        // Use a resumable upload if the file is larger than 5MB
+        onUploadProgress: evt => console.log(`Uploaded ${evt.bytesRead} bytes of ${fileSize} bytes`)
+      });
+    
+      return res;
+    } catch (error) {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   private async getGoogleDriveClient(): Promise<any> {
@@ -141,41 +135,24 @@ export class GoogleDriveService {
   }
 
   async deleteProfilePicture(@Body('cookie') cookie: string): Promise<ApiResponse> {
-    const decryptedCookieHash = await this.securityService.decryptCookie(cookie);
-    const existingSession = await this.prisma.session.findFirst({ where: { hashedCookie: decryptedCookieHash } });
     try {
-      try {
-        await argon2.verify(decryptedCookieHash.toString(), existingSession.serializedCookie);
-        const jwtToken = existingSession.jwtToken;
-        this.jwtService.verify(jwtToken, { ignoreExpiration: false });
-      } catch (error) {
-        if (error.name === 'TokenExpiredError') {
-          await this.prisma.session.delete({ where: { id: existingSession.id } });
-          return { status: HttpStatus.UNAUTHORIZED, message: 'Your previous session has expired' };
-        } else {
-          return { status: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials' };
-        }
-      }
+      const existingSession: Session = await this.securityService.verifyCookie(cookie);
 
       const drive = await this.getGoogleDriveClient();
-      if (!drive) {
-        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to connect to the storage' };
-      }
+      
       const user = await this.prisma.user.findFirst({ where: { id: existingSession.userId } });  
-      if (user.profilePicture) {
-        const fileId = user.profilePicture;
-        try {
-          await drive.files.delete({ fileId: fileId });
-        } catch (err) {
-          console.error('Error deleting file:', err);
-          return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to delete profile picture' };
-        }
-      }
+      const fileId = user.profilePicture;
+      await drive.files.delete({ fileId: fileId });
+
       await this.prisma.user.update({ where: { id: existingSession.userId }, data: { profilePicture: "" } });
+
       return { status: HttpStatus.OK, message: 'Profile picture deleted successfully' };
     } catch (error) {
-      console.error('Error deleting file:', error);
-      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Failed to delete profile picture' };
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
     }
   }
 

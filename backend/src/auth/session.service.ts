@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   session.service.ts                                 :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/04/24 13:55:37 by rmazurit          #+#    #+#             */
+/*   Updated: 2023/04/24 13:55:40 by rmazurit         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SecurityService } from './security.service';

@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   auth.service.ts                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
+/*   Updated: 2023/04/24 13:54:29 by rmazurit         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 import { Body, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from './session.service';
@@ -9,6 +21,7 @@ import { ApiResponse } from './dto/response.dto'
 import { User } from '@prisma/client';
 
 @Injectable()
+
 export class AuthService {
   constructor(
     private prisma: PrismaService,
