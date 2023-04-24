@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 16:52:02 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 16:53:41 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,36 +28,7 @@ export class GoogleDriveService {
     private sessionService: SessionService,
 	) {}
 
-	async setFirstProfilePicture(@Body('cookie') cookie: string, file?: Express.Multer.File): Promise<void> {
-
-    
-    try {
-      if (file) {
-        await this.uploadProfilePicture(cookie, file);
-      }
-      else {
-        const defaultAvatars = fs.readdirSync('./default_avatars');
-        const randomIndex = Math.floor(Math.random() * defaultAvatars.length);
-        const randomPicturePath = `./default_avatars/${defaultAvatars[randomIndex]}`;
-        const buffer = fs.readFileSync(randomPicturePath);
-        
-        const defaultFile = {
-          fieldname: 'profilePicture',
-          originalname: defaultAvatars[randomIndex],
-          encoding: '7bit',
-          mimetype: 'image/jpeg',
-          buffer: buffer,
-          path: randomPicturePath,
-        };
-        this.uploadProfilePicture(cookie, defaultFile as Express.Multer.File);
-      }
-
-      return ;
-    } catch (error) {
-			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
+  //ENDPOINT FUNCTIONS
   async uploadProfilePicture(cookie: string, @UploadedFile() file: Express.Multer.File): Promise<ApiResponse> {
     if (!file) {
       throw new HttpException("File is required", HttpStatus.BAD_REQUEST);
@@ -86,53 +57,6 @@ export class GoogleDriveService {
       } else {
 				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
       }
-    }
-  }
-
-  private async uploadFileToGoogleDrive(file: Express.Multer.File, drive: any): Promise<any> {
-    try {
-      const path = require('path');
-      const filePath = file.path;
-      const fileName = path.basename(filePath);
-      const fileMimeType = file.mimetype;
-      const fileSize = file.size;
-  
-      const media = {
-        mimeType: fileMimeType,
-        body: fs.createReadStream(filePath),
-      };
-      
-      const res = await drive.files.create({
-        requestBody: {
-          name: fileName,
-          mimeType: fileMimeType,
-        },
-        media,
-      }, {
-        // Use a resumable upload if the file is larger than 5MB
-        onUploadProgress: evt => console.log(`Uploaded ${evt.bytesRead} bytes of ${fileSize} bytes`)
-      });
-    
-      return res;
-    } catch (error) {
-				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  private async getGoogleDriveClient(): Promise<any> {
-    try {
-      const { google } = require('googleapis');
-      const oauth2Client = new google.auth.OAuth2({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        redirectUri: process.env.GOOGLE_REDIRECT_URI,
-      });
-      oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-      const drive = google.drive({ version: 'v3', auth: oauth2Client });  
-      
-      return Promise.resolve(drive);
-    } catch (error) {
-				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -194,6 +118,86 @@ export class GoogleDriveService {
     }
   }
 
+
+  //MEMBER FUNCTIONS
+  async setFirstProfilePicture(@Body('cookie') cookie: string, file?: Express.Multer.File): Promise<void> {
+
+    
+    try {
+      if (file) {
+        await this.uploadProfilePicture(cookie, file);
+      }
+      else {
+        const defaultAvatars = fs.readdirSync('./default_avatars');
+        const randomIndex = Math.floor(Math.random() * defaultAvatars.length);
+        const randomPicturePath = `./default_avatars/${defaultAvatars[randomIndex]}`;
+        const buffer = fs.readFileSync(randomPicturePath);
+        
+        const defaultFile = {
+          fieldname: 'profilePicture',
+          originalname: defaultAvatars[randomIndex],
+          encoding: '7bit',
+          mimetype: 'image/jpeg',
+          buffer: buffer,
+          path: randomPicturePath,
+        };
+        this.uploadProfilePicture(cookie, defaultFile as Express.Multer.File);
+      }
+
+      return ;
+    } catch (error) {
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+  
+  private async uploadFileToGoogleDrive(file: Express.Multer.File, drive: any): Promise<any> {
+    try {
+      const path = require('path');
+      const filePath = file.path;
+      const fileName = path.basename(filePath);
+      const fileMimeType = file.mimetype;
+      const fileSize = file.size;
+  
+      const media = {
+        mimeType: fileMimeType,
+        body: fs.createReadStream(filePath),
+      };
+      
+      const res = await drive.files.create({
+        requestBody: {
+          name: fileName,
+          mimeType: fileMimeType,
+        },
+        media,
+      }, {
+        // Use a resumable upload if the file is larger than 5MB
+        onUploadProgress: evt => console.log(`Uploaded ${evt.bytesRead} bytes of ${fileSize} bytes`)
+      });
+    
+      return res;
+    } catch (error) {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private async getGoogleDriveClient(): Promise<any> {
+    try {
+      const { google } = require('googleapis');
+      const oauth2Client = new google.auth.OAuth2({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI,
+      });
+      oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+      const drive = google.drive({ version: 'v3', auth: oauth2Client });  
+      
+      return Promise.resolve(drive);
+    } catch (error) {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+ 
   private async getGoogleDriveAcessToken(): Promise<string> {
     try {      
       const response = await axios.post('https://oauth2.googleapis.com/token', null, {

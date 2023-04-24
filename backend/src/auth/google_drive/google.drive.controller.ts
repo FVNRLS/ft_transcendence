@@ -6,13 +6,12 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:42 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 16:37:09 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 16:54:25 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, Controller, HttpStatus, Post, UploadedFile, UseInterceptors, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { AuthDto } from '../dto';
 import { ApiResponse, FileResponse } from '../dto/response.dto';
 import { GoogleDriveService } from './google.drive.service';
 
