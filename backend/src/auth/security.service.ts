@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 13:55:24 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 14:28:18 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,6 @@ import { serialize } from 'cookie';
 import axios from 'axios';
 import { AuthDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
-
 
 
 @Injectable()
@@ -41,11 +40,8 @@ export class SecurityService {
 	async validateToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
 		try {
 		  const url = 'https://api.intra.42.fr/v2/achievements';
-		  await axios.get(url, {
-			headers: { Authorization: `Bearer ${dto.token_42}` },
-			responseType: 'arraybuffer',
-		  });
-
+		  await axios.get(url, { headers: { Authorization: `Bearer ${dto.token_42}` }, responseType: 'arraybuffer' });
+			
 		  return { status: HttpStatus.OK, message: 'Token valid' };
 		} catch(error){
 			throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
@@ -133,7 +129,7 @@ export class SecurityService {
 			return serializedCookie;
 		}
 		catch(error) {
-			throw error;
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -170,7 +166,7 @@ Return the base64-encoded encrypted session string
 	Verify the decrypted string with argon2 
 	Return the decrypted session string
 	*/
-	async decryptCookie(encryptedCookie: string) {
+	async decryptCookie(encryptedCookie: string): Promise<string> {
 		try {
 			if (!encryptedCookie) {
 				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
@@ -195,10 +191,9 @@ Return the base64-encoded encrypted session string
 	}
 
 	async verifyCookie(encryptedCookie: string): Promise<Session> {
-		let existingSession = null;
 		try {
 			const decryptedCookieHash = await this.decryptCookie(encryptedCookie);
-			existingSession = await this.prisma.session.findFirst({ where: { hashedCookie: decryptedCookieHash } });
+			const existingSession: Session = await this.prisma.session.findFirst({ where: { hashedCookie: decryptedCookieHash } });
 			await argon2.verify(decryptedCookieHash.toString(), existingSession.serializedCookie);
 			const jwtToken = existingSession.jwtToken;
 			this.jwtService.verify(jwtToken, { ignoreExpiration: false });
@@ -206,7 +201,10 @@ Return the base64-encoded encrypted session string
 			return existingSession;
 		} catch (error) {
 			if (error.name === 'TokenExpiredError') {
+				const decryptedCookieHash = await this.decryptCookie(encryptedCookie);
+				const existingSession: Session = await this.prisma.session.findFirst({ where: { hashedCookie: decryptedCookieHash } });
 				await this.prisma.session.delete({ where: { id: existingSession.id } });
+				
 				throw new HttpException('Your previous session has expired', HttpStatus.UNAUTHORIZED);
 			} else {
 				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);

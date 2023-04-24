@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 13:54:16 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/24 15:31:28 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,6 @@ import { AuthDto } from '../dto';
 import * as fs from 'fs';
 import { Session, User } from '@prisma/client';
 import axios from 'axios';
-import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ApiResponse } from '../dto/response.dto';
 
@@ -77,8 +76,8 @@ export class GoogleDriveService {
         await this.deleteProfilePicture(cookie);
       
       const drive = await this.getGoogleDriveClient();
-
       const response = await this.uploadFileToGoogleDrive(file, drive);
+      
       await this.prisma.user.update({ where: { username: user.username }, data: { profilePicture: response.data.id } });
 
       return { status: HttpStatus.OK, message: "File uploaded successfully!"};
@@ -91,7 +90,7 @@ export class GoogleDriveService {
     }
   }
 
-  private async uploadFileToGoogleDrive(file: Express.Multer.File, drive: any) {
+  private async uploadFileToGoogleDrive(file: Express.Multer.File, drive: any): Promise<any> {
     try {
       const path = require('path');
       const filePath = file.path;
@@ -122,16 +121,20 @@ export class GoogleDriveService {
   }
 
   private async getGoogleDriveClient(): Promise<any> {
-    const { google } = require('googleapis');
-
-    const oauth2Client = new google.auth.OAuth2({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri: process.env.GOOGLE_REDIRECT_URI,
-    });
-    oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-    const drive = google.drive({ version: 'v3', auth: oauth2Client });
-    return Promise.resolve(drive);
+    try {
+      const { google } = require('googleapis');
+      const oauth2Client = new google.auth.OAuth2({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI,
+      });
+      oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+      const drive = google.drive({ version: 'v3', auth: oauth2Client });  
+      
+      return Promise.resolve(drive);
+    } catch (error) {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async deleteProfilePicture(@Body('cookie') cookie: string): Promise<ApiResponse> {
@@ -145,7 +148,6 @@ export class GoogleDriveService {
       await drive.files.delete({ fileId: fileId });
 
       await this.prisma.user.update({ where: { id: existingSession.userId }, data: { profilePicture: "" } });
-
       return { status: HttpStatus.OK, message: 'Profile picture deleted successfully' };
     } catch (error) {
       if (error instanceof HttpException) {
