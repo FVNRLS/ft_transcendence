@@ -29,18 +29,15 @@ export class SessionService {
 	} 
 	
 	async getSessionByCookieHash(decryptedCookieHash: string): Promise<any> {
-		const databaseEntry = await this.prisma.session.findUnique({ where: { hashedCookie: decryptedCookieHash.toString() } });
-		if (!databaseEntry) {
+		try {
+			const databaseEntry = await this.prisma.session.findUnique({ where: { hashedCookie: decryptedCookieHash.toString() } });
+			const serializedCookie = databaseEntry.serializedCookie;
+			await argon2.verify(decryptedCookieHash.toString(), serializedCookie);
+
+			return databaseEntry;
+		} catch (error) {
 			throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
 		}
-
-		const serializedCookie = databaseEntry.serializedCookie;
-		const dehashedSession = await argon2.verify(decryptedCookieHash.toString(), serializedCookie);
-		if (!dehashedSession) {
-			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-
-		return databaseEntry;
 	}
 
 	private async pushSessionToDatabase(user: User, token: string, hashedCookie: string, serializedCookie: string): Promise<Session> {

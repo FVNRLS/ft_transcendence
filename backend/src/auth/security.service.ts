@@ -157,14 +157,10 @@ Return the base64-encoded encrypted session string
 	async decryptCookie(encryptedCookie: string) {
 		try {
 			if (!encryptedCookie) {
-				throw new HttpException({ status: HttpStatus.UNAUTHORIZED, message: 'Cookie is required' }, HttpStatus.UNAUTHORIZED);
+				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
 			}
 	
 			const COOKIE_SECRET = process.env.COOKIE_SECRET;
-			if (!COOKIE_SECRET) {
-				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-
 			const encryptedData = Buffer.from(encryptedCookie, 'base64');
 			const iv = encryptedData.slice(0, 16);
 			const encryptedText = encryptedData.slice(16);

@@ -94,7 +94,7 @@ export class AuthService {
       if (error instanceof HttpException) {
         throw error;
       } else {
-        throw new HttpException('An error occurred during logout', HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }
