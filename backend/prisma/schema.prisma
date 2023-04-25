@@ -16,10 +16,11 @@ model User {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   username            String    @unique
-  hashedPasswd        String    
+  hashedPasswd        String
   salt                String
-  profilePicture      String
   TFA                 Boolean
+  email               String
+  profilePicture      String
   sessions            Session[]
   // score               Score[]
   // messages            Messages[]

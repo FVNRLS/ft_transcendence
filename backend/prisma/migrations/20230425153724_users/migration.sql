@@ -6,8 +6,9 @@ CREATE TABLE "users" (
     "username" TEXT NOT NULL,
     "hashedPasswd" TEXT NOT NULL,
     "salt" TEXT NOT NULL,
-    "profilePicture" TEXT NOT NULL,
     "TFA" BOOLEAN NOT NULL,
+    "email" TEXT NOT NULL,
+    "profilePicture" TEXT NOT NULL,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );

@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/25 17:14:23 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/25 17:39:03 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ export class AuthService {
           salt: salt,
           profilePicture: "",
           TFA: false,
+          email: "",
         },
       })
 
