@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 19:50:25 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/25 16:59:53 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,12 +29,12 @@ export class SecurityService {
 		private jwtService: JwtService,
 	) {}
 
-	async verifyDto(dto: AuthDto): Promise<void> {
+	async verifyCredentials(dto: AuthDto): Promise<void> {
 		if (!dto.username)
 			throw new HttpException('Username is required!', HttpStatus.UNAUTHORIZED);
 		else if (!dto.password)
 			throw new HttpException('Password is required!', HttpStatus.UNAUTHORIZED);
-		return;
+		return ;
 	}
 
 	async validateToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
@@ -75,6 +75,7 @@ export class SecurityService {
 
 	async getVerifiedUserData(dto: AuthDto): Promise<User> {
 		try {
+			
 			const user: User = await this.prisma.user.findUnique({
 				where: { username: dto.username },
 				select: { 
@@ -83,6 +84,7 @@ export class SecurityService {
 					hashedPasswd: true,
 					salt: true,
 					profilePicture: true,
+					TFA: true,
 					createdAt: true,
 					updatedAt: true,
 					sessions: {
@@ -98,6 +100,8 @@ export class SecurityService {
 					}
 				},
 			});
+			console.log(dto.username);
+
 			await argon2.verify(user.hashedPasswd, dto.password);
 
 			return user;

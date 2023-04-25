@@ -19,6 +19,7 @@ model User {
   hashedPasswd        String    
   salt                String
   profilePicture      String
+  TFA                 Boolean
   sessions            Session[]
   // score               Score[]
   // messages            Messages[]

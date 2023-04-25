@@ -6,13 +6,14 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:56:32 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 13:56:34 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/25 16:54:23 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { Worker } from 'worker_threads';
 
 /*
 1. The NestFactory.create method creates a new NestJS application 

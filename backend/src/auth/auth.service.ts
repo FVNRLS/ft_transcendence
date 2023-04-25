@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 20:09:59 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/25 16:58:54 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ export class AuthService {
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<ApiResponse> {
     try {
       await this.securityService.validateToken(dto);
-      await this.securityService.verifyDto(dto);
+      await this.securityService.verifyCredentials(dto);
       
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
       await this.prisma.user.create({
@@ -46,6 +46,7 @@ export class AuthService {
           hashedPasswd: hashedPassword,
           salt: salt,
           profilePicture: "",
+          TFA: false,
         },
       })
 
@@ -68,7 +69,7 @@ export class AuthService {
   //protect versus sql injections!
   async signin(dto: AuthDto): Promise<ApiResponse> {
     try {
-      this.securityService.verifyDto(dto);
+      await this.securityService.verifyCredentials(dto);
       const user: User = await this.securityService.getVerifiedUserData(dto);
       const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id } });
       if (existingSession) {
@@ -113,7 +114,6 @@ export class AuthService {
     }
   }
 
-  //TODO: test more - also with expired cookie/token
 	async updateProfile(@Body('cookie') cookie: string, file?: Express.Multer.File, dto?: AuthDto): Promise<ApiResponse> {
     try {   
       if (file) {
