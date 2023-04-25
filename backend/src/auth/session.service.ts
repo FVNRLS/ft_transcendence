@@ -6,13 +6,13 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:37 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 14:28:28 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/25 17:02:46 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { SecurityService } from './security.service';
+import { SecurityService } from './security/security.service';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { Session, User } from '@prisma/client';

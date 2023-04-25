@@ -6,14 +6,14 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/25 16:58:54 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/25 17:14:23 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Body, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from './session.service';
-import { SecurityService } from './security.service';
+import { SecurityService } from './security/security.service';
 import { JwtService } from '@nestjs/jwt';
 import { GoogleDriveService } from './google_drive/google.drive.service';
 import { AuthDto } from './dto';
@@ -66,7 +66,6 @@ export class AuthService {
     }
   }
 
-  //protect versus sql injections!
   async signin(dto: AuthDto): Promise<ApiResponse> {
     try {
       await this.securityService.verifyCredentials(dto);

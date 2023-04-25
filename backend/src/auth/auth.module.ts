@@ -6,19 +6,20 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:56:00 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 13:56:02 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/25 17:12:57 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from '../prisma/prisma.module';
+import { JwtModule } from '@nestjs/jwt';
+import { AuthController } from './auth.controller';
+import { SecurityController } from './security/security.controller';
+import { GoogleDriveController } from './google_drive/google.drive.controller';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
-import { SecurityService } from './security.service';
-import { AuthController } from './auth.controller';
+import { SecurityService } from './security/security.service';
 import { GoogleDriveService } from './google_drive/google.drive.service';
-import { GoogleDriveController } from './google_drive/google.drive.controller';
 
 @Module({
   imports: [
@@ -29,6 +30,6 @@ import { GoogleDriveController } from './google_drive/google.drive.controller';
     }),
   ],
   providers: [AuthService, SessionService, SecurityService, GoogleDriveService],
-  controllers: [AuthController, GoogleDriveController],
+  controllers: [AuthController, SecurityController, GoogleDriveController],
 })
 export class AuthModule {}

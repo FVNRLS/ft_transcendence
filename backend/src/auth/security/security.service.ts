@@ -6,20 +6,22 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/25 16:59:53 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/25 17:26:24 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import * as argon2 from 'argon2';
 import { randomBytes, createCipheriv, createDecipheriv, scrypt } from 'crypto';
 import { promisify } from 'util';
 import { Session, User } from '@prisma/client';
 import { serialize } from 'cookie';
 import axios from 'axios';
-import { AuthDto } from './dto';
+import { AuthDto } from '../dto';
+import { ApiResponse } from '../dto/response.dto';
 import { JwtService } from '@nestjs/jwt';
+import { stat } from 'fs';
 
 
 @Injectable()
@@ -197,7 +199,7 @@ Return the base64-encoded encrypted session string
 	async verifyCookie(encryptedCookie: string): Promise<Session> {
 		try {
 			const decryptedCookieHash = await this.decryptCookie(encryptedCookie);
-			const existingSession: Session = await this.prisma.session.findFirst({ where: { hashedCookie: decryptedCookieHash } });
+			const existingSession: Session = await this.prisma.session.findUnique({ where: { hashedCookie: decryptedCookieHash } });
 			await argon2.verify(decryptedCookieHash.toString(), existingSession.serializedCookie);
 			const jwtToken = existingSession.jwtToken;
 			this.jwtService.verify(jwtToken, { ignoreExpiration: false });
@@ -206,13 +208,37 @@ Return the base64-encoded encrypted session string
 		} catch (error) {
 			if (error.name === 'TokenExpiredError') {
 				const decryptedCookieHash = await this.decryptCookie(encryptedCookie);
-				const existingSession: Session = await this.prisma.session.findFirst({ where: { hashedCookie: decryptedCookieHash } });
+				const existingSession: Session = await this.prisma.session.findUnique({ where: { hashedCookie: decryptedCookieHash } });
 				await this.prisma.session.delete({ where: { id: existingSession.id } });
 				
 				throw new HttpException('Your previous session has expired', HttpStatus.UNAUTHORIZED);
 			} else {
 				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
 			}
+		}
+	}
+
+	async changeTFA(encryptedCookie: string): Promise<ApiResponse> {
+		try {
+			const session: Session = await this.verifyCookie(encryptedCookie);
+			const user: User = await this.prisma.user.findUnique( {where: {id: session.userId} } );
+		
+			await this.prisma.user.update({ where: { username: user.username }, data: { TFA: !user.TFA} });
+			
+			let tfa_message: string
+			if (user.TFA === true) {
+				tfa_message = "Two Factor Authentication disabled";
+			} else {
+				tfa_message = "Two Factor Authentication enabled";
+			}
+			
+      return { status: HttpStatus.OK, message: tfa_message};
+		} catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
 		}
 	}
 }
