@@ -28,6 +28,7 @@
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/platform-socket.io": "^9.4.0",
     "@prisma/client": "^4.12.0",
+    "@sendinblue/client": "^3.3.1",
     "@types/jsonwebtoken": "^9.0.1",
     "@types/multer": "^1.4.7",
     "argon2": "0.30.3",
@@ -50,6 +51,7 @@
     "prisma": "^4.12.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0",
+    "sib-api-v3-sdk": "^8.5.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

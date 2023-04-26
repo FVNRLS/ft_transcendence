@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 10:06:07 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 10:33:37 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ export class AuthService {
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<ApiResponse> {
     try {
       await this.securityService.validateToken(dto);
-      await this.securityService.verifyCredentials(dto);
+      await this.securityService.validateCredentials(dto);
       
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
       await this.prisma.user.create({
@@ -70,7 +70,6 @@ export class AuthService {
 
   async signin(dto: AuthDto): Promise<ApiResponse> {
     try {
-      await this.securityService.verifyCredentials(dto);
       const user: User = await this.securityService.getVerifiedUserData(dto);
       
       const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id } });

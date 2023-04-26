@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/25 19:30:51 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 10:31:10 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,13 +32,31 @@ export class SecurityService {
 		private jwtService: JwtService,
 	) {}
 
-	async verifyCredentials(dto: AuthDto): Promise<void> {
-		if (!dto.username)
+	public validateCredentials(dto: AuthDto): void {
+		if (!dto.username) {
 			throw new HttpException('Username is required!', HttpStatus.UNAUTHORIZED);
-		else if (!dto.password)
+		} else if (!dto.password) {
 			throw new HttpException('Password is required!', HttpStatus.UNAUTHORIZED);
+		}
+		
+		const usernameValid = this.validateUsername(dto.username);
+		if (!usernameValid) {
+			throw new HttpException('Invalid username!', HttpStatus.BAD_REQUEST);
+		}
+			
 		return ;
 	}
+
+	private validateUsername(username: string): boolean {
+    const regex = /^[a-zA-Z0-9]+$/; // Regular expression to check for alphanumeric characters
+    return regex.test(username); // Returns true if username matches the regular expression
+  }
+
+	//TODO: apply in the end!
+	private validatePassword(password: string): boolean {
+    const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
+    return regex.test(password);
+  }
 
 	async validateToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
 		try {
