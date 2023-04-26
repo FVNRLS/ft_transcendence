@@ -9,6 +9,7 @@ CREATE TABLE "users" (
     "TFAMode" BOOLEAN NOT NULL,
     "email" TEXT NOT NULL,
     "TFACode" TEXT NOT NULL,
+    "TFAExpiresAt" TEXT NOT NULL,
     "profilePicture" TEXT NOT NULL,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")

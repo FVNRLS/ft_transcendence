@@ -21,6 +21,7 @@ model User {
   TFAMode             Boolean
   email               String    @unique
   TFACode             String    @unique
+  TFAExpiresAt        String
   profilePicture      String
   sessions            Session[]
   // score               Score[]

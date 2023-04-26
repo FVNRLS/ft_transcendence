@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 13:06:27 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 15:55:56 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,6 +105,7 @@ export class SecurityService {
 					TFAMode: true,
 					email: true,
 					TFACode: true,
+					TFAExpiresAt: true,
 					createdAt: true,
 					updatedAt: true,
 					sessions: {
@@ -292,5 +293,19 @@ Return the base64-encoded encrypted session string
 	private async validateEmail(email: string): Promise<boolean> {
 		const emailRegex: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		return emailRegex.test(email);
+	}
+
+	async generateTFACode(user: User): Promise<string> {
+		try {
+			const code = Math.floor(100000 + Math.random() * 900000).toString();
+			const expiresInMinutes = 2;
+			const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000).toUTCString();
+			await this.prisma.user.update({ where: { username: user.username }, data: { TFACode: code, TFAExpiresAt: expiresAt} });
+			
+			return code;
+		} catch (error) {
+			throw error;
+		}
+
 	}
 }
