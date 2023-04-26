@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 11:30:06 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 12:13:06 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ import { AuthDto } from './dto';
 import { ApiResponse } from './dto/response.dto'
 import { Session, User } from '@prisma/client';
 import { MailService } from './mail.service';
+import { log } from 'console';
 
 @Injectable()
 
@@ -87,11 +88,11 @@ export class AuthService {
         }
       }
 
-      if (user.TFAMode) {
+      if (user.TFAMode) { 
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const mailService = new MailService();
-        await mailService.sendVerificationCode(user.email, code);    
-        
+        await mailService.sendVerificationCode(user.email, code);
+                
         return { status: HttpStatus.ACCEPTED, message: 'Please check your email and enter the provided 2FA code' };
       } else {
         const session = await this.sessionService.createSession(user);
@@ -109,6 +110,7 @@ export class AuthService {
   async signinWithTFA(dto: AuthDto) {
     try {
         const user: User = await this.securityService.getVerifiedUserData(dto);
+        
         if (dto.TFACode !== user.TFACode) {
           throw new HttpException('Invalid code.', HttpStatus.UNAUTHORIZED); 
         }
