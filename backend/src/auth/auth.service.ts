@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 17:39:26 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 18:08:14 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,7 +124,7 @@ export class AuthService {
     }
 	}
 
-  async updateProfile(@Body("cookie") cookie: string, file?: Express.Multer.File, dto?: AuthDto, email?: string): Promise<ApiResponse> {
+  async updateProfile(cookie: string, file?: Express.Multer.File, dto?: AuthDto, email?: string): Promise<ApiResponse> {
     try {
       if (email) {
         await this.securityService.setEmailAddress(cookie, email);
@@ -138,11 +138,9 @@ export class AuthService {
       const user: User = await this.prisma.user.findUnique({ where: {id: session.userId} });
       
       if (dto.password) {
-        console.log(user.hashedPasswd);
         const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
-        
-        await this.prisma.user.update({ where: { username: user.username }, data: { 
-          hashedPasswd: hashedPassword, 
+        await this.prisma.user.update({ where: { username: user.username }, data: {
+          hashedPasswd: hashedPassword,
           salt: salt
         } });
       }

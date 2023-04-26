@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 17:37:42 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 18:06:27 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,20 +50,20 @@ export class AuthController {
 		}
 	}
 
-	@Post("/logout")
-	logout(@Body("cookie") cookie: string): Promise<ApiResponse> {
+	@Post("/update_profile")
+	@UseInterceptors(FileInterceptor("file", { dest: "uploads" }))
+	updateProfile(@Body("cookie") cookie: string, @UploadedFile() file?: Express.Multer.File, @Body() dto?:AuthDto, @Body("email") email?: string): Promise<ApiResponse> {
 		try {
-			return this.authService.logout(cookie);
+			return this.authService.updateProfile(cookie, file, dto, email);
 		} catch (error) {
 			throw error;
 		}
 	}
-
-	@Post("/update_profile")
-	@UseInterceptors(FileInterceptor("file", { dest: "uploads" }))
-	updateProfile(@Body("cookie") cookie: string, @UploadedFile() file?: Express.Multer.File, @Body() dto?:AuthDto): Promise<ApiResponse> {
+	
+	@Post("/logout")
+	logout(@Body("cookie") cookie: string): Promise<ApiResponse> {
 		try {
-			return this.authService.updateProfile(cookie, file, dto);
+			return this.authService.logout(cookie);
 		} catch (error) {
 			throw error;
 		}
