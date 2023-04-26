@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 11:48:03 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 13:06:27 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,8 +21,6 @@ import axios from 'axios';
 import { AuthDto } from '../dto';
 import { ApiResponse } from '../dto/response.dto';
 import { JwtService } from '@nestjs/jwt';
-import { stat } from 'fs';
-import e from 'express';
 
 
 @Injectable()

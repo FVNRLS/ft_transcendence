@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 12:13:06 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 13:06:36 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,10 +20,9 @@ import { AuthDto } from './dto';
 import { ApiResponse } from './dto/response.dto'
 import { Session, User } from '@prisma/client';
 import { MailService } from './mail.service';
-import { log } from 'console';
+
 
 @Injectable()
-
 export class AuthService {
   constructor(
     private prisma: PrismaService,
@@ -92,6 +91,7 @@ export class AuthService {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const mailService = new MailService();
         await mailService.sendVerificationCode(user.email, code);
+        await this.prisma.user.update({ where: { username: user.username }, data: { TFACode: code } });
                 
         return { status: HttpStatus.ACCEPTED, message: 'Please check your email and enter the provided 2FA code' };
       } else {
