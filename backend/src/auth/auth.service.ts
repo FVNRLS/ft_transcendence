@@ -6,20 +6,20 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 17:32:07 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:39:26 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { SessionService } from './session.service';
-import { SecurityService } from './security/security.service';
-import { JwtService } from '@nestjs/jwt';
-import { GoogleDriveService } from './google_drive/google.drive.service';
-import { AuthDto } from './dto';
-import { ApiResponse } from './dto/response.dto'
-import { Session, User } from '@prisma/client';
-import { MailService } from './mail.service';
+import { Body, HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { SessionService } from "./session.service";
+import { SecurityService } from "./security/security.service";
+import { JwtService } from "@nestjs/jwt";
+import { GoogleDriveService } from "./google_drive/google.drive.service";
+import { AuthDto } from "./dto";
+import { ApiResponse } from "./dto/response.dto"
+import { Session, User } from "@prisma/client";
+import { MailService } from "./mail.service";
 
 
 @Injectable()
@@ -57,15 +57,15 @@ export class AuthService {
       const session = await this.sessionService.createSession(user);
       await this.googleDriveService.setFirstProfilePicture(session.cookie, file);
 
-      return { status: HttpStatus.CREATED, message: 'You signed up successfully', cookie: session.cookie };
+      return { status: HttpStatus.CREATED, message: "You signed up successfully", cookie: session.cookie };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
-      if (error.code === 'P2002') {
-				throw new HttpException('Username already exists', HttpStatus.CONFLICT);
+      if (error.code === "P2002") {
+				throw new HttpException("Username already exists", HttpStatus.CONFLICT);
       }
-			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -79,11 +79,11 @@ export class AuthService {
           const jwtToken = existingSession.jwtToken;
           this.jwtService.verify(jwtToken, { ignoreExpiration: false });
 
-					throw new HttpException('You are already signed in', HttpStatus.ACCEPTED);
+					throw new HttpException("You are already signed in", HttpStatus.ACCEPTED);
         } catch (error) {
-          if (error.name === 'TokenExpiredError') {
+          if (error.name === "TokenExpiredError") {
             await this.prisma.session.delete({ where: { id: existingSession.id } });
-            throw new HttpException('Your previous session has expired', HttpStatus.UNAUTHORIZED);
+            throw new HttpException("Your previous session has expired", HttpStatus.UNAUTHORIZED);
           }
         }
       }
@@ -93,16 +93,16 @@ export class AuthService {
         const mailService = new MailService();
         await mailService.sendVerificationCode(user.email, code);
                 
-        return { status: HttpStatus.ACCEPTED, message: 'Please check your email and enter the provided 2FA code' };
+        return { status: HttpStatus.ACCEPTED, message: "Please check your email and enter the provided 2FA code" };
       } else {
         const session = await this.sessionService.createSession(user);
-        return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };
+        return { status: HttpStatus.CREATED, message: "You signed in successfully", cookie: session.cookie };
       }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       } else {
-				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }
@@ -114,17 +114,17 @@ export class AuthService {
 
         const session = await this.sessionService.createSession(user);
         
-        return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };
+        return { status: HttpStatus.CREATED, message: "You signed in successfully", cookie: session.cookie };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       } else {
-				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
 	}
 
-  async updateProfile(@Body('cookie') cookie: string, file?: Express.Multer.File, dto?: AuthDto, email?: string): Promise<ApiResponse> {
+  async updateProfile(@Body("cookie") cookie: string, file?: Express.Multer.File, dto?: AuthDto, email?: string): Promise<ApiResponse> {
     try {
       if (email) {
         await this.securityService.setEmailAddress(cookie, email);
@@ -151,29 +151,29 @@ export class AuthService {
         await this.prisma.user.update({ where: { username: user.username }, data: { username: dto.username } });
       }
 
-      return { status: HttpStatus.OK, message: 'Profile updated successfully' };
+      return { status: HttpStatus.OK, message: "Profile updated successfully" };
     }
     catch (error) {
       if (error instanceof HttpException) {
         throw error;
       } else {
-				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }
   
-  async logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
+  async logout(@Body("cookie") cookie: string): Promise<ApiResponse> {
     try {
       const session: Session = await this.securityService.verifyCookie(cookie);
       
       await this.prisma.session.deleteMany({ where: { userId: session.userId } });
 
-      return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
+      return { status: HttpStatus.OK, message: "You have been logged out successfully." };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       } else {
-				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }

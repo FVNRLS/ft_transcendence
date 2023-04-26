@@ -1,6 +1,6 @@
-import { WebSocketGateway, WebSocketServer} from '@nestjs/websockets'
-import { Server, Socket } from 'socket.io';
-import { v4 as uuidv4 } from 'uuid';
+import { WebSocketGateway, WebSocketServer} from "@nestjs/websockets"
+import { Server, Socket } from "socket.io";
+import { v4 as uuidv4 } from "uuid";
 
 interface Player {
 	id: string;
@@ -35,7 +35,7 @@ export class GameGateway {
 		rightPaddleY: 720 / 2 - 125,
 		scoreLeft: 0,
 		scoreRight: 0,
-		bgColor: 'linear-gradient(315deg, rgba(60,132,206,1) 38%, rgba(255,25,25,1) 98%)',
+		bgColor: "linear-gradient(315deg, rgba(60,132,206,1) 38%, rgba(255,25,25,1) 98%)",
 		invisibility: false,
 		ready: false
 	};
@@ -62,7 +62,7 @@ export class GameGateway {
 		// 	client.join(this.roomId);
 		// }
 
-		client.on('move', (state: initialState) => {
+		client.on("move", (state: initialState) => {
 			if (this.player1 && client.id == this.player1.id) {
 				this.gameState.leftPaddleY = state.cursorY;
 				if (state.ready == true)
@@ -87,7 +87,7 @@ export class GameGateway {
 				this.gameState.bgColor = state.bgColor;
 				this.gameState.invisibility = state.invisibility;
 			}
-			this.server.to(this.roomId).emit('updateState', this.gameState);
+			this.server.to(this.roomId).emit("updateState", this.gameState);
 		});
 	}
 

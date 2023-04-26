@@ -6,15 +6,15 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 17:01:14 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:37:42 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, Controller, Post, UploadedFile, UseInterceptors} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { AuthService } from './auth.service'
-import { AuthDto } from './dto';
-import { ApiResponse } from './dto/response.dto';
+import { Body, Controller, Post, UploadedFile, UseInterceptors} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { AuthService } from "./auth.service"
+import { AuthDto } from "./dto";
+import { ApiResponse } from "./dto/response.dto";
 
 @Controller("/auth")
 export class AuthController {
@@ -23,7 +23,7 @@ export class AuthController {
 		) {}
 
 	@Post("/signup")
-	@UseInterceptors(FileInterceptor('file', { dest: "uploads" }))
+	@UseInterceptors(FileInterceptor("file", { dest: "uploads" }))
 	async signup(@Body() dto: AuthDto, @UploadedFile() file?: Express.Multer.File): Promise<ApiResponse> {
 		try {
 			return this.authService.signup(dto, file);
@@ -51,7 +51,7 @@ export class AuthController {
 	}
 
 	@Post("/logout")
-	logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
+	logout(@Body("cookie") cookie: string): Promise<ApiResponse> {
 		try {
 			return this.authService.logout(cookie);
 		} catch (error) {
@@ -60,7 +60,7 @@ export class AuthController {
 	}
 
 	@Post("/update_profile")
-	@UseInterceptors(FileInterceptor('file', { dest: "uploads" }))
+	@UseInterceptors(FileInterceptor("file", { dest: "uploads" }))
 	updateProfile(@Body("cookie") cookie: string, @UploadedFile() file?: Express.Multer.File, @Body() dto?:AuthDto): Promise<ApiResponse> {
 		try {
 			return this.authService.updateProfile(cookie, file, dto);

@@ -6,12 +6,12 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/26 12:37:34 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 16:16:25 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:38:48 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Injectable } from '@nestjs/common';
-import axios from 'axios';
+import { Injectable } from "@nestjs/common";
+import axios from "axios";
 
 @Injectable()
 export class MailService {
@@ -23,18 +23,18 @@ export class MailService {
 		try {
 			const data = {
 				sender: {
-					name: 'Estonian Hedgehogs',
+					name: "Estonian Hedgehogs",
 					email: this.senderEmail,
 				},
 				to: [ { email: email } ],
-				subject: 'Verification Code',
+				subject: "Verification Code",
 				htmlContent: `<html><head></head><body><p>Hello,</p>Your verification code: ${code}</p></body></html>`,
 			};
 	
 			const headers = {
-				'Accept': 'application/json',
-				'api-key': this.apiKey,
-				'Content-Type': 'application/json',
+				"Accept": "application/json",
+				"api-key": this.apiKey,
+				"Content-Type": "application/json",
 			};
 	
 			await axios.post(this.apiUrl, data, { headers });

@@ -6,13 +6,13 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:57:42 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 13:57:45 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:40:00 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { PrismaClient } from '@prisma/client';
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { PrismaClient } from "@prisma/client";
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class PrismaService
@@ -20,7 +20,7 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor(config: ConfigService) {
-    const url = config.get<string>('DATABASE_URL');
+    const url = config.get<string>("DATABASE_URL");
 
     super({
       datasources: {
@@ -40,7 +40,7 @@ export class PrismaService
   }
 
   async cleanDatabase() {
-    if (process.env.NODE_ENV === 'production') return;
+    if (process.env.NODE_ENV === "production") return;
 
     // teardown logic
     return Promise.all([this.user.deleteMany()]);

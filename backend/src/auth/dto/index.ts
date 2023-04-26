@@ -6,8 +6,8 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:57:18 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 13:57:20 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:38:57 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-export * from './auth.dto'
+export * from "./auth.dto"

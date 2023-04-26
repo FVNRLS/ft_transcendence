@@ -6,16 +6,16 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:56:24 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/24 13:56:26 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:39:56 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from './prisma/prisma.module';
-import { AppController } from './app.controller';
-import { AuthModule } from './auth/auth.module';
-import { GameGateway } from './game/game.gateway';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { PrismaModule } from "./prisma/prisma.module";
+import { AppController } from "./app.controller";
+import { AuthModule } from "./auth/auth.module";
+import { GameGateway } from "./game/game.gateway";
 
 @Module({
     imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, PrismaModule],

@@ -6,16 +6,16 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:37 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/25 17:02:46 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:38:55 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { SecurityService } from './security/security.service';
-import { JwtService } from '@nestjs/jwt';
-import * as argon2 from 'argon2';
-import { Session, User } from '@prisma/client';
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { SecurityService } from "./security/security.service";
+import { JwtService } from "@nestjs/jwt";
+import * as argon2 from "argon2";
+import { Session, User } from "@prisma/client";
 
 @Injectable()
 export class SessionService {
@@ -34,9 +34,9 @@ export class SessionService {
 			const encryptedCookie = await this.securityService.encryptCookie(hashedCookie);
 			await this.pushSessionToDatabase(user, jwt_token, hashedCookie, serializedCookie);
 			
-			return { status: HttpStatus.CREATED, message: 'Login successful', cookie: encryptedCookie };
+			return { status: HttpStatus.CREATED, message: "Login successful", cookie: encryptedCookie };
 		} catch (error) {
-			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	} 
 	
@@ -48,7 +48,7 @@ export class SessionService {
 
 			return databaseEntry;
 		} catch (error) {
-			throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+			throw new HttpException("Invalid credentials", HttpStatus.UNAUTHORIZED);
 		}
 	}
 
@@ -69,7 +69,7 @@ export class SessionService {
 			});
 			return session;
 		} catch (error) {
-			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 }

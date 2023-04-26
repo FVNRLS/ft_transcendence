@@ -6,11 +6,11 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:57:26 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 12:01:45 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:38:57 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class AuthDto {
   @IsNotEmpty()
