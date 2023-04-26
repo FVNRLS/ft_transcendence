@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/25 17:39:03 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 10:06:07 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,8 +46,9 @@ export class AuthService {
           hashedPasswd: hashedPassword,
           salt: salt,
           profilePicture: "",
-          TFA: false,
+          TFAMode: false,
           email: "",
+          TFACode: "",          
         },
       })
 
@@ -71,6 +72,7 @@ export class AuthService {
     try {
       await this.securityService.verifyCredentials(dto);
       const user: User = await this.securityService.getVerifiedUserData(dto);
+      
       const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id } });
       if (existingSession) {
         try {
@@ -86,8 +88,16 @@ export class AuthService {
         }
       }
 
-			const session = await this.sessionService.createSession(user);
-			return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };
+      if (user.TFAMode) {
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        
+        
+        return { status: HttpStatus.ACCEPTED, message: 'Two Factor Authentication in progress' };
+      } else {
+        const session = await this.sessionService.createSession(user);
+        return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -95,16 +105,19 @@ export class AuthService {
 				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
-
   }
 
-  async logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
+  async signinWithTFA(dto: AuthDto) {
     try {
-      const session: Session = await this.securityService.verifyCookie(cookie);
-      
-      await this.prisma.session.deleteMany({ where: { userId: session.userId } });
-
-      return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
+        const user: User = await this.securityService.getVerifiedUserData(dto);
+        if (dto.TFACode !== user.TFACode) {
+          throw new HttpException('Invalid code.', HttpStatus.UNAUTHORIZED); 
+        }
+        
+        await this.prisma.user.update({ where: { username: user.username }, data: { TFACode: "" } });
+        const session = await this.sessionService.createSession(user);
+        
+        return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -112,10 +125,14 @@ export class AuthService {
 				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
-  }
+	}
 
-	async updateProfile(@Body('cookie') cookie: string, file?: Express.Multer.File, dto?: AuthDto): Promise<ApiResponse> {
-    try {   
+  async updateProfile(@Body('cookie') cookie: string, file?: Express.Multer.File, dto?: AuthDto, email?: string): Promise<ApiResponse> {
+    try {
+      if (email) {
+        await this.securityService.setEmailAddress(cookie, email);
+      }
+      
       if (file) {
         await this.googleDriveService.uploadProfilePicture(cookie, file);
       }
@@ -136,10 +153,26 @@ export class AuthService {
       if (dto.username) {
         await this.prisma.user.update({ where: { username: user.username }, data: { username: dto.username } });
       }
-      
+
       return { status: HttpStatus.OK, message: 'Profile updated successfully' };
     }
     catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+  
+  async logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
+    try {
+      const session: Session = await this.securityService.verifyCookie(cookie);
+      
+      await this.prisma.session.deleteMany({ where: { userId: session.userId } });
+
+      return { status: HttpStatus.OK, message: 'You have been logged out successfully.' };
+    } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       } else {

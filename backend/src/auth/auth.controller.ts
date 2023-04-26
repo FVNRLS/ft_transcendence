@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/25 17:02:35 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/25 19:20:05 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,15 @@ export class AuthController {
 			return this.authService.signin(dto);
 		} catch(error) {
 			throw error;
+		}
+	}
+
+	@Post('login_tfa')
+	async signinWithTFA(@Body() dto: AuthDto): Promise<ApiResponse> {
+		try {
+			return this.signinWithTFA(dto);
+		} catch (error) {
+			return error;
 		}
 	}
 

@@ -18,8 +18,9 @@ model User {
   username            String    @unique
   hashedPasswd        String
   salt                String
-  TFA                 Boolean
-  email               String
+  TFAMode             Boolean
+  email               String    @unique
+  TFACode             String    @unique
   profilePicture      String
   sessions            Session[]
   // score               Score[]

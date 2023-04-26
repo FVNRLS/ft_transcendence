@@ -6,8 +6,9 @@ CREATE TABLE "users" (
     "username" TEXT NOT NULL,
     "hashedPasswd" TEXT NOT NULL,
     "salt" TEXT NOT NULL,
-    "TFA" BOOLEAN NOT NULL,
+    "TFAMode" BOOLEAN NOT NULL,
     "email" TEXT NOT NULL,
+    "TFACode" TEXT NOT NULL,
     "profilePicture" TEXT NOT NULL,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
@@ -29,6 +30,12 @@ CREATE TABLE "sessions" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_TFACode_key" ON "users"("TFACode");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "sessions_jwtToken_key" ON "sessions"("jwtToken");

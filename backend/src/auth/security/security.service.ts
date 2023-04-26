@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/25 17:38:39 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/25 19:30:51 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ import { AuthDto } from '../dto';
 import { ApiResponse } from '../dto/response.dto';
 import { JwtService } from '@nestjs/jwt';
 import { stat } from 'fs';
+import e from 'express';
 
 
 @Injectable()
@@ -77,7 +78,6 @@ export class SecurityService {
 
 	async getVerifiedUserData(dto: AuthDto): Promise<User> {
 		try {
-			
 			const user: User = await this.prisma.user.findUnique({
 				where: { username: dto.username },
 				select: { 
@@ -86,8 +86,9 @@ export class SecurityService {
 					hashedPasswd: true,
 					salt: true,
 					profilePicture: true,
-					TFA: true,
+					TFAMode: true,
 					email: true,
+					TFACode: true,
 					createdAt: true,
 					updatedAt: true,
 					sessions: {
@@ -103,13 +104,18 @@ export class SecurityService {
 					}
 				},
 			});
-			console.log(dto.username);
+			if (!user) {
+				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+			}
 
-			await argon2.verify(user.hashedPasswd, dto.password);
+			const passwordValid = await argon2.verify(user.hashedPasswd, dto.password);
+			if (!passwordValid) {
+				throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+			}
 
 			return user;
 		} catch (error) {
-			throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+			throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -224,12 +230,15 @@ Return the base64-encoded encrypted session string
 			const session: Session = await this.verifyCookie(encryptedCookie);
 			const user: User = await this.prisma.user.findUnique( {where: {id: session.userId} } );
 		
-			await this.prisma.user.update({ where: { username: user.username }, data: { TFA: !user.TFA} });
+			await this.prisma.user.update({ where: { username: user.username }, data: { TFAMode: !user.TFAMode} });
 			
 			let tfa_message: string
-			if (user.TFA === true) {
+			if (user.TFAMode === true) {
 				tfa_message = "Two Factor Authentication disabled";
 			} else {
+				if (!user.email) {
+					return { status: HttpStatus.ACCEPTED, message: "Please provide your email address"};
+				}
 				tfa_message = "Two Factor Authentication enabled";
 			}
 			
@@ -241,5 +250,31 @@ Return the base64-encoded encrypted session string
 				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
       }
 		}
+	}
+
+	async setEmailAddress(encryptedCookie: string, newEmail: string): Promise<ApiResponse> {
+		try {
+			const session: Session = await this.verifyCookie(encryptedCookie);
+			const user: User = await this.prisma.user.findUnique( {where: {id: session.userId} } );
+			
+			const emailValid = await this.verifyEmail(newEmail);
+			if (!emailValid) {
+				throw new HttpException('Invalid email address', HttpStatus.BAD_REQUEST);
+			}
+			await this.prisma.user.update({ where: { username: user.username }, data: { email: newEmail } });
+			
+			return { status: HttpStatus.ACCEPTED, message: "Please provide your email address"};
+		} catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException('Ooops...Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+	}
+
+	private async verifyEmail(email: string): Promise<boolean> {
+		const emailRegex: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return emailRegex.test(email);
 	}
 }
