@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 15:59:46 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:32:07 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,12 +110,8 @@ export class AuthService {
   async signinWithTFA(dto: AuthDto) {
     try {
         const user: User = await this.securityService.getVerifiedUserData(dto);
-        
-        if (user && user.TFACode !== dto.TFACode && new Date().toUTCString() < user.TFAExpiresAt) {
-          throw new HttpException('Invalid code.', HttpStatus.UNAUTHORIZED); 
-        }
-        
-        await this.prisma.user.update({ where: { username: user.username }, data: { TFACode: "", TFAExpiresAt: "" } });
+        await this.securityService.validateTFACode(user, dto);        
+
         const session = await this.sessionService.createSession(user);
         
         return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };

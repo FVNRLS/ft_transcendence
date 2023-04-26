@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/25 19:20:05 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:01:14 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,14 +16,14 @@ import { AuthService } from './auth.service'
 import { AuthDto } from './dto';
 import { ApiResponse } from './dto/response.dto';
 
-@Controller('/auth')
+@Controller("/auth")
 export class AuthController {
 	constructor(
 		private authService: AuthService,
 		) {}
 
-	@Post('/signup')
-	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
+	@Post("/signup")
+	@UseInterceptors(FileInterceptor('file', { dest: "uploads" }))
 	async signup(@Body() dto: AuthDto, @UploadedFile() file?: Express.Multer.File): Promise<ApiResponse> {
 		try {
 			return this.authService.signup(dto, file);
@@ -32,7 +32,7 @@ export class AuthController {
 		}
 	}
 
-	@Post('/login')
+	@Post("/login")
 	signin(@Body() dto: AuthDto): Promise<ApiResponse> {
 		try {
 			return this.authService.signin(dto);
@@ -41,16 +41,16 @@ export class AuthController {
 		}
 	}
 
-	@Post('login_tfa')
+	@Post("/login_tfa")
 	async signinWithTFA(@Body() dto: AuthDto): Promise<ApiResponse> {
 		try {
-			return this.signinWithTFA(dto);
+			return await this.authService.signinWithTFA(dto);
 		} catch (error) {
 			return error;
 		}
 	}
 
-	@Post('/logout')
+	@Post("/logout")
 	logout(@Body('cookie') cookie: string): Promise<ApiResponse> {
 		try {
 			return this.authService.logout(cookie);
@@ -59,9 +59,9 @@ export class AuthController {
 		}
 	}
 
-	@Post('/update_profile')
-	@UseInterceptors(FileInterceptor('file', { dest: 'uploads' }))
-	updateProfile(@Body('cookie') cookie: string, @UploadedFile() file?: Express.Multer.File, @Body() dto?:AuthDto): Promise<ApiResponse> {
+	@Post("/update_profile")
+	@UseInterceptors(FileInterceptor('file', { dest: "uploads" }))
+	updateProfile(@Body("cookie") cookie: string, @UploadedFile() file?: Express.Multer.File, @Body() dto?:AuthDto): Promise<ApiResponse> {
 		try {
 			return this.authService.updateProfile(cookie, file, dto);
 		} catch (error) {

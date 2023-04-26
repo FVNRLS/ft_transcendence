@@ -25,18 +25,19 @@ model User {
   profilePicture      String
   sessions            Session[]
   // score               Score[]
-  // messages            Messages[]
+  // messages            Message[]
+  // rooms               Room[]
 
   @@map("users")
 }
 
 model Session {
   id                  Int      @id @default(autoincrement())
+  userId              Int
   user                User     @relation(fields: [userId], references: [id])
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   expiresAt           DateTime
-  userId              Int
   jwtToken            String   @unique
   serializedCookie    String   @unique
   hashedCookie        String   @unique
@@ -56,7 +57,7 @@ model Session {
 //  @@map("score")
 // }
 
-// model Messages {
+// model Message {
 //   id                    Int   @id @default(autoincrement())
 //   roomId                Int ---> get it from chat websocket!
 //   createdAt             DateTime @default(now())
@@ -64,4 +65,11 @@ model Session {
 //   userId                Int
 //   user                  User  @relation(fields: [user_id], references: [id])
 //   @@map("messages")
+// }
+
+// model Room {          
+//   id                    Int     @id @default(autoincrement())
+//   userId                Int
+//   user                  User    @relation(fields: [userId], references: [id])
+//   @@map("rooms")
 // }

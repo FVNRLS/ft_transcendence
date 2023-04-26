@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 15:55:56 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 17:02:13 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -306,6 +306,23 @@ Return the base64-encoded encrypted session string
 		} catch (error) {
 			throw error;
 		}
+
+	}
+	
+	async validateTFACode(user: User, dto: AuthDto): Promise<void> {
+		try {
+			if (user.TFACode !== dto.TFACode) {
+				throw new HttpException('Invalid code.', HttpStatus.UNAUTHORIZED);
+			}
+			
+			const currentTime = new Date().toUTCString();
+			if (currentTime > user.TFAExpiresAt) {
+				throw new HttpException('Code expired.', HttpStatus.UNAUTHORIZED);
+			}
+		} catch (error) {
+			throw error;
+		}
+	
 
 	}
 }

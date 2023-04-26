@@ -6,11 +6,11 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/26 12:37:34 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 15:35:04 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 16:16:25 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
 @Injectable()
@@ -37,15 +37,9 @@ export class MailService {
 				'Content-Type': 'application/json',
 			};
 	
-			const response = await axios.post(this.apiUrl, data, { headers });
-			console.log(response.data);
+			await axios.post(this.apiUrl, data, { headers });
 		} catch (error) {
-			if (error instanceof HttpException) {
 				throw error;
-			} else {
-				console.log(error);
-				throw new HttpException( 'Oops... Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR );
-			}
 		}
 	}
 }
