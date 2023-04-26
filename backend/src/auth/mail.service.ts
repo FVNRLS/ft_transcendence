@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/26 12:37:34 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 17:38:48 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 20:00:47 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,13 +22,13 @@ export class MailService {
   async sendVerificationCode(email: string, code: string): Promise<void> {
 		try {
 			const data = {
+				templateId: 9,
 				sender: {
 					name: "Estonian Hedgehogs",
 					email: this.senderEmail,
 				},
 				to: [ { email: email } ],
-				subject: "Verification Code",
-				htmlContent: `<html><head></head><body><p>Hello,</p>Your verification code: ${code}</p></body></html>`,
+				params: { verification_code: code },
 			};
 	
 			const headers = {
@@ -36,6 +36,8 @@ export class MailService {
 				"api-key": this.apiKey,
 				"Content-Type": "application/json",
 			};
+	
+			const params = { "verification_code": code };
 	
 			await axios.post(this.apiUrl, data, { headers });
 		} catch (error) {

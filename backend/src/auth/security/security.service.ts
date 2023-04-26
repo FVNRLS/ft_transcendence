@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 18:04:30 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 19:25:16 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -274,7 +274,6 @@ Return the base64-encoded encrypted session string
 			const session: Session = await this.verifyCookie(encryptedCookie);
 			const user: User = await this.prisma.user.findUnique( {where: {id: session.userId} } );
 			
-			console.log(newEmail);
 			const emailValid = await this.validateEmail(newEmail);
 			if (!emailValid) {
 				throw new HttpException("Invalid email address", HttpStatus.BAD_REQUEST);
@@ -283,7 +282,6 @@ Return the base64-encoded encrypted session string
 			
 			return { status: HttpStatus.OK, message: "Thank you! Your email address is now verified and ready for Two-Factor Authentication." };
 		} catch (error) {
-			console.log(error);
 			if (error instanceof HttpException) {
 				throw error;
 			} else {
