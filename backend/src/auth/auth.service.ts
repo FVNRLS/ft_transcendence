@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 10:33:37 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/26 11:30:06 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ import { GoogleDriveService } from './google_drive/google.drive.service';
 import { AuthDto } from './dto';
 import { ApiResponse } from './dto/response.dto'
 import { Session, User } from '@prisma/client';
-import { hash } from 'argon2';
+import { MailService } from './mail.service';
 
 @Injectable()
 
@@ -89,10 +89,10 @@ export class AuthService {
 
       if (user.TFAMode) {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const mailService = new MailService();
+        await mailService.sendVerificationCode(user.email, code);    
         
-        
-        
-        return { status: HttpStatus.ACCEPTED, message: 'Two Factor Authentication in progress' };
+        return { status: HttpStatus.ACCEPTED, message: 'Please check your email and enter the provided 2FA code' };
       } else {
         const session = await this.sessionService.createSession(user);
         return { status: HttpStatus.CREATED, message: 'You signed in successfully', cookie: session.cookie };
