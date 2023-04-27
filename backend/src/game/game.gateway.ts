@@ -1,3 +1,4 @@
+import { Injectable } from "@nestjs/common";
 import { WebSocketGateway, WebSocketServer} from "@nestjs/websockets"
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
@@ -19,13 +20,14 @@ interface initialState {
 	ready: boolean
 }
 
+@Injectable()
 @WebSocketGateway(5005, { cors: "*" })
 export class GameGateway {
 	@WebSocketServer()
 	server: Server;
 
 	private player1: Player;
-  	private player2: Player;
+  private player2: Player;
 	
 	private gameState = {
 		ball: { x:(1280 / 2 - 15), y: (720 / 2) - 15},
@@ -42,7 +44,7 @@ export class GameGateway {
 
 	private roomId = uuidv4();
 
-	handleConnection(client: Socket) {
+	async handleConnection(client: Socket) {
 		client.join(this.roomId);
 
 		if (!this.player1) {
@@ -91,7 +93,7 @@ export class GameGateway {
 		});
 	}
 
-	handleDisconnect(client: Socket) {
+	async handleDisconnect(client: Socket) {
 		if (this.player1 && this.player1.id === client.id) {
 		  this.player1 = null;
 		}
