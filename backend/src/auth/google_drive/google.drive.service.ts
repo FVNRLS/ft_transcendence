@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 17:39:21 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/27 14:35:57 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,7 +69,7 @@ export class GoogleDriveService {
       const user = await this.prisma.user.findFirst({ where: { id: existingSession.userId } });  
       const fileId = user.profilePicture;
       await drive.files.delete({ fileId: fileId });
-
+      await this.prisma.user.update({where: { id: user.id }, data: { profilePicture: "" } });
 
       return { status: HttpStatus.OK, message: "Profile picture deleted successfully" };
     } catch (error) {
