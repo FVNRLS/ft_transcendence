@@ -6,20 +6,20 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/26 19:25:16 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/27 14:48:25 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import * as argon2 from "argon2";
 import { randomBytes, createCipheriv, createDecipheriv, scrypt } from "crypto";
 import { promisify } from "util";
 import { Session, User } from "@prisma/client";
 import { serialize } from "cookie";
 import axios from "axios";
-import { AuthDto } from "../dto";
-import { ApiResponse } from "../dto/response.dto";
+import { AuthDto } from "../auth/dto";
+import { ApiResponse } from "../auth/dto/response.dto";
 import { JwtService } from "@nestjs/jwt";
 
 

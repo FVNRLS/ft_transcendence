@@ -1,5 +1,5 @@
 import { Body, Controller, Post } from "@nestjs/common";
-import { ApiResponse } from "../dto/response.dto";
+import { ApiResponse } from "../auth/dto/response.dto";
 import { SecurityService } from "./security.service";
 
 @Controller("/security")
