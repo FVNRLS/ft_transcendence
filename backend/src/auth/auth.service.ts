@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 14:48:25 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/27 17:37:20 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ import { SecurityService } from "../security/security.service";
 import { JwtService } from "@nestjs/jwt";
 import { GoogleDriveService } from "./google_drive/google.drive.service";
 import { AuthDto } from "./dto";
-import { ApiResponse } from "./dto/response.dto"
+import { AuthResponse } from "./dto/response.dto"
 import { Session, User } from "@prisma/client";
 import { MailService } from "./mail.service";
 
@@ -34,7 +34,7 @@ export class AuthService {
 
   //CONTROLLER FUNCTIONS
   //TODO: protect versus sql injections!
-  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<ApiResponse> {
+  async signup(dto: AuthDto, file?: Express.Multer.File): Promise<AuthResponse> {
     try {
       await this.securityService.validateToken(dto);
       await this.securityService.validateCredentials(dto);
@@ -69,7 +69,7 @@ export class AuthService {
     }
   }
 
-  async signin(dto: AuthDto): Promise<ApiResponse> {
+  async signin(dto: AuthDto): Promise<AuthResponse> {
     try {
       const user: User = await this.securityService.getVerifiedUserData(dto);
       
@@ -124,7 +124,7 @@ export class AuthService {
     }
 	}
 
-  async updateProfile(cookie: string, file?: Express.Multer.File, dto?: AuthDto, email?: string): Promise<ApiResponse> {
+  async updateProfile(cookie: string, file?: Express.Multer.File, dto?: AuthDto, email?: string): Promise<AuthResponse> {
     try {
       if (email) {
         await this.securityService.setEmailAddress(cookie, email);
@@ -160,7 +160,7 @@ export class AuthService {
     }
   }
   
-  async logout(@Body("cookie") cookie: string): Promise<ApiResponse> {
+  async logout(@Body("cookie") cookie: string): Promise<AuthResponse> {
     try {
       const session: Session = await this.securityService.verifyCookie(cookie);
       

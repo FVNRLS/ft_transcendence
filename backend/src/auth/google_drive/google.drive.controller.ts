@@ -6,13 +6,13 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:42 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 14:50:22 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/27 17:37:20 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Body, Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { ApiResponse, FileResponse } from "../dto/response.dto";
+import { AuthResponse, FileResponse } from "../dto/response.dto";
 import { GoogleDriveService } from "./google.drive.service";
 
 @Controller("/storage")
@@ -23,7 +23,7 @@ export class GoogleDriveController {
 	
 	@Post("/upload")
 	@UseInterceptors(FileInterceptor("file", { dest: "uploads" }))
-	async uploadProfilePicture(@Body("cookie") cookie: string, @UploadedFile() file: Express.Multer.File): Promise<ApiResponse> {
+	async uploadProfilePicture(@Body("cookie") cookie: string, @UploadedFile() file: Express.Multer.File): Promise<AuthResponse> {
 		try {
 			return this.googleDriveService.uploadProfilePicture(cookie, file);
 		} catch (error) {
@@ -32,7 +32,7 @@ export class GoogleDriveController {
 	}
 
 	@Post("/delete")
-	async deleteProfilePicture(@Body("cookie") cookie: string): Promise<ApiResponse> {
+	async deleteProfilePicture(@Body("cookie") cookie: string): Promise<AuthResponse> {
 		try {
 			return this.googleDriveService.deleteProfilePicture(cookie);
 		} catch (error) {

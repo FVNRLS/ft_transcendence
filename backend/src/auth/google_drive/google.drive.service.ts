@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 14:48:25 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/27 17:37:20 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@ import { SecurityService } from "../../security/security.service";
 import * as fs from "fs";
 import { Session, User } from "@prisma/client";
 import axios from "axios";
-import { ApiResponse, FileResponse } from "../dto/response.dto";
+import { AuthResponse, FileResponse } from "../dto/response.dto";
 import { SessionService } from "../session.service";
 
 
@@ -29,7 +29,7 @@ export class GoogleDriveService {
 	) {}
 
   //ENDPOINT FUNCTIONS
-  async uploadProfilePicture(cookie: string, @UploadedFile() file: Express.Multer.File): Promise<ApiResponse> {
+  async uploadProfilePicture(cookie: string, @UploadedFile() file: Express.Multer.File): Promise<AuthResponse> {
     if (!file) {
       throw new HttpException("File is required", HttpStatus.BAD_REQUEST);
     }
@@ -62,7 +62,7 @@ export class GoogleDriveService {
     }
   }
 
-  async deleteProfilePicture(@Body("cookie") cookie: string): Promise<ApiResponse> {
+  async deleteProfilePicture(@Body("cookie") cookie: string): Promise<AuthResponse> {
     try {
       const existingSession: Session = await this.securityService.verifyCookie(cookie);
 

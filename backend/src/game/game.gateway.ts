@@ -3,10 +3,16 @@ import { WebSocketGateway, WebSocketServer} from "@nestjs/websockets"
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import { InitialState, Player } from "./dto/init.params";
+import { GameService } from "./game.service";
 
 @Injectable()
 @WebSocketGateway(5005, { cors: "*" })
 export class GameGateway {
+	constructor(
+		private gameService: GameService,
+	) {}
+
+		
 	@WebSocketServer()
 	server: Server;
 

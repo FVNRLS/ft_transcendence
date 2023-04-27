@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 14:48:25 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/27 17:37:20 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ import { Session, User } from "@prisma/client";
 import { serialize } from "cookie";
 import axios from "axios";
 import { AuthDto } from "../auth/dto";
-import { ApiResponse } from "../auth/dto/response.dto";
+import { AuthResponse } from "../auth/dto/response.dto";
 import { JwtService } from "@nestjs/jwt";
 
 
@@ -242,7 +242,7 @@ Return the base64-encoded encrypted session string
 		}
 	}
 
-	async changeTFA(encryptedCookie: string): Promise<ApiResponse> {
+	async changeTFA(encryptedCookie: string): Promise<AuthResponse> {
 		try {
 			const session: Session = await this.verifyCookie(encryptedCookie);
 			const user: User = await this.prisma.user.findUnique( {where: {id: session.userId} } );
@@ -269,7 +269,7 @@ Return the base64-encoded encrypted session string
 		}
 	}
 
-	async setEmailAddress(encryptedCookie: string, newEmail: string): Promise<ApiResponse> {
+	async setEmailAddress(encryptedCookie: string, newEmail: string): Promise<AuthResponse> {
 		try {
 			const session: Session = await this.verifyCookie(encryptedCookie);
 			const user: User = await this.prisma.user.findUnique( {where: {id: session.userId} } );

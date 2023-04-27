@@ -46,14 +46,14 @@ model Session {
 }
 
 model Score {
-   id                 Int         @id @default(autoincrement())
-   userId             Int
-   user               User        @relation(fields: [userId], references: [id])
-   gameTime           DateTime    @default(now())
-   wins               Int
-   losses             Int
-   totalMatches       Int
-   rating             Int
+  id                 Int         @id @default(autoincrement())
+  userId             Int
+  user               User        @relation(fields: [userId], references: [id])
+  gameTime           DateTime    @default(now())
+  wins               Int
+  losses             Int
+  totalMatches       Int
+  rating             Int
    
  @@map("scores")
 }
