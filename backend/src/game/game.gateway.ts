@@ -2,23 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { WebSocketGateway, WebSocketServer} from "@nestjs/websockets"
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
-
-interface Player {
-	id: string;
-	ready: boolean;
-}
-
-interface initialState {
-	ball: { x: number, y: number },
-	ballAngle: number,
-	ballSpeed: number,
-	cursorY: number,
-	scoreLeft: number,
-	scoreRight: number,
-	bgColor: string,
-	invisibility: boolean,
-	ready: boolean
-}
+import { InitialState, Player } from "./dto/init.params";
 
 @Injectable()
 @WebSocketGateway(5005, { cors: "*" })
@@ -64,7 +48,7 @@ export class GameGateway {
 		// 	client.join(this.roomId);
 		// }
 
-		client.on("move", (state: initialState) => {
+		client.on("move", (state: InitialState) => {
 			if (this.player1 && client.id == this.player1.id) {
 				this.gameState.leftPaddleY = state.cursorY;
 				if (state.ready == true)
