@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 14:35:57 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/04/27 14:42:08 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,8 +42,10 @@ export class GoogleDriveService {
     try {
       const existingSession: Session = await this.securityService.verifyCookie(cookie);
       const user = await this.prisma.user.findFirst({ where: { id: existingSession.userId } });
-      if (user.profilePicture)
+      
+      if (user.profilePicture){
         await this.deleteProfilePicture(cookie);
+      }
       
       const drive = await this.getGoogleDriveClient();
       const response = await this.uploadFileToGoogleDrive(file, drive);
