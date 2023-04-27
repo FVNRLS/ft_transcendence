@@ -18,15 +18,28 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "sessions" (
     "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
-    "userId" INTEGER NOT NULL,
     "jwtToken" TEXT NOT NULL,
     "serializedCookie" TEXT NOT NULL,
     "hashedCookie" TEXT NOT NULL,
 
     CONSTRAINT "sessions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "scores" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "gameTime" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "wins" INTEGER NOT NULL,
+    "losses" INTEGER NOT NULL,
+    "totalMatches" INTEGER NOT NULL,
+    "rating" INTEGER NOT NULL,
+
+    CONSTRAINT "scores_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -49,3 +62,6 @@ CREATE UNIQUE INDEX "sessions_hashedCookie_key" ON "sessions"("hashedCookie");
 
 -- AddForeignKey
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "scores" ADD CONSTRAINT "scores_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

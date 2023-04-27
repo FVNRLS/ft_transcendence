@@ -12,19 +12,19 @@ datasource db {
 }
 
 model User {
-  id                  Int       @id @default(autoincrement())
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  username            String    @unique
+  id                  Int         @id @default(autoincrement())
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  username            String      @unique
   hashedPasswd        String
   salt                String
   TFAMode             Boolean
-  email               String    @unique
-  TFACode             String    @unique
+  email               String      @unique
+  TFACode             String      @unique
   TFAExpiresAt        String
   profilePicture      String
   sessions            Session[]
-  // score               Score[]
+  scores              Score[]
   // messages            Message[]
   // rooms               Room[]
 
@@ -32,30 +32,31 @@ model User {
 }
 
 model Session {
-  id                  Int      @id @default(autoincrement())
+  id                  Int         @id @default(autoincrement())
   userId              Int
-  user                User     @relation(fields: [userId], references: [id])
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  user                User        @relation(fields: [userId], references: [id])
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
   expiresAt           DateTime
-  jwtToken            String   @unique
-  serializedCookie    String   @unique
-  hashedCookie        String   @unique
+  jwtToken            String      @unique
+  serializedCookie    String      @unique
+  hashedCookie        String      @unique
 
   @@map("sessions")
 }
 
-// model  Score {
-//    id            Int    @id @default(autoincrement())
-//    gameTime      DateTime @default(now())
-//    loosing       Int
-//    rating        Int
-//    wining        Int
-//    userId        Int
-//    Player   User   @relation(fields: [userId], references: [id])
+model Score {
+   id                 Int         @id @default(autoincrement())
+   userId             Int
+   user               User        @relation(fields: [userId], references: [id])
+   gameTime           DateTime    @default(now())
+   wins               Int
+   losses             Int
+   totalMatches       Int
+   rating             Int
    
-//  @@map("score")
-// }
+ @@map("scores")
+}
 
 // model Message {
 //   id                    Int   @id @default(autoincrement())
