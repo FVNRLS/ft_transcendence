@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 17:37:20 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 18:28:53 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -278,6 +278,12 @@ Return the base64-encoded encrypted session string
 			if (!emailValid) {
 				throw new HttpException("Invalid email address", HttpStatus.BAD_REQUEST);
 			}
+
+			const email = await this.prisma.user.findFirst( {where: { email: newEmail } } )
+			if (email) {
+					throw new HttpException("The email address is already in use by another user", HttpStatus.BAD_REQUEST);
+			}
+			
 			await this.prisma.user.update({ where: { username: user.username }, data: { email: newEmail } });
 			
 			return { status: HttpStatus.OK, message: "Thank you! Your email address is now verified and ready for Two-Factor Authentication." };

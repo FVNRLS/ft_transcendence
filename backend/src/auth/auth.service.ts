@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/01 18:16:19 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 18:33:44 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,6 @@ export class AuthService {
     try {
       await this.securityService.validateToken(dto);
       this.securityService.validateCredentials(dto);
-      console.log("-------");
       
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
       await this.prisma.user.create({
