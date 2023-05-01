@@ -6,15 +6,15 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/01 14:06:34 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 15:18:21 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { SecurityService } from "src/security/security.service";
-import { GameScoreResponse, GameRankingResponse } from "./dto";
+import { GameScoreResponse, GameRatingResponse } from "./dto";
 import { PrismaService } from "src/prisma/prisma.service";
-import { Score } from "@prisma/client";
+import { Rating, Score } from "@prisma/client";
 
 @Injectable()
 export class GameService {
@@ -28,22 +28,55 @@ export class GameService {
 		try {
 			await this.securityService.verifyCookie(cookie);
 		
-			let scores: GameScoreResponse[] = [];
-			const scoreList = await this.prisma.score.findMany();
+			let scoreTable: GameScoreResponse[] = [];
+			const scoreList: Score[] = await this.prisma.score.findMany();
 			
 			for (let i: number = 0; i < scoreList.length; ++i) {
 				const score = scoreList[i];
 				const scoreResponse = await this.getScore(score);
-			
-				scores.push(scoreResponse);
+				scoreTable.push(scoreResponse);
 			};
 			
-			return scores;
-			} catch (error) {
-			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			return scoreTable;
+		} catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
 		}
 	}
+
+	async getRatingTable(cookie: string): Promise<GameRatingResponse[]> {
+		try {
+			let ratingTable: GameRatingResponse[] = [];
+			const ratingList: Rating[] = await this.prisma.rating.findMany();
+			ratingList.sort((a: Rating, b: Rating): number => a.rank - b.rank);
+			
+			let length: number;
+			if (ratingList.length < 20) {
+				length = ratingList.length;
+			} else {
+				length = 20;
+			}
+			
+			for (let i: number = 0; i < length; ++i) {
+				const rating = ratingList[i];
+				const ratingResponse = await this.getRating(rating);
+				ratingTable.push(ratingResponse);
+			};
+
+			return ratingTable;		
+		} catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
 	
+	}
+
 	private async getScore(score: Score): Promise<GameScoreResponse> {
 		try {			
 			let scoreResponse: GameScoreResponse;
@@ -54,6 +87,20 @@ export class GameService {
 			scoreResponse.gameTime = score.gameTime.toString();
 
 			return scoreResponse;
+		} catch (error) {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	private async getRating(rating: Rating): Promise<GameRatingResponse> {
+		try {			
+			let ratingResponse: GameRatingResponse;
+			ratingResponse.totalMatches = rating.totalMatches;
+			ratingResponse.wins = rating.wins;
+			ratingResponse.losses = rating.losses;
+			ratingResponse.rank = rating.rank;
+
+			return ratingResponse;
 		} catch (error) {
 				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
