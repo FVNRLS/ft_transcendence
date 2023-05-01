@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/01 14:06:51 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 16:11:38 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,18 @@ export class AuthService {
       })
 
       const user: User = await this.securityService.getVerifiedUserData(dto);
+      await this.prisma.rating.create({
+        data: {
+          totalMatches: 0,
+          wins: 0,
+          losses: 0,
+          rank: 0,
+          user: {
+            connect: { id: user.id },
+          },
+        },
+      })
+      
       const session = await this.sessionService.createSession(user);
       await this.googleDriveService.setFirstProfilePicture(session.cookie, file);
 

@@ -6,13 +6,13 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/01 15:18:21 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 15:54:54 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { SecurityService } from "src/security/security.service";
-import { GameScoreResponse, GameRatingResponse } from "./dto";
+import { GameScoreResponse, GameRatingResponse, GameDto } from "./dto";
 import { PrismaService } from "src/prisma/prisma.service";
 import { Rating, Score } from "@prisma/client";
 
@@ -22,7 +22,6 @@ export class GameService {
 		private securityService: SecurityService,
 		private prisma: PrismaService,
 	) {}
-	
 	
 	async getPersonalScores(cookie: string): Promise<GameScoreResponse[]> {
 		try {
@@ -49,6 +48,8 @@ export class GameService {
 
 	async getRatingTable(cookie: string): Promise<GameRatingResponse[]> {
 		try {
+			await this.securityService.verifyCookie(cookie);
+
 			let ratingTable: GameRatingResponse[] = [];
 			const ratingList: Rating[] = await this.prisma.rating.findMany();
 			ratingList.sort((a: Rating, b: Rating): number => a.rank - b.rank);
@@ -77,10 +78,32 @@ export class GameService {
 	
 	}
 
+	//here no route/endpoint required - the public function is only to apply after the match end
+	async updateGameData(dto: GameDto): Promise<void>{
+		try {
+			await this.prisma.score.create({
+				data: {
+					userId: dto.userId,
+					enemyName: dto.enemyName,
+					score: dto.score,
+					win: dto.win,
+				},
+			});
+
+			
+
+		} catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+	}
+
 	private async getScore(score: Score): Promise<GameScoreResponse> {
 		try {			
 			let scoreResponse: GameScoreResponse;
-			scoreResponse.username = score.username;
 			scoreResponse.enemyName = score.enemyName;
 			scoreResponse.score = score.score;
 			scoreResponse.win = score.win;

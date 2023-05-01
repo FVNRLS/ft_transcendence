@@ -33,7 +33,6 @@ CREATE TABLE "sessions" (
 CREATE TABLE "scores" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
-    "username" TEXT NOT NULL,
     "enemyName" TEXT NOT NULL,
     "score" TEXT NOT NULL,
     "win" BOOLEAN NOT NULL,
@@ -43,7 +42,7 @@ CREATE TABLE "scores" (
 );
 
 -- CreateTable
-CREATE TABLE "ratings" (
+CREATE TABLE "rating" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
     "totalMatches" INTEGER NOT NULL,
@@ -51,7 +50,7 @@ CREATE TABLE "ratings" (
     "losses" INTEGER NOT NULL,
     "rank" INTEGER NOT NULL,
 
-    CONSTRAINT "ratings_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "rating_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -72,6 +71,9 @@ CREATE UNIQUE INDEX "sessions_serializedCookie_key" ON "sessions"("serializedCoo
 -- CreateIndex
 CREATE UNIQUE INDEX "sessions_hashedCookie_key" ON "sessions"("hashedCookie");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "rating_userId_key" ON "rating"("userId");
+
 -- AddForeignKey
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -79,4 +81,4 @@ ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userI
 ALTER TABLE "scores" ADD CONSTRAINT "scores_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ratings" ADD CONSTRAINT "ratings_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "rating" ADD CONSTRAINT "rating_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
