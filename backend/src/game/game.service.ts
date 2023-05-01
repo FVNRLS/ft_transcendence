@@ -6,14 +6,15 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 19:33:47 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 14:06:34 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { SecurityService } from "src/security/security.service";
-import { GameScoresResponse } from "./dto/scores.response.dto";
+import { GameScoreResponse, GameRankingResponse } from "./dto";
 import { PrismaService } from "src/prisma/prisma.service";
+import { Score } from "@prisma/client";
 
 @Injectable()
 export class GameService {
@@ -23,26 +24,38 @@ export class GameService {
 	) {}
 	
 	
-	async getScores(cookie: string): Promise<GameScoresResponse> {
+	async getPersonalScores(cookie: string): Promise<GameScoreResponse[]> {
 		try {
-			const session = await this.securityService.verifyCookie(cookie);
-			const scores = await this.prisma.score.findFirst({ where: { userId: session.userId } })
-			const user = await this.prisma.user.findFirst({ where: { id: session.userId } })
+			await this.securityService.verifyCookie(cookie);
+		
+			let scores: GameScoreResponse[] = [];
+			const scoreList = await this.prisma.score.findMany();
 			
-			let gameScoresResponse: GameScoresResponse;
-			gameScoresResponse.username = user.username;
-			gameScoresResponse.wins = scores.wins;
-			gameScoresResponse.losses = scores.losses;
-			gameScoresResponse.totalMatches = scores.totalMatches;
-			gameScoresResponse.rating = scores.rating;			
+			for (let i: number = 0; i < scoreList.length; ++i) {
+				const score = scoreList[i];
+				const scoreResponse = await this.getScore(score);
 			
-      return gameScoresResponse;
+				scores.push(scoreResponse);
+			};
+			
+			return scores;
+			} catch (error) {
+			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+	
+	private async getScore(score: Score): Promise<GameScoreResponse> {
+		try {			
+			let scoreResponse: GameScoreResponse;
+			scoreResponse.username = score.username;
+			scoreResponse.enemyName = score.enemyName;
+			scoreResponse.score = score.score;
+			scoreResponse.win = score.win;
+			scoreResponse.gameTime = score.gameTime.toString();
+
+			return scoreResponse;
 		} catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      } else {
 				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-      }
 		}
 	}
 }

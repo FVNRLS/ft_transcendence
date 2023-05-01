@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:24:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 19:08:02 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 14:07:42 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,7 @@ import { Body, Controller, Post } from "@nestjs/common";
 import { GameService } from "./game.service";
 import { SecurityService } from "src/security/security.service";
 import { GameGateway } from "./game.gateway";
-import { GameScoresResponse } from "./dto/scores.response.dto";
-import { GameRankingResponse } from "./dto/ranking.table.response.dto";
+import { GameScoreResponse, GameRankingResponse } from "./dto";
 
 @Controller("/game")
 export class GameController {
@@ -35,9 +34,9 @@ export class GameController {
 	}
 
 	@Post("/get_private_scores")
-	async getScores(@Body("cookie") cookie: string): Promise<GameScoresResponse> {
+	async getPersonalScores(@Body("cookie") cookie: string): Promise<GameScoreResponse[]> {
 		try {
-			return await this.gameService.getScores(cookie);			
+			return await this.gameService.getPersonalScores(cookie);
 		} catch (error) {
 			throw error;
 		}

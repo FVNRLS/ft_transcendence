@@ -25,6 +25,7 @@ model User {
   profilePicture      String
   sessions            Session[]
   scores              Score[]
+  ratings             Rating[]
   // messages            Message[]
   // rooms               Room[]
 
@@ -49,14 +50,27 @@ model Score {
   id                 Int         @id @default(autoincrement())
   userId             Int
   user               User        @relation(fields: [userId], references: [id])
+  username           String
+  enemyName          String
+  score              String
+  win                Boolean
   gameTime           DateTime    @default(now())
-  wins               Int
-  losses             Int
-  totalMatches       Int
-  rating             Int
    
  @@map("scores")
 }
+
+  
+  model Rating {
+  id                 Int         @id @default(autoincrement())
+  userId             Int
+  user               User        @relation(fields: [userId], references: [id])
+  totalMatches       Int
+  wins               Int
+  losses             Int
+  rank               Int
+
+   @@map("ratings")
+  }
 
 // model Message {
 //   id                    Int   @id @default(autoincrement())

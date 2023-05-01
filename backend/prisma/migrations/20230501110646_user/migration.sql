@@ -33,13 +33,25 @@ CREATE TABLE "sessions" (
 CREATE TABLE "scores" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
+    "username" TEXT NOT NULL,
+    "enemyName" TEXT NOT NULL,
+    "score" TEXT NOT NULL,
+    "win" BOOLEAN NOT NULL,
     "gameTime" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "wins" INTEGER NOT NULL,
-    "losses" INTEGER NOT NULL,
-    "totalMatches" INTEGER NOT NULL,
-    "rating" INTEGER NOT NULL,
 
     CONSTRAINT "scores_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ratings" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "totalMatches" INTEGER NOT NULL,
+    "wins" INTEGER NOT NULL,
+    "losses" INTEGER NOT NULL,
+    "rank" INTEGER NOT NULL,
+
+    CONSTRAINT "ratings_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -65,3 +77,6 @@ ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userI
 
 -- AddForeignKey
 ALTER TABLE "scores" ADD CONSTRAINT "scores_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ratings" ADD CONSTRAINT "ratings_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

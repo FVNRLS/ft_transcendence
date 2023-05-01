@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 17:37:20 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 14:06:51 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ export class AuthService {
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<AuthResponse> {
     try {
       await this.securityService.validateToken(dto);
-      await this.securityService.validateCredentials(dto);
+      this.securityService.validateCredentials(dto);
       
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
       await this.prisma.user.create({
@@ -150,8 +150,7 @@ export class AuthService {
       }
 
       return { status: HttpStatus.OK, message: "Profile updated successfully" };
-    }
-    catch (error) {
+    } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       } else {

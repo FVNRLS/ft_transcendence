@@ -6,8 +6,9 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:57:18 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 15:40:43 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 12:57:04 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 export * from "./game.dto"
+export * from "./game.response.dto"
