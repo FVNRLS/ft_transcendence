@@ -19,13 +19,13 @@ model User {
   hashedPasswd        String
   salt                String
   TFAMode             Boolean
-  email               String      @unique
-  TFACode             String      @unique
+  email               String
+  TFACode             String
   TFAExpiresAt        String
   profilePicture      String
   sessions            Session[]
   scores              Score[]
-  rating              Rating?
+  ratings             Rating[]
   // messages            Message[]
   // rooms               Room[]
 
@@ -63,12 +63,13 @@ model Rating {
   id                 Int         @id @default(autoincrement())
   userId             Int         @unique
   user               User        @relation(fields: [userId], references: [id])
+  username           String      @unique
   totalMatches       Int
   wins               Int
   losses             Int
   rank               Int
 
-  @@map("rating")
+  @@map("ratings")
 }
 
 // model Message {

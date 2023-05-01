@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/01 16:11:38 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 18:16:19 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ export class AuthService {
     try {
       await this.securityService.validateToken(dto);
       this.securityService.validateCredentials(dto);
+      console.log("-------");
       
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
       await this.prisma.user.create({
@@ -54,15 +55,16 @@ export class AuthService {
       })
 
       const user: User = await this.securityService.getVerifiedUserData(dto);
+
+      const maxRank = await this.prisma.rating.aggregate({ _max: { rank: true } });
       await this.prisma.rating.create({
         data: {
+          userId: user.id,
+          username: user.username,
           totalMatches: 0,
           wins: 0,
           losses: 0,
-          rank: 0,
-          user: {
-            connect: { id: user.id },
-          },
+          rank: maxRank._max.rank + 1,
         },
       })
       

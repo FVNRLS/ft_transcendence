@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:24:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/01 14:58:57 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 16:45:01 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,15 @@ export class GameController {
 	async getRankingTable(@Body("cookie") cookie: string): Promise<GameRatingResponse[]> {
 		try {
 			return await this.getRankingTable(cookie);
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	@Post("/get_user_rating")
+	async getPersonalRating(@Body("cookie") cookie: string): Promise<GameRatingResponse> {
+		try {
+			return await this.getPersonalRating(cookie);
 		} catch (error) {
 			throw error;
 		}
