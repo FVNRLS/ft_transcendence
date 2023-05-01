@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/01 17:45:32 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/01 18:59:22 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,23 +95,8 @@ export class GameService {
 		}		
 	}
 
-	private async getRating(rating: Rating): Promise<GameRatingResponse> {
-		try {			
-			const ratingResponse: GameRatingResponse = {
-				username: rating.username,
-				totalMatches: rating.totalMatches,
-				wins: rating.wins,
-				losses: rating.losses,
-				rank: rating.rank,
-			};
-
-			return ratingResponse;
-		} catch (error) {
-				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
-
-	//here no route/endpoint required - the public function is only to apply after the match end
+	//TODO: delete route in controllers!
+	//here no route/endpoint required - the public function is only to apply after the match end in GameGateway
 	async updateGameData(dto: GameDto): Promise<void> {
 		try {
 			await this.prisma.score.create({
@@ -122,6 +107,9 @@ export class GameService {
 					win: dto.win,
 				},
 			});
+
+			//TODO: cont here!
+			console.log("-----");
 
 			const currentRating = await this.prisma.rating.update({
 				where: { userId: dto.userId },
@@ -143,6 +131,22 @@ export class GameService {
 			} else {
 				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
+		}
+	}
+
+	private async getRating(rating: Rating): Promise<GameRatingResponse> {
+		try {			
+			const ratingResponse: GameRatingResponse = {
+				username: rating.username,
+				totalMatches: rating.totalMatches,
+				wins: rating.wins,
+				losses: rating.losses,
+				rank: rating.rank,
+			};
+
+			return ratingResponse;
+		} catch (error) {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -197,8 +201,5 @@ export class GameService {
 		} catch (error) {
 			throw error;
 		}
-	
 	}
-	
-
 }
