@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/02 17:11:19 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/02 17:16:23 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,7 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { SecurityService } from "src/security/security.service";
 import { GameScoreResponse, GameRatingResponse, GameDto } from "./dto";
 import { PrismaService } from "src/prisma/prisma.service";
-import { Rating, Score, Session, User } from "@prisma/client";
-import { error } from "console";
+import { Rating, Score, Session } from "@prisma/client";
 
 @Injectable()
 export class GameService {
