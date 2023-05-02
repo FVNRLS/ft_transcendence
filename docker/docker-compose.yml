@@ -82,21 +82,21 @@ services:
     - postgres
     restart: unless-stopped
   
-  # react_js:
-  #   container_name: react_js
-  #   build: ./frontend
-  #   environment:
-  #     REACT_PORT: $REACT_PORT
-  #     REACT_APP_ID: $REACT_APP_ID
-  #     REACT_APP_SECRET: $REACT_APP_SECRET
-  #     CALLBACK_URL: $CALLBACK_URL
-  #   ports:
-  #     - ${REACT_PORT}:${REACT_PORT}
-  #   networks:
-  #   - internal
-  #   volumes:
-  #   - nest_vol:/nest/
-  #   - react_vol:/react/
-  #   depends_on:
-  #   - nest_js
-  #   restart: unless-stopped
+  react_js:
+    container_name: react_js
+    build: ./frontend
+    environment:
+      REACT_PORT: $REACT_PORT
+      REACT_APP_ID: $REACT_APP_ID
+      REACT_APP_SECRET: $REACT_APP_SECRET
+      CALLBACK_URL: $CALLBACK_URL
+    ports:
+      - ${REACT_PORT}:${REACT_PORT}
+    networks:
+    - internal
+    volumes:
+    - nest_vol:/nest/
+    - react_vol:/react/
+    depends_on:
+    - nest_js
+    restart: unless-stopped
