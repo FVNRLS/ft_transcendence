@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/02 16:39:57 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/02 17:11:19 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,8 +68,8 @@ export class GameService {
 			let scoreTable: GameScoreResponse[] = [];
 			const scoreList: Score[] = await this.prisma.score.findMany();
 			
-			if (!scoreList) {
-				throw new HttpException("Ooops...It looks like you didn't play our ping pong game yet!", HttpStatus.NO_CONTENT);
+			if (scoreList.length === 0) {
+				throw new HttpException("Oh no! It looks like you didn't play our ping pong game yet!", HttpStatus.NO_CONTENT);
 			}
 			
 			for (let i: number = 0; i < scoreList.length; i++) {
