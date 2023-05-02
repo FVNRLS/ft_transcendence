@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/01 18:59:22 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/02 15:09:31 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,9 +108,6 @@ export class GameService {
 				},
 			});
 
-			//TODO: cont here!
-			console.log("-----");
-
 			const currentRating = await this.prisma.rating.update({
 				where: { userId: dto.userId },
 				data: {
@@ -126,6 +123,7 @@ export class GameService {
 
 			await this.updateRatingTable(currentRating);		
 		} catch (error) {
+			console.log(error);
 			if (error instanceof HttpException) {
 				throw error;
 			} else {

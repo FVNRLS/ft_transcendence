@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 17:37:20 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/02 11:57:18 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,15 +17,12 @@ import * as fs from "fs";
 import { Session, User } from "@prisma/client";
 import axios from "axios";
 import { AuthResponse, FileResponse } from "../dto/response.dto";
-import { SessionService } from "../session.service";
-
 
 @Injectable()
 export class GoogleDriveService {
 	constructor(
 		private securityService: SecurityService,
     private prisma: PrismaService,
-    private sessionService: SessionService,
 	) {}
 
   //ENDPOINT FUNCTIONS
@@ -190,7 +187,7 @@ export class GoogleDriveService {
         redirectUri: process.env.GOOGLE_REDIRECT_URI,
       });
       oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-      const drive = google.drive({ version: "v3", auth: oauth2Client });  
+      const drive = google.drive({ version: "v3", auth: oauth2Client });
       
       return Promise.resolve(drive);
     } catch (error) {

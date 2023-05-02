@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:24:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/01 18:55:33 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/02 15:29:35 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ export class GameController {
 
 	//TODO: ONLY FOR TESTING PURPOSES! DELETE AFTERWARDS!
 	@Post("/update_score")
-	async updateScore(dto: GameDto): Promise<void> {
+	async updateScore(@Body() dto: GameDto): Promise<void> {
 		try {
 			return await this.gameService.updateGameData(dto);
 		} catch (error) {
