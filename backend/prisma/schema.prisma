@@ -25,9 +25,9 @@ model User {
   profilePicture      String
   sessions            Session[]
   scores              Score[]
-  ratings             Rating[]
-  // messages            Message[]
-  // rooms               Room[]
+  ratings             Rating?
+  messages            Message[]
+  rooms               Room[]
 
   @@map("users")
 }
@@ -72,19 +72,21 @@ model Rating {
   @@map("ratings")
 }
 
-// model Message {
-//   id                    Int   @id @default(autoincrement())
-//   roomId                Int ---> get it from chat websocket!
-//   createdAt             DateTime @default(now())
-//   value                 String
-//   userId                Int
-//   user                  User  @relation(fields: [user_id], references: [id])
-//   @@map("messages")
-// }
+model Room {          
+  id                    Int       @id @default(autoincrement())
+  userId                Int
+  messages              Message[]
+  user                  User      @relation(fields: [userId], references: [id])
+  @@map("rooms")
+}
 
-// model Room {          
-//   id                    Int     @id @default(autoincrement())
-//   userId                Int
-//   user                  User    @relation(fields: [userId], references: [id])
-//   @@map("rooms")
-// }
+model Message {
+  id                    Int   @id @default(autoincrement())
+  roomId                Int
+  room                  Room  @relation(fields: [roomId], references: [id])
+  createdAt             DateTime @default(now())
+  value                 String
+  userId                Int
+  user                  User  @relation(fields: [userId], references: [id])
+  @@map("messages")
+}

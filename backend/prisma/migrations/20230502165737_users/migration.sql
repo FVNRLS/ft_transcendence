@@ -54,6 +54,14 @@ CREATE TABLE "ratings" (
     CONSTRAINT "ratings_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "rooms" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+
+    CONSTRAINT "rooms_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 
@@ -80,3 +88,6 @@ ALTER TABLE "scores" ADD CONSTRAINT "scores_userId_fkey" FOREIGN KEY ("userId") 
 
 -- AddForeignKey
 ALTER TABLE "ratings" ADD CONSTRAINT "ratings_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "rooms" ADD CONSTRAINT "rooms_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
