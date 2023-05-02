@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/02 15:09:31 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/02 16:39:57 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@ import { SecurityService } from "src/security/security.service";
 import { GameScoreResponse, GameRatingResponse, GameDto } from "./dto";
 import { PrismaService } from "src/prisma/prisma.service";
 import { Rating, Score, Session, User } from "@prisma/client";
+import { error } from "console";
 
 @Injectable()
 export class GameService {
@@ -23,78 +24,6 @@ export class GameService {
 		private prisma: PrismaService,
 	) {}
 	
-	async getPersonalScores(cookie: string): Promise<GameScoreResponse[]> {
-		try {
-			await this.securityService.verifyCookie(cookie);
-		
-			let scoreTable: GameScoreResponse[] = [];
-			const scoreList: Score[] = await this.prisma.score.findMany();
-			
-			for (let i: number = 0; i < scoreList.length; ++i) {
-				const score = scoreList[i];
-				const scoreResponse = await this.getScore(score);
-				scoreTable.push(scoreResponse);
-			};
-			
-			return scoreTable;
-		} catch (error) {
-			if (error instanceof HttpException) {
-				throw error;
-			} else {
-				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-		}
-	}
-
-	async getRatingTable(cookie: string): Promise<GameRatingResponse[]> {
-		try {
-			await this.securityService.verifyCookie(cookie);
-
-			let ratingTable: GameRatingResponse[] = [];
-			const ratingList: Rating[] = await this.prisma.rating.findMany();
-			ratingList.sort((a: Rating, b: Rating): number => a.rank - b.rank);
-			
-			let length: number;
-			if (ratingList.length < 20) {
-				length = ratingList.length;
-			} else {
-				length = 20;
-			}
-			
-			for (let i: number = 0; i < length; ++i) {
-				const rating = ratingList[i];
-				const ratingResponse = await this.getRating(rating);
-				ratingTable.push(ratingResponse);
-			};
-
-			return ratingTable;		
-		} catch (error) {
-			if (error instanceof HttpException) {
-				throw error;
-			} else {
-				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-		}
-	
-	}
-
-	async getPersonalRating(cookie: string): Promise<GameRatingResponse> {
-		try {
-			const session: Session = await this.securityService.verifyCookie(cookie);
-			
-			const rating: Rating = await this.prisma.rating.findFirst( {where: { id: session.userId } } );
-			const ratingResponse = this.getRating(rating);
-	
-			return ratingResponse;
-		} catch (error) {
-			if (error instanceof HttpException) {
-				throw error;
-			} else {
-				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-		}		
-	}
-
 	//TODO: delete route in controllers!
 	//here no route/endpoint required - the public function is only to apply after the match end in GameGateway
 	async updateGameData(dto: GameDto): Promise<void> {
@@ -131,6 +60,83 @@ export class GameService {
 			}
 		}
 	}
+	
+	async getPersonalScores(cookie: string): Promise<GameScoreResponse[]> {
+		try {
+			await this.securityService.verifyCookie(cookie);
+		
+			let scoreTable: GameScoreResponse[] = [];
+			const scoreList: Score[] = await this.prisma.score.findMany();
+			
+			if (!scoreList) {
+				throw new HttpException("Ooops...It looks like you didn't play our ping pong game yet!", HttpStatus.NO_CONTENT);
+			}
+			
+			for (let i: number = 0; i < scoreList.length; i++) {
+				const score = scoreList[i];
+				const scoreResponse = await this.getScore(score);
+				scoreTable.push(scoreResponse);
+			};
+			
+			return scoreTable;
+		} catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+	}
+
+	async getRatingTable(cookie: string): Promise<GameRatingResponse[]> {
+		try {
+			await this.securityService.verifyCookie(cookie);
+
+			let ratingTable: GameRatingResponse[] = [];
+			const ratingList: Rating[] = await this.prisma.rating.findMany({ 
+				where: { rank: { lte: 20 } },
+				orderBy: { rank: 'asc' }
+			});
+			
+			let length: number;
+			if (ratingList.length < 20) {
+				length = ratingList.length;
+			} else {
+				length = 20;
+			}
+			
+			for (let i: number = 0; i < length; ++i) {
+				const rating = ratingList[i];
+				const ratingResponse = await this.getRating(rating);
+				ratingTable.push(ratingResponse);
+			};
+
+			return ratingTable;		
+		} catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+	}
+
+	async getPersonalRating(cookie: string): Promise<GameRatingResponse> {
+		try {
+			const session: Session = await this.securityService.verifyCookie(cookie);
+			
+			const rating: Rating = await this.prisma.rating.findFirst( {where: { id: session.userId } } );
+			const ratingResponse = this.getRating(rating);
+	
+			return ratingResponse;
+		} catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}		
+	}
 
 	private async getRating(rating: Rating): Promise<GameRatingResponse> {
 		try {			
@@ -150,14 +156,15 @@ export class GameService {
 
 	private async getScore(score: Score): Promise<GameScoreResponse> {
 		try {			
-			let scoreResponse: GameScoreResponse;
-			scoreResponse.enemyName = score.enemyName;
-			scoreResponse.score = score.score;
-			scoreResponse.win = score.win;
-			scoreResponse.gameTime = score.gameTime.toString();
+			const scoreResponse: GameScoreResponse = {
+				enemyName: score.enemyName,
+				score: score.score,
+				win: score.win,
+				gameTime: score.gameTime.toUTCString(),
+			}
 
 			return scoreResponse;
-		} catch (error) {
+		} catch (error) {			
 				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}

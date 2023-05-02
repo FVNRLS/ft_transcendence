@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:24:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/02 15:29:35 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/02 16:21:40 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,18 @@ export class GameController {
 		}
 	}
 
-	@Post("/get_private_scores")
+
+	//TODO: ONLY FOR TESTING PURPOSES! DELETE AFTERWARDS!
+	@Post("/update_score")
+	async updateScore(@Body() dto: GameDto): Promise<void> {
+		try {
+			return await this.gameService.updateGameData(dto);
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	@Post("/get_personal_scores")
 	async getPersonalScores(@Body("cookie") cookie: string): Promise<GameScoreResponse[]> {
 		try {
 			return await this.gameService.getPersonalScores(cookie);
@@ -43,9 +54,9 @@ export class GameController {
 	}
 
 	@Post("/get_ranking_table")
-	async getRankingTable(@Body("cookie") cookie: string): Promise<GameRatingResponse[]> {
+	async getRatingTable(@Body("cookie") cookie: string): Promise<GameRatingResponse[]> {
 		try {
-			return await this.getRankingTable(cookie);
+			return await this.gameService.getRatingTable(cookie);
 		} catch (error) {
 			throw error;
 		}
@@ -54,17 +65,7 @@ export class GameController {
 	@Post("/get_user_rating")
 	async getPersonalRating(@Body("cookie") cookie: string): Promise<GameRatingResponse> {
 		try {
-			return await this.getPersonalRating(cookie);
-		} catch (error) {
-			throw error;
-		}
-	}
-
-	//TODO: ONLY FOR TESTING PURPOSES! DELETE AFTERWARDS!
-	@Post("/update_score")
-	async updateScore(@Body() dto: GameDto): Promise<void> {
-		try {
-			return await this.gameService.updateGameData(dto);
+			return await this.gameService.getPersonalRating(cookie);
 		} catch (error) {
 			throw error;
 		}
