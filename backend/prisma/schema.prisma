@@ -26,6 +26,7 @@ model User {
   sessions            Session[]
   scores              Score[]
   ratings             Rating[]
+  friends             Friend[]
   messages            Message[]
   rooms               Room[]
 
@@ -57,7 +58,6 @@ model Score {
    
  @@map("scores")
 }
-
   
 model Rating {
   id                 Int         @id @default(autoincrement())
@@ -72,19 +72,33 @@ model Rating {
   @@map("ratings")
 }
 
+model Friend {
+  id                    Int       @id @default(autoincrement())
+  userId                Int
+  user                  User      @relation(fields: [userId], references: [id])
+  createdAt             DateTime  @default(now())
+  friendId              Int
+  friendName            String
+  isOnline              Boolean
+
+  @@map("friends")
+}
+
 model Room {          
   id                    Int       @id @default(autoincrement())
   userId                Int
   user                  User      @relation(fields: [userId], references: [id])
+
   @@map("rooms")
 }
 
 model Message {
-  id                    Int   @id @default(autoincrement())
+  id                    Int       @id @default(autoincrement())
   roomId                Int
-  createdAt             DateTime @default(now())
+  createdAt             DateTime  @default(now())
   value                 String
   userId                Int
-  user                  User  @relation(fields: [userId], references: [id])
+  user                  User      @relation(fields: [userId], references: [id])
+  
   @@map("messages")
 }
