@@ -6,25 +6,25 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:20 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 13:27:31 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/03 14:24:20 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Controller, Get, Post, Body } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
 import { Friend } from "@prisma/client";
 import { FriendshipDto, FriendshipResponse } from "./dto";
+import { FriendshipService } from "./friendship.service";
 
 @Controller("/friends")
 export class FriendshipController {
-  constructor(private prisma: PrismaService) {
-    
-  }
+  constructor(
+    private friendshipService: FriendshipService
+    ) {}
 
   @Post("/add")
   async addFriendship(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipResponse> {
     try {
-      
+      return await this.friendshipService.addFriendship(cookie, dto);
     } catch (error) {
       return error;
     }

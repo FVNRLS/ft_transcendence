@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:29 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 13:10:31 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/03 14:29:31 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@ import { SecurityModule } from 'src/security/security.module';
 import { FriendshipController } from './friendship.controller';
 import { FriendshipService } from './friendship.service';
 import { SessionService } from 'src/auth/session.service';
+import { SecurityService } from 'src/security/security.service';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { SessionService } from 'src/auth/session.service';
     }),
     SecurityModule,
   ],
-  providers: [FriendshipService, SessionService],
+  providers: [FriendshipService, SecurityService, SessionService],
   controllers: [FriendshipController],
 })
 export class FriendshipModule {}
