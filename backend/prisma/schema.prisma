@@ -73,13 +73,13 @@ model Rating {
 }
 
 model Friend {
-  id                    Int       @id @default(autoincrement())
-  userId                Int
-  user                  User      @relation(fields: [userId], references: [id])
-  createdAt             DateTime  @default(now())
-  friendId              Int
-  friendName            String
-  isOnline              Boolean
+  id                 Int      @id @default(autoincrement())
+  userId             Int
+  user               User     @relation(fields: [userId], references: [id])
+  friendId           Int
+  friendName         String
+  status             String   // Status of the friendship (e.g. "pending", "accepted", "rejected")
+  isOnline           Boolean
 
   @@map("friends")
 }

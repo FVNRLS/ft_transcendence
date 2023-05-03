@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:56:24 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 19:06:07 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/03 11:44:47 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,9 +17,10 @@ import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
 import { SecurityModule } from "./security/security.module";
 import { GameModule } from "./game/game.module";
+import { FriendshipModule } from "./friendship/friendship.module";
 
 @Module({
-    imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, GameModule, PrismaModule, SecurityModule],
+    imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, GameModule, PrismaModule, SecurityModule, FriendshipModule],
     controllers: [AppController],
     providers: [],
 })
