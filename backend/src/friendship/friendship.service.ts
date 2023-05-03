@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 15:55:50 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/03 18:18:15 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ export class FriendshipService {
 		private securityService: SecurityService,
   ) {}
   
+  //CONTROLLER FUNCTIONS
   async addFriendship(cookie: string, dto: FriendshipDto): Promise<FriendshipStatusResponse> {
     try {
       const session: Session = await this.securityService.verifyCookie(cookie);
