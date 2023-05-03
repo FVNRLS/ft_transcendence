@@ -6,31 +6,47 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 14:24:56 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/03 15:55:50 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { FriendshipDto, FriendshipResponse } from './dto';
+import { FriendshipDto, FriendshipStatusResponse, FriendshipDataResponse } from './dto';
 import { PrismaService } from "../prisma/prisma.service";
 import { SecurityService } from 'src/security/security.service';
+import { Session, User } from '@prisma/client';
 
 @Injectable()
 export class FriendshipService {
   constructor(
     private prisma: PrismaService,
 		private securityService: SecurityService,
-    
   ) {}
   
-  async addFriendship(cookie: string, dto: FriendshipDto): Promise<FriendshipResponse> {
+  async addFriendship(cookie: string, dto: FriendshipDto): Promise<FriendshipStatusResponse> {
     try {
-      await this.securityService.verifyCookie(cookie);
-      
-      
+      const session: Session = await this.securityService.verifyCookie(cookie);
+      const user: User = await this.prisma.user.findUnique({ where: {id: session.userId} });
 
-      return { status: HttpStatus.CREATED, message: `You have sent a friendship request to the user ${dto.username}!
-       Please wait for their confirmation.` };
+      if (dto.username === user.username) {
+        throw new HttpException("Cmooooon... Are you trying to friend yourself? That's like giving yourself a high five... awkward and kinda sad.", HttpStatus.BAD_REQUEST);
+      }
+      
+      const friend = await this.prisma.user.findUnique({ where: {username: dto.username} });
+      if (!friend) {
+				throw new HttpException(`The person ${dto.username} doesn't exist`, HttpStatus.NO_CONTENT);
+      }
+      
+      await this.prisma.friend.create({ 
+        data: {
+          userId: user.id,
+          friendId: friend.id,
+          friendName: friend.username,
+          status: "pending",
+        }
+       });
+
+      return { status: HttpStatus.CREATED, message: `You have sent a friendship request to the user ${dto.username}! Please wait for their confirmation.` };
     } catch (error) {
 			if (error instanceof HttpException) {
 				throw error;

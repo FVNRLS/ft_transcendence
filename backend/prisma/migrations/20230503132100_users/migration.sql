@@ -61,7 +61,6 @@ CREATE TABLE "friends" (
     "friendId" INTEGER NOT NULL,
     "friendName" TEXT NOT NULL,
     "status" TEXT NOT NULL,
-    "isOnline" BOOLEAN NOT NULL,
 
     CONSTRAINT "friends_pkey" PRIMARY KEY ("id")
 );

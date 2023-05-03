@@ -28,7 +28,7 @@ model User {
   ratings             Rating[]
   friends             Friend[]
   messages            Message[]
-  rooms               Room[]
+  userrooms           UserOnRooms[]
 
   @@map("users")
 }
@@ -73,32 +73,44 @@ model Rating {
 }
 
 model Friend {
-  id                 Int      @id @default(autoincrement())
+  id                 Int          @id @default(autoincrement())
   userId             Int
-  user               User     @relation(fields: [userId], references: [id])
+  user               User         @relation(fields: [userId], references: [id])
   friendId           Int
   friendName         String
   status             String   // Status of the friendship (e.g. "pending", "accepted", "rejected")
-  isOnline           Boolean
 
   @@map("friends")
 }
 
+model UserOnRooms {
+  id        Int                   @id @default(autoincrement())
+  roomId    Int
+  room      Room                  @relation(fields: [roomId], references: [id])
+  userId    Int
+  user      User                  @relation(fields: [userId], references: [id])
+
+  @@map("(useronrooms)")
+}
+
 model Room {          
   id                    Int       @id @default(autoincrement())
+  roomName              String
   userId                Int
-  user                  User      @relation(fields: [userId], references: [id])
+  messages              Message[]
+  userOnRooms           UserOnRooms[]
 
   @@map("rooms")
 }
 
 model Message {
   id                    Int       @id @default(autoincrement())
-  roomId                Int
-  createdAt             DateTime  @default(now())
-  value                 String
   userId                Int
   user                  User      @relation(fields: [userId], references: [id])
+  roomId                Int
+  room                  Room      @relation(fields: [roomId], references: [id])
+  createdAt             DateTime  @default(now())
+  value                 String
   
   @@map("messages")
 }

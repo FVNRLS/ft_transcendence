@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/02 14:30:52 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/03 16:49:36 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,7 +84,6 @@ export class AuthService {
   async signin(dto: AuthDto): Promise<AuthResponse> {
     try {
       const user: User = await this.securityService.getVerifiedUserData(dto);
-      
       
       const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id } });
       if (existingSession) {
