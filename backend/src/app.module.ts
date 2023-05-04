@@ -18,9 +18,10 @@ import { AuthModule } from "./auth/auth.module";
 import { SecurityModule } from "./security/security.module";
 import { GameModule } from "./game/game.module";
 import { FriendshipModule } from "./friendship/friendship.module";
+import { ChatModule } from './chat/chat.module';
 
 @Module({
-    imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, GameModule, PrismaModule, SecurityModule, FriendshipModule],
+    imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, GameModule, PrismaModule, SecurityModule, FriendshipModule, ChatModule],
     controllers: [AppController],
     providers: [],
 })
