@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:20 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 15:52:57 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/05 14:15:02 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,22 +21,22 @@ export class FriendshipController {
     ) {}
 
   @Post("/add")
-  async addFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
+  async addFriend(@Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
     try {
-      return await this.friendshipService.addFriendship(cookie, dto);
+      return await this.friendshipService.addFriend(dto);
     } catch (error) {
       throw error;
     }
   }
 
-//   @Post("/accept")
-//   async acceptFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
-//     try {
-      
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+  @Post("/accept")
+  async acceptFriend(@Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
+    try {
+      return await this.acceptFriend(dto);
+    } catch (error) {
+      throw error;
+    }
+  }
 
 //   @Post("/reject")
 //   async rejectFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
@@ -69,6 +69,14 @@ export class FriendshipController {
 //   async getPendingFriendships(@Body("cookie") cookie: string): Promise<FriendshipDataResponse> {
 //     try {
       
+//     } catch (error) {
+//       throw error;
+//     }
+//   }
+
+  // async getFriendshipsToAccept(@Body("cookie") cookie: string): Promise<Friend[]> {
+//     try {
+        
 //     } catch (error) {
 //       throw error;
 //     }

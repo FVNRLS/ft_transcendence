@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 18:18:15 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/05 14:52:05 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,18 +24,24 @@ export class FriendshipService {
   ) {}
   
   //CONTROLLER FUNCTIONS
-  async addFriendship(cookie: string, dto: FriendshipDto): Promise<FriendshipStatusResponse> {
+  async addFriend(dto: FriendshipDto): Promise<FriendshipStatusResponse> {
     try {
-      const session: Session = await this.securityService.verifyCookie(cookie);
+      const session: Session = await this.securityService.verifyCookie(dto.cookie);
       const user: User = await this.prisma.user.findUnique({ where: {id: session.userId} });
 
-      if (dto.username === user.username) {
+      if (dto.friendName === user.username) {
         throw new HttpException("Cmooooon... Are you trying to friend yourself? That's like giving yourself a high five... awkward and kinda sad.", HttpStatus.BAD_REQUEST);
       }
       
-      const friend = await this.prisma.user.findUnique({ where: {username: dto.username} });
+      const friend = await this.prisma.user.findUnique({ where: {username: dto.friendName} });
       if (!friend) {
-				throw new HttpException(`The person ${dto.username} doesn't exist`, HttpStatus.NO_CONTENT);
+				throw new HttpException(`The person ${dto.friendName} doesn't exist`, HttpStatus.NO_CONTENT);
+      }
+      
+      const friendInDatabase = await this.prisma.friend.findFirst({ where: {userId: friend.id } });
+      const reverseFriendshipRequestExists = await this.prisma.friend.findFirst({ where: {userId: friendInDatabase.userId, status: "pending"} });
+      if (reverseFriendshipRequestExists) {
+				throw new HttpException(`The person ${dto.friendName} hast already requested a friendship with you - accept him as a friend!`, HttpStatus.BAD_REQUEST);
       }
       
       await this.prisma.friend.create({ 
@@ -47,7 +53,7 @@ export class FriendshipService {
         }
        });
 
-      return { status: HttpStatus.CREATED, message: `You have sent a friendship request to the user ${dto.username}! Please wait for their confirmation.` };
+      return { status: HttpStatus.CREATED, message: `You have sent a friendship request to the user ${dto.friendName}! Please wait for their confirmation.` };
     } catch (error) {
 			if (error instanceof HttpException) {
 				throw error;
@@ -57,17 +63,22 @@ export class FriendshipService {
 		}
   }
 
-  // async acceptFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipResponse> {
-  //   try {
+  async acceptFriend(dto: FriendshipDto): Promise<FriendshipStatusResponse> {
+    try {
+      const session = await this.securityService.verifyCookie(dto.cookie);
+      const friendshipEntry = await this.prisma.friend.findFirst({ where: {userId: session.userId, friendName: dto.friendName } })
       
-  //   } catch (error) {
-	// 		if (error instanceof HttpException) {
-	// 			throw error;
-	// 		} else {
-	// 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-	// 		}
-	// 	}
-  // }
+      await this.prisma.friend.update({ where: { id: friendshipEntry.id }, data: { status: "accepted" } });
+      
+      return { status: HttpStatus.OK, message: "Done!" };
+    } catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+  }
 
   // async rejectFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipResponse> {
   //   try {
@@ -106,6 +117,18 @@ export class FriendshipService {
   // }
 
   // async getPendingFriendships(@Body("cookie") cookie: string): Promise<Friend[]> {
+  //   try {
+      
+  //   } catch (error) {
+	// 		if (error instanceof HttpException) {
+	// 			throw error;
+	// 		} else {
+	// 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+	// 		}
+	// 	}
+  // }
+
+  // async getFriendshipsToAccept(@Body("cookie") cookie: string): Promise<Friend[]> {
   //   try {
       
   //   } catch (error) {
