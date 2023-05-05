@@ -18,6 +18,7 @@ import { SecurityController } from 'src/security/security.controller';
 import { SecurityModule } from 'src/security/security.module';
 import { SecurityService } from 'src/security/security.service';
 import { ChatController } from './chat.controller';
+import { ChatService } from './chat.service';
 
 @Module({
 	imports: [
@@ -28,7 +29,7 @@ import { ChatController } from './chat.controller';
     }),
     SecurityModule,
   ],
-  providers: [SecurityService, PrismaService],
+  providers: [SecurityService, PrismaService, ChatService],
   controllers: [ChatController, SecurityController],
 })
 export class ChatModule {}
