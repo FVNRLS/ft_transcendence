@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:20 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/10 12:13:01 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/10 15:03:58 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,14 +38,14 @@ export class FriendshipController {
     }
   }
 
-//   @Post("/reject")
-//   async rejectFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
-//     try {
-      
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+  @Post("/reject")
+  async rejectFriend(@Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
+    try {
+      return await this.friendshipService.rejectFriend(dto);
+    } catch (error) {
+      throw error;
+    }
+  }
 
 //   @Post("/delete")
 //   async deleteFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
