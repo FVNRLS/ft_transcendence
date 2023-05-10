@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/10 17:17:16 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/10 17:44:05 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -161,7 +161,7 @@ export class FriendshipService {
 		}
   }
 
-  async getPendingFriendships(cookie: string): Promise<FriendshipDataResponse[]> {
+  async getPendingFriends(cookie: string): Promise<FriendshipDataResponse[]> {
     try {
       const status: string = "pending";
       return await this.getFriendlist(cookie, status);
@@ -174,17 +174,32 @@ export class FriendshipService {
 		}
   }
 
-  // async getFriendshipsToAccept(@Body("cookie") cookie: string): Promise<Friend[]> {
-  //   try {
+  async getFriendsToAccept(cookie: string): Promise<FriendshipDataResponse[]> {
+    try {
+      const session = await this.securityService.verifyCookie(cookie);
+      const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });
       
-  //   } catch (error) {
-	// 		if (error instanceof HttpException) {
-	// 			throw error;
-	// 		} else {
-	// 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-	// 		}
-	// 	}
-  // }
+      const friends: Friend[] = await this.prisma.friend.findMany({ where: { friendName: user.username, status: "pending"} });
+      if (friends.length === 0) {
+        throw new HttpException("It looks like you have no pending friendship requests yet.", HttpStatus.NO_CONTENT);
+      }
+
+      let friendList: FriendshipDataResponse[] = [];
+      for (let i: number = 0; i < friends.length; i++) {
+        const friend = friends[i];
+        const friendResponse = await this.getFriend(friend);
+        friendList.push(friendResponse);
+      };
+      
+      return friendList;
+    } catch (error) {
+		  if (error instanceof HttpException) {
+			  throw error;
+		  } else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+  }
 
   private async validateFriendshipRequest(dto: FriendshipDto, user: User): Promise<User> {
     try {
@@ -245,8 +260,6 @@ export class FriendshipService {
     } catch (error) {
       throw error;
     }
-
-  
   }
   
   private async getFriend(friend: Friend): Promise<FriendshipDataResponse> {
