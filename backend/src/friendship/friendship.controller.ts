@@ -6,11 +6,11 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:20 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/10 16:18:57 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/10 17:20:28 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Controller, Get, Post, Body } from "@nestjs/common";
+import { Controller, Post, Body } from "@nestjs/common";
 import { FriendshipDataResponse, FriendshipDto, FriendshipStatusResponse } from "./dto";
 import { FriendshipService } from "./friendship.service";
 
@@ -56,7 +56,7 @@ export class FriendshipController {
     }
   }
 
-  @Get("/get_accepted")
+  @Post("/get_accepted")
   async getAcceptedFriends(@Body("cookie") cookie: string): Promise<FriendshipDataResponse[]> {
     try {
       return await this.friendshipService.getAcceptedFriends(cookie);
@@ -65,16 +65,16 @@ export class FriendshipController {
     }
   }
 
-//   @Get("/get_pending")
-//   async getPendingFriendships(@Body("cookie") cookie: string): Promise<FriendshipDataResponse> {
-//     try {
-      
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+  @Post("/get_pending")
+  async getPendingFriendships(@Body("cookie") cookie: string): Promise<FriendshipDataResponse[]> {
+    try {
+      return await this.friendshipService.getPendingFriendships(cookie);
+    } catch (error) {
+      throw error;
+    }
+  }
 
-//   @Get("/get_pending")
+//   @Post("/get_to_accept")
   // async getFriendshipsToAccept(@Body("cookie") cookie: string): Promise<Friend[]> {
 //     try {
         

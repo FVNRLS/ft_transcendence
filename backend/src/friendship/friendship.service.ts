@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/10 16:18:48 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/10 17:17:16 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,24 +147,11 @@ export class FriendshipService {
 		}
   }
 
+  //TODO: find out the better way to determine if user is online or not
   async getAcceptedFriends(cookie: string): Promise<FriendshipDataResponse[]> {
     try {
-      const session = await this.securityService.verifyCookie(cookie);
-  
-      const friends: Friend[] = await this.prisma.friend.findMany({ where: { userId: session.userId, status: "accepted" } });
-      if (friends.length === 0) {
-				throw new HttpException("Oh no! It looks like you don't have friends yet!", HttpStatus.NO_CONTENT);
-			}
-
-      let friendsTable: FriendshipDataResponse[] = [];
-      for (let i: number = 0; i < friends.length; i++) {
-				const friend = friends[i];
-				const friendResponse = await this.getFriend(friend);
-				friendsTable.push(friendResponse);
-			};
-
-  
-      return friendsTable;
+      const status: string = "accepted";
+      return await this.getFriendlist(cookie, status);
     } catch (error) {
 			if (error instanceof HttpException) {
 				throw error;
@@ -174,17 +161,18 @@ export class FriendshipService {
 		}
   }
 
-  // async getPendingFriendships(@Body("cookie") cookie: string): Promise<Friend[]> {
-  //   try {
-      
-  //   } catch (error) {
-	// 		if (error instanceof HttpException) {
-	// 			throw error;
-	// 		} else {
-	// 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-	// 		}
-	// 	}
-  // }
+  async getPendingFriendships(cookie: string): Promise<FriendshipDataResponse[]> {
+    try {
+      const status: string = "pending";
+      return await this.getFriendlist(cookie, status);
+    } catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+  }
 
   // async getFriendshipsToAccept(@Body("cookie") cookie: string): Promise<Friend[]> {
   //   try {
@@ -237,6 +225,30 @@ export class FriendshipService {
     }
   }
 
+  private async getFriendlist(cookie: string, status: string): Promise<FriendshipDataResponse[]> {
+    try {
+      const session = await this.securityService.verifyCookie(cookie);
+
+      const friends: Friend[] = await this.prisma.friend.findMany({ where: { userId: session.userId, status: status } });
+        if (friends.length === 0) {
+          throw new HttpException("Oh no! It looks like you don't have friends yet!", HttpStatus.NO_CONTENT);
+        }
+  
+        let friendList: FriendshipDataResponse[] = [];
+        for (let i: number = 0; i < friends.length; i++) {
+          const friend = friends[i];
+          const friendResponse = await this.getFriend(friend);
+          friendList.push(friendResponse);
+        };
+        
+        return friendList;
+    } catch (error) {
+      throw error;
+    }
+
+  
+  }
+  
   private async getFriend(friend: Friend): Promise<FriendshipDataResponse> {
 		try {
       let isOnline: boolean;
