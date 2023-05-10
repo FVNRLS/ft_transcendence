@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/10 15:09:24 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/10 15:34:26 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,17 +112,40 @@ export class FriendshipService {
 		}
   }
 
-  // async deleteFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipResponse> {
-  //   try {
+  async deleteFriend(dto: FriendshipDto): Promise<FriendshipStatusResponse> {
+    try {
+      const session = await this.securityService.verifyCookie(dto.cookie);
       
-  //   } catch (error) {
-	// 		if (error instanceof HttpException) {
-	// 			throw error;
-	// 		} else {
-	// 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-	// 		}
-	// 	}
-  // }
+      const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });
+      if (user.username === dto.friendName) {
+				throw new HttpException("Invalid input", HttpStatus.BAD_REQUEST);
+      }
+
+      const friend: User = await this.prisma.user.findUnique({ where: { username: dto.friendName } });
+      if (!friend) {
+        throw new HttpException(`The user ${dto.friendName} doesn't exist`, HttpStatus.BAD_REQUEST);
+      }
+
+      const friendInDatabase = await this.prisma.friend.findFirst({
+        where: {
+          OR: [
+            { userId: friend.id, friendName: user.username },
+            { userId: user.id, friendName: friend.username },
+          ],
+        },
+      });
+
+      await this.prisma.friend.delete({ where: { id: friendInDatabase.id } });
+
+      return { status: HttpStatus.OK, message: `User ${dto.friendName} was removed from your friendlist` };
+    } catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+  }
 
   // async getAcceptedFriends(@Body("cookie") cookie: string): Promise<Friend[]> {
   //   try {
