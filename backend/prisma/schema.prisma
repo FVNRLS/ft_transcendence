@@ -78,7 +78,7 @@ model Friend {
   user               User         @relation(fields: [userId], references: [id])
   friendId           Int
   friendName         String
-  status             String   // Status of the friendship (e.g. "pending", "accepted", "rejected")
+  status             String   // Status of the friendship (e.g. "pending", "accepted")
 
   @@map("friends")
 }

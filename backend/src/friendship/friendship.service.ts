@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/05 14:52:05 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/10 11:14:48 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { FriendshipDto, FriendshipStatusResponse, FriendshipDataResponse } from './dto';
 import { PrismaService } from "../prisma/prisma.service";
 import { SecurityService } from 'src/security/security.service';
-import { Session, User } from '@prisma/client';
+import { Friend, Session, User } from '@prisma/client';
 
 @Injectable()
 export class FriendshipService {
@@ -27,23 +27,10 @@ export class FriendshipService {
   async addFriend(dto: FriendshipDto): Promise<FriendshipStatusResponse> {
     try {
       const session: Session = await this.securityService.verifyCookie(dto.cookie);
-      const user: User = await this.prisma.user.findUnique({ where: {id: session.userId} });
+      const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });
 
-      if (dto.friendName === user.username) {
-        throw new HttpException("Cmooooon... Are you trying to friend yourself? That's like giving yourself a high five... awkward and kinda sad.", HttpStatus.BAD_REQUEST);
-      }
-      
-      const friend = await this.prisma.user.findUnique({ where: {username: dto.friendName} });
-      if (!friend) {
-				throw new HttpException(`The person ${dto.friendName} doesn't exist`, HttpStatus.NO_CONTENT);
-      }
-      
-      const friendInDatabase = await this.prisma.friend.findFirst({ where: {userId: friend.id } });
-      const reverseFriendshipRequestExists = await this.prisma.friend.findFirst({ where: {userId: friendInDatabase.userId, status: "pending"} });
-      if (reverseFriendshipRequestExists) {
-				throw new HttpException(`The person ${dto.friendName} hast already requested a friendship with you - accept him as a friend!`, HttpStatus.BAD_REQUEST);
-      }
-      
+      const friend: User = await this.validateFriendshipRequest(dto, user);
+
       await this.prisma.friend.create({ 
         data: {
           userId: user.id,
@@ -53,7 +40,7 @@ export class FriendshipService {
         }
        });
 
-      return { status: HttpStatus.CREATED, message: `You have sent a friendship request to the user ${dto.friendName}! Please wait for their confirmation.` };
+      return { status: HttpStatus.CREATED, message: `You have sent a friendship request to the user ${dto.friendName}! Please wait for the confirmation.` };
     } catch (error) {
 			if (error instanceof HttpException) {
 				throw error;
@@ -139,4 +126,42 @@ export class FriendshipService {
 	// 		}
 	// 	}
   // }
+
+  private async validateFriendshipRequest(dto: FriendshipDto, user: User): Promise<User> {
+    try {
+      if (dto.friendName === user.username) {
+        throw new HttpException("Cmooooon... Are you trying to friend yourself? That's like giving yourself a high five... awkward and kinda sad.", HttpStatus.BAD_REQUEST);
+      }
+      
+      const friend = await this.prisma.user.findUnique({ where: {username: dto.friendName} });
+      if (!friend) {
+				throw new HttpException(`The person ${dto.friendName} doesn't exist`, HttpStatus.BAD_REQUEST);
+      }
+      
+      const friendInDatabase = await this.prisma.friend.findFirst({
+        where: {
+          OR: [
+            { userId: friend.id, friendName: user.username },
+            { userId: user.id, friendName: friend.username },
+          ],
+        },
+      });
+      
+      if (friendInDatabase) {
+        if (friendInDatabase.status === "pending") {
+          if (friendInDatabase.friendName === user.username) {
+            throw new HttpException(`The person ${dto.friendName} has already requested a friendship with you - accept him as a friend!`, HttpStatus.BAD_REQUEST);
+          } else if (friendInDatabase.friendName === friend.username) {
+            throw new HttpException(`You have already requested a friendship with ${dto.friendName}. Please wait for the confirmation.`, HttpStatus.BAD_REQUEST);
+          }
+        }
+        if (friendInDatabase.status === "accepted") {
+				  throw new HttpException(`You are already in friendship with ${dto.friendName}`, HttpStatus.BAD_REQUEST);
+        }
+        return friend;
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
 }

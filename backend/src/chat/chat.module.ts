@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/04 11:45:19 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/04 11:45:21 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/10 09:55:14 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ import { SecurityController } from 'src/security/security.controller';
 import { SecurityModule } from 'src/security/security.module';
 import { SecurityService } from 'src/security/security.service';
 import { ChatController } from './chat.controller';
+import { ChatService } from './chat.service';
 
 @Module({
 	imports: [
@@ -28,7 +29,7 @@ import { ChatController } from './chat.controller';
     }),
     SecurityModule,
   ],
-  providers: [SecurityService, PrismaService],
+  providers: [ChatService, SecurityService, PrismaService],
   controllers: [ChatController, SecurityController],
 })
 export class ChatModule {}
