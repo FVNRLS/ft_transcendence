@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/10 12:02:25 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/10 14:21:48 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,12 +53,27 @@ export class FriendshipService {
   async acceptFriend(dto: FriendshipDto): Promise<FriendshipStatusResponse> {
     try {
       const session = await this.securityService.verifyCookie(dto.cookie);
-      const friendshipEntry = await this.prisma.friend.findFirst({ where: {userId: session.userId, friendName: dto.friendName } })
+      
+      const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });
+      if (user.username === dto.friendName) {
+				throw new HttpException("You can't accept friendship, requested from yourself!", HttpStatus.BAD_REQUEST);
+      }
+
+      const friend: User = await this.prisma.user.findUnique({ where: { username: dto.friendName } });
+      if (!friend) {
+        throw new HttpException(`The user ${dto.friendName} doesn't exist`, HttpStatus.BAD_REQUEST);
+      }
+
+      const friendshipEntry: Friend = await this.prisma.friend.findFirst({ where: { userId: friend.id, friendName: user.username } })
+      if (friendshipEntry.status === "accepted") {
+				throw new HttpException(`You have already accepted the friendship with ${dto.friendName}`, HttpStatus.BAD_REQUEST);
+      }
       
       await this.prisma.friend.update({ where: { id: friendshipEntry.id }, data: { status: "accepted" } });
       
       return { status: HttpStatus.OK, message: "Done!" };
     } catch (error) {
+      console.log(error);
 			if (error instanceof HttpException) {
 				throw error;
 			} else {
