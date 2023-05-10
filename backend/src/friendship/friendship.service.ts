@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/10 11:14:48 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/10 12:02:25 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ export class FriendshipService {
       const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });
 
       const friend: User = await this.validateFriendshipRequest(dto, user);
-
+    
       await this.prisma.friend.create({ 
         data: {
           userId: user.id,
@@ -133,7 +133,7 @@ export class FriendshipService {
         throw new HttpException("Cmooooon... Are you trying to friend yourself? That's like giving yourself a high five... awkward and kinda sad.", HttpStatus.BAD_REQUEST);
       }
       
-      const friend = await this.prisma.user.findUnique({ where: {username: dto.friendName} });
+      const friend: User = await this.prisma.user.findUnique({ where: { username: dto.friendName } });
       if (!friend) {
 				throw new HttpException(`The person ${dto.friendName} doesn't exist`, HttpStatus.BAD_REQUEST);
       }
@@ -146,7 +146,7 @@ export class FriendshipService {
           ],
         },
       });
-      
+
       if (friendInDatabase) {
         if (friendInDatabase.status === "pending") {
           if (friendInDatabase.friendName === user.username) {
@@ -157,9 +157,10 @@ export class FriendshipService {
         }
         if (friendInDatabase.status === "accepted") {
 				  throw new HttpException(`You are already in friendship with ${dto.friendName}`, HttpStatus.BAD_REQUEST);
-        }
-        return friend;
+        }    
       }
+      
+      return friend;
     } catch (error) {
       throw error;
     }
