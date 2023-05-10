@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/10 15:34:26 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/10 16:18:48 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,17 +147,32 @@ export class FriendshipService {
 		}
   }
 
-  // async getAcceptedFriends(@Body("cookie") cookie: string): Promise<Friend[]> {
-  //   try {
-      
-  //   } catch (error) {
-	// 		if (error instanceof HttpException) {
-	// 			throw error;
-	// 		} else {
-	// 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-	// 		}
-	// 	}
-  // }
+  async getAcceptedFriends(cookie: string): Promise<FriendshipDataResponse[]> {
+    try {
+      const session = await this.securityService.verifyCookie(cookie);
+  
+      const friends: Friend[] = await this.prisma.friend.findMany({ where: { userId: session.userId, status: "accepted" } });
+      if (friends.length === 0) {
+				throw new HttpException("Oh no! It looks like you don't have friends yet!", HttpStatus.NO_CONTENT);
+			}
+
+      let friendsTable: FriendshipDataResponse[] = [];
+      for (let i: number = 0; i < friends.length; i++) {
+				const friend = friends[i];
+				const friendResponse = await this.getFriend(friend);
+				friendsTable.push(friendResponse);
+			};
+
+  
+      return friendsTable;
+    } catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			} else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+  }
 
   // async getPendingFriendships(@Body("cookie") cookie: string): Promise<Friend[]> {
   //   try {
@@ -206,7 +221,7 @@ export class FriendshipService {
       if (friendInDatabase) {
         if (friendInDatabase.status === "pending") {
           if (friendInDatabase.friendName === user.username) {
-            throw new HttpException(`The person ${dto.friendName} has already requested a friendship with you - accept him as a friend!`, HttpStatus.BAD_REQUEST);
+            throw new HttpException(`The user ${dto.friendName} has already requested a friendship with you - accept him as a friend!`, HttpStatus.BAD_REQUEST);
           } else if (friendInDatabase.friendName === friend.username) {
             throw new HttpException(`You have already requested a friendship with ${dto.friendName}. Please wait for the confirmation.`, HttpStatus.BAD_REQUEST);
           }
@@ -221,4 +236,25 @@ export class FriendshipService {
       throw error;
     }
   }
+
+  private async getFriend(friend: Friend): Promise<FriendshipDataResponse> {
+		try {
+      let isOnline: boolean;
+      const session: Session = await this.prisma.session.findFirst({ where: { userId: friend.userId } });
+      if (session) {
+        isOnline = true;
+      } else {
+        isOnline = false;
+      }
+      
+			const frienResponse: FriendshipDataResponse = {
+				friendName: friend.friendName,
+        isOnline: isOnline,
+			}
+
+			return frienResponse;
+		} catch (error) {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }
