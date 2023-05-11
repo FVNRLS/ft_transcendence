@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/11 12:42:31 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/11 12:54:07 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -167,45 +167,32 @@ export class FriendshipService {
 		}
   }
 
-  // async getPendingFriends(cookie: string): Promise<FriendshipDataResponse[]> {
-  //   try {
-  //     const status: string = "pending";
-  //     return await this.getFriendlist(cookie, status);
-  //   } catch (error) {
-	// 		if (error instanceof HttpException) {
-	// 			throw error;
-	// 		} else {
-	// 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-	// 		}
-	// 	}
-  // }
-
-  // async getFriendsToAccept(cookie: string): Promise<FriendshipDataResponse[]> {
-  //   try {
-  //     const session = await this.securityService.verifyCookie(cookie);
-  //     const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });
+  async getFriendsToAccept(cookie: string): Promise<FriendshipDataResponse[]> {
+    try {
+      const session = await this.securityService.verifyCookie(cookie);
+      const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });
       
-  //     const friends: Friend[] = await this.prisma.friend.findMany({ where: { friendName: user.username, status: "pending"} });
-  //     if (friends.length === 0) {
-  //       throw new HttpException("It looks like you have no pending friendship requests yet.", HttpStatus.NO_CONTENT);
-  //     }
+      const friends: Friend[] = await this.prisma.friend.findMany({ where: { friendName: user.username, status: "pending"} });
+      if (friends.length === 0) {
+        throw new HttpException("It looks like you have no pending friendship requests yet.", HttpStatus.NO_CONTENT);
+      }
 
-  //     let friendList: FriendshipDataResponse[] = [];
-  //     for (let i: number = 0; i < friends.length; i++) {
-  //       const friend = friends[i];
-  //       const friendResponse = await this.getContactedFriend(friend);
-  //       friendList.push(friendResponse);
-  //     };
+      let friendList: FriendshipDataResponse[] = [];
+      for (let i: number = 0; i < friends.length; i++) {
+        const friend = friends[i];
+        const friendResponse = await this.getFriend(friend, user);
+        friendList.push(friendResponse);
+      };
       
-  //     return friendList;
-  //   } catch (error) {
-	// 	  if (error instanceof HttpException) {
-	// 		  throw error;
-	// 	  } else {
-	// 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-	// 		}
-	// 	}
-  // }
+      return friendList;
+    } catch (error) {
+		  if (error instanceof HttpException) {
+			  throw error;
+		  } else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+  }
 
   private async validateFriendshipRequest(dto: FriendshipDto, user: User): Promise<User> {
     try {
@@ -252,14 +239,10 @@ export class FriendshipService {
       const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });      
   
       const contactedFriends = await this.prisma.friend.findMany({
-        where: { userId: session.userId, status },
-        // include: { user: true },
-      });
+        where: { userId: session.userId, status } });
   
       const friendsContactedMe = await this.prisma.friend.findMany({
-        where: { friendId: session.userId, status },
-        // include: { user: true },
-      });
+        where: { friendId: session.userId, status } });
   
       const friendList = contactedFriends.concat(friendsContactedMe);
       if (friendList.length === 0) {

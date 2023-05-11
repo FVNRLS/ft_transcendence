@@ -6,7 +6,7 @@
 /*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:20 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/11 12:44:29 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/11 12:54:24 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,21 +65,12 @@ export class FriendshipController {
     }
   }
 
-  // @Post("/get_pending")
-  // async getPendingFriends(@Body("cookie") cookie: string): Promise<FriendshipDataResponse[]> {
-  //   try {
-  //     return await this.friendshipService.getPendingFriends(cookie);
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
-  // @Post("/get_to_accept")
-  // async getFriendsToAccept(@Body("cookie") cookie: string): Promise<FriendshipDataResponse[]> {
-  //   try {
-  //     return await this.friendshipService.getFriendsToAccept(cookie);
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
+  @Post("/get_to_accept")
+  async getFriendsToAccept(@Body("cookie") cookie: string): Promise<FriendshipDataResponse[]> {
+    try {
+      return await this.friendshipService.getFriendsToAccept(cookie);
+    } catch (error) {
+      throw error;
+    }
+  }
 }
