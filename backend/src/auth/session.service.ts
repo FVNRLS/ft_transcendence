@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   session.service.ts                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:37 by rmazurit          #+#    #+#             */
 /*   Updated: 2023/04/27 14:48:25 by rmazurit         ###   ########.fr       */

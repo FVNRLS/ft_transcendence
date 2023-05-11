@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   friendship.dto.ts                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/04 11:46:23 by rmazurit          #+#    #+#             */
 /*   Updated: 2023/05/10 14:50:00 by rmazurit         ###   ########.fr       */

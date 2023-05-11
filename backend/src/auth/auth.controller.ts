@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   auth.controller.ts                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
 /*   Updated: 2023/04/27 18:03:54 by rmazurit         ###   ########.fr       */

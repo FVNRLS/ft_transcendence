@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   game.module.ts                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:22:08 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 12:55:29 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/11 18:15:36 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 

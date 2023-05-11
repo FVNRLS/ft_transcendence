@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   friendship.service.ts                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/05/03 13:10:39 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/11 12:54:07 by rmazurit         ###   ########.fr       */
+/*   Created: 2023/05/11 18:09:00 by rmazurit          #+#    #+#             */
+/*   Updated: 2023/05/11 18:09:04 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
