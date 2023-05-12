@@ -25,16 +25,15 @@ const Form = () =>
 
 	//TODO: test the new function
 	useEffect(() => {
-		const authorizeOnFortyTwo = async () => {
+		const authorize = async () => {
 		  try {
-				const response = await axios.get('http://localhost:5000/auth/authorize_on_fortytwo_page');
-				window.location.href = response.data.authorizationUrl;
+				await axios.get('http://localhost:5000/auth/authorize');
 			} catch (error) {
 				console.error(error);
 			}
 		};
 	  
-		authorizeOnFortyTwo();
+		authorize();
 	}, []);
 
 	const sendSignUpData = async (event:any) => {
