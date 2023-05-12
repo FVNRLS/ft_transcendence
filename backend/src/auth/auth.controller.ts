@@ -10,35 +10,31 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, Controller, Get, Post, Query, Res, UploadedFile, UseInterceptors} from "@nestjs/common";
+import { Body, Controller, Get, Post, Redirect, UploadedFile, UseInterceptors} from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AuthService } from "./auth.service"
 import { AuthDto } from "./dto";
 import { AuthResponse } from "./dto/response.dto";
-import { Response } from 'express';
+
+const CLIENT_ID = process.env.REACT_APP_ID;
+const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
 
 @Controller("/auth")
 export class AuthController {
 	constructor( private authService: AuthService ) {}
 
-	@Get('/authorize_on_fortytwo_page')
-	async authorize(): Promise<string> {
-		try {
-			return await this.authService.getAuthorizationUrl();
-		} catch (error) {
-			throw error;
-		}
-	}
+	@Get('/authorize')
+  @Redirect(`https://api.intra.42.fr/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`, 302)
+  authorize() {}
 
-	@Get('/authorize_callback')
-	async authorizeCallback(@Query('code') code: string, @Res() response: Response): Promise<void> {
-  	try {
-    	const accessToken = await this.authService.exchangeCodeForToken(code);
-    	return response.redirect('http://localhost:3000/');
-  	} catch (error) {
-    	throw error;
-  	}
-	}
+  @Get('/authorize_callback')
+  async authorizeCallback(@Body("code") code: string): Promise<void> {
+    try {
+     await this.authService.authorizeCallback(code);
+    } catch (error) {
+      throw error;
+    }
+  }
 
 	@Post("/signup")
 	@UseInterceptors(FileInterceptor("file", { dest: "uploads" }))

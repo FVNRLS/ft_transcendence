@@ -22,7 +22,6 @@ import { Session, User } from "@prisma/client";
 import { MailService } from "./mail.service";
 import axios from "axios";
 
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -31,56 +30,34 @@ export class AuthService {
     private sessionService: SessionService,
 		private securityService: SecurityService,
     private googleDriveService: GoogleDriveService,
-
   ) {}
 
-
- async getAuthorizationUrl(): Promise<string> {
-  try {
-      const CLIENT_ID = process.env.REACT_APP_ID;
-      const REDIRECT_URI = 'http://localhost:3000/auth/authorize_callback';
-
-      const params = new URLSearchParams({
-      client_id: CLIENT_ID,
-      redirect_uri: REDIRECT_URI,
-      response_type: 'code',
-    });
-      const authorizationUrl = `https://api.intra.42.fr/oauth/authorize?${params.toString()}`;
-      console.log(authorizationUrl);
-
-      return authorizationUrl;
-    } catch (error) {
-				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  async exchangeCodeForToken(code: string): Promise<string> {
-    const CLIENT_ID = process.env.REACT_APP_ID;
-    const SECRET = process.env.REACT_APP_SECRET;
-    const REDIRECT_URI = 'http://localhost:3000/auth/authorize_callback';
-
-    const data = {
-      grant_type: 'authorization_code',
-      client_id: CLIENT_ID,
-      client_secret: SECRET,
-      code: code,
-      redirect_uri: REDIRECT_URI,
-    };
-  
-    try {
-      const response = await axios.post('https://api.intra.42.fr/oauth/token', data);
-      const accessToken: string = response.data.access_token;
-
-      return accessToken;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-
-
-
   //CONTROLLER FUNCTIONS
+  async authorizeCallback(code: string): Promise<void> {
+    try {
+      const CLIENT_ID = process.env.REACT_APP_ID;
+      const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
+      const SECRET = process.env.REACT_APP_SECRET;
+  
+      const response = await axios.post("https://api.intra.42.fr/oauth/token", {
+        grant_type: 'authorization_code',
+        client_id: CLIENT_ID,
+        client_secret: SECRET,
+        code,
+        redirect_uri: REDIRECT_URI,
+      });
+
+      const accessToken = response.data.access_token;
+      await this.securityService.validateToken(accessToken);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<AuthResponse> {
     try {
       await this.securityService.validateToken(dto);
