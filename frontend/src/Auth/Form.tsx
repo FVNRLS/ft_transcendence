@@ -8,7 +8,7 @@ import './Form.css'
 const Form = () => 
 {
 	const [isLoading, setIsLoading] = useState(false);
-	const [accessToken, setAccessToken] = useState('');
+	const [isAuthorized, setIsAuthorized] = useState(false);
 	const [signInError, setSignInError] = useState('');
 	const [signUpError, setSignUpError] = useState('');
 	const [switchUp, setSwitchUp] = useState(false);
@@ -23,11 +23,12 @@ const Form = () =>
 		setFile(event.target.files[0]);
 	};
 
-	//TODO: test the new function
+	//TODO: resolve the problem, that after authorization the code prints into browser url field - remove it
 	useEffect(() => {
 		const authorize = async () => {
 		  try {
 				await axios.get('http://localhost:5000/auth/authorize');
+				setIsAuthorized(true); // Update the flag if authorize succeeds
 			} catch (error) {
 				console.error(error);
 			}
@@ -42,10 +43,9 @@ const Form = () =>
 		let formData = new FormData();
 		formData.append('username', username);
 		formData.append('password', password);
-		formData.append('token_42', accessToken);
 		if (file)
 			formData.append('file', file);
-		if (accessToken)
+		if (isAuthorized) //singup only if authorized
 		{
 			try {
 				const response = await axios.post('http://localhost:5000/auth/signup', formData, {
@@ -70,23 +70,26 @@ const Form = () =>
 	const sendSignInData = async (event:any) => {
 		event.preventDefault();
 		setIsLoading(true);
-		try {
-			const response = await axios.post('http://localhost:5000/auth/login', {
-				username: username,
-				password: password
-			});
-			if (response.data.status === 201)
-			{
-				dispatch(login(response.data.cookie));
-				navigate('/');
+		if (isAuthorized) //singup only if authorized
+		{
+			try {
+				const response = await axios.post('http://localhost:5000/auth/login', {
+					username: username,
+					password: password
+				});
+				if (response.data.status === 201)
+				{
+					dispatch(login(response.data.cookie));
+					navigate('/');
+				}
+				else
+					setSignInError(response.data.message);
+			} catch (error) {
+				console.error(error);
+			} finally {
+				setIsLoading(false);
 			}
-			else
-				setSignInError(response.data.message);
-		} catch (error) {
-			console.error(error);
-		} finally {
-            setIsLoading(false);
-        }
+		}
 	}
 
 	const handleSwitch = () => {

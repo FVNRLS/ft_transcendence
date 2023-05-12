@@ -60,7 +60,6 @@ export class AuthService {
 
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<AuthResponse> {
     try {
-      await this.securityService.validateToken(dto);
       this.securityService.validateCredentials(dto);
       
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
