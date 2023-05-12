@@ -36,11 +36,11 @@ export class AuthService {
   async authorizeCallback(code: string): Promise<void> {
     try {
       const CLIENT_ID = process.env.REACT_APP_ID;
-      const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
+      const REDIRECT_URI = "http://localhost:3000/form";
       const SECRET = process.env.REACT_APP_SECRET;
   
       const response = await axios.post("https://api.intra.42.fr/oauth/token", {
-        grant_type: 'authorization_code',
+        grant_type: "authorization_code",
         client_id: CLIENT_ID,
         client_secret: SECRET,
         code,

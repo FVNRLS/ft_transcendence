@@ -16,18 +16,24 @@ import { AuthService } from "./auth.service"
 import { AuthDto } from "./dto";
 import { AuthResponse } from "./dto/response.dto";
 
-const CLIENT_ID = process.env.REACT_APP_ID;
 const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
 
 @Controller("/auth")
 export class AuthController {
 	constructor( private authService: AuthService ) {}
 
-	@Get('/authorize')
-  @Redirect(`https://api.intra.42.fr/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`, 302)
+	/*
+		User accesses the /authorize endpoint.
+		They are redirected to the authorization server to authorize the application.
+		After authorization, the user is redirected back to the redirect_uri specified in the authorization request.
+		The authorizeCallback() function is called, and the authorization code is received as a parameter.
+		The authorization code can then be used to obtain an access token and complete the authorization process.
+	*/
+	@Get("/authorize")
+  @Redirect(`https://api.intra.42.fr/oauth/authorize?client_id=${process.env.REACT_APP_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`, 302)
   authorize() {}
 
-  @Get('/authorize_callback')
+  @Post("/authorize_callback")
   async authorizeCallback(@Body("code") code: string): Promise<void> {
     try {
      await this.authService.authorizeCallback(code);
