@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   friendship.controller.ts                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:20 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 15:52:57 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/11 12:54:24 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Controller, Get, Post, Body } from "@nestjs/common";
+import { Controller, Post, Body } from "@nestjs/common";
 import { FriendshipDataResponse, FriendshipDto, FriendshipStatusResponse } from "./dto";
 import { FriendshipService } from "./friendship.service";
 
@@ -21,56 +21,56 @@ export class FriendshipController {
     ) {}
 
   @Post("/add")
-  async addFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
+  async addFriend(@Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
     try {
-      return await this.friendshipService.addFriendship(cookie, dto);
+      return await this.friendshipService.addFriend(dto);
     } catch (error) {
       throw error;
     }
   }
 
-//   @Post("/accept")
-//   async acceptFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
-//     try {
-      
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+  @Post("/accept")
+  async acceptFriend(@Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
+    try {
+      return await this.friendshipService.acceptFriend(dto);
+    } catch (error) {
+      throw error;
+    }
+  }
 
-//   @Post("/reject")
-//   async rejectFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
-//     try {
-      
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+  @Post("/reject")
+  async rejectFriend(@Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
+    try {
+      return await this.friendshipService.rejectFriend(dto);
+    } catch (error) {
+      throw error;
+    }
+  }
 
-//   @Post("/delete")
-//   async deleteFriend(@Body("cookie") cookie: string, @Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
-//     try {
-      
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+  @Post("/delete")
+  async deleteFriend(@Body() dto: FriendshipDto): Promise<FriendshipStatusResponse> {
+    try {
+      return await this.friendshipService.deleteFriend(dto);
+    } catch (error) {
+      throw error;
+    }
+  }
 
-//   @Get("/get_accepted")
-//   async getAcceptedFriends(@Body("cookie") cookie: string): Promise<FriendshipDataResponse> {
-//     try {
-      
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+  @Post("/get_accepted")
+  async getAcceptedFriends(@Body("cookie") cookie: string): Promise<FriendshipDataResponse[]> {
+    try {
+      return await this.friendshipService.getFriends(cookie);
+    } catch (error) {
+      throw error;
+    }
+  }
 
-//   @Get("/get_pending")
-//   async getPendingFriendships(@Body("cookie") cookie: string): Promise<FriendshipDataResponse> {
-//     try {
-      
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+  @Post("/get_to_accept")
+  async getFriendsToAccept(@Body("cookie") cookie: string): Promise<FriendshipDataResponse[]> {
+    try {
+      return await this.friendshipService.getFriendsToAccept(cookie);
+    } catch (error) {
+      throw error;
+    }
+  }
 }

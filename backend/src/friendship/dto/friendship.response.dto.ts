@@ -3,15 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   friendship.response.dto.ts                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 15:16:43 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/11 12:47:40 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { HttpStatus } from "@nestjs/common";
-import { Friend } from "@prisma/client";
 
 export interface FriendshipStatusResponse {
   status: HttpStatus;
@@ -19,6 +18,6 @@ export interface FriendshipStatusResponse {
 }
 
 export interface FriendshipDataResponse {
-  friends: Friend[];
-  isOnline: boolean;
+  friendName: string;
+  // isOnline?: boolean;
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   game.controller.ts                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:24:21 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/02 17:07:53 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/11 18:15:27 by rmazurit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
