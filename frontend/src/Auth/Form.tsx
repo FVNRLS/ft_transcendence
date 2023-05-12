@@ -5,10 +5,6 @@ import { useDispatch } from 'react-redux';
 import { login } from './AuthSlice';
 import './Form.css'
 
-const CLIENT_ID = process.env.REACT_APP_ID;
-const REDIRECT_URI = 'http://localhost:3000/form';
-const SECRET = process.env.REACT_APP_SECRET;
-
 const Form = () => 
 {
 	const [isLoading, setIsLoading] = useState(false);
@@ -27,26 +23,19 @@ const Form = () =>
 		setFile(event.target.files[0]);
 	};
 
+	//TODO: test the new function
 	useEffect(() => {
-		const urlParams = new URLSearchParams(window.location.search);
-		const code = urlParams.get('code');
-		if (code) {
-			axios.post('https://api.intra.42.fr/oauth/token', {
-				grant_type: 'authorization_code',
-				client_id: CLIENT_ID,
-				client_secret: SECRET,
-				code: code,
-				redirect_uri: REDIRECT_URI
-			})
-			.then(response => {
-				setAccessToken(response.data.access_token);
-			})
-			.catch(error => {
+		const authorizeOnFortyTwo = async () => {
+		  try {
+				const response = await axios.get('http://localhost:5000/auth/authorize_on_fortytwo_page');
+				window.location.href = response.data.authorizationUrl;
+			} catch (error) {
 				console.error(error);
-			});}
-		
-		navigate('');
-	}, [navigate]);
+			}
+		};
+	  
+		authorizeOnFortyTwo();
+	}, []);
 
 	const sendSignUpData = async (event:any) => {
 		event.preventDefault();

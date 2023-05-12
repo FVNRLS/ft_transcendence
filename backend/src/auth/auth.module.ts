@@ -13,6 +13,7 @@
 import { Module } from "@nestjs/common";
 import { PrismaModule } from "../prisma/prisma.module";
 import { JwtModule } from "@nestjs/jwt";
+import { SecurityModule } from "src/security/security.module";
 import { AuthController } from "./auth.controller";
 import { SecurityController } from "../security/security.controller";
 import { GoogleDriveController } from "./google_drive/google.drive.controller";
@@ -21,7 +22,6 @@ import { SessionService } from "./session.service";
 import { SecurityService } from "../security/security.service";
 import { GoogleDriveService } from "./google_drive/google.drive.service";
 import { MailService } from "./mail.service";
-import { SecurityModule } from "src/security/security.module";
 
 
 @Module({
