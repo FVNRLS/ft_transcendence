@@ -85,14 +85,17 @@ model Friend {
 }
 
 model UserOnRooms {
-  id        Int                   @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   roomId    Int
-  room      Room                  @relation(fields: [roomId], references: [id])
+  room      Room     @relation(fields: [roomId], references: [id])
   userId    Int
-  user      User                  @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
-  @@map("(useronrooms)")
+  @@unique([roomId, userId])
+  @@map("useronrooms")
 }
+
+
 
 model Room {          
   id                    Int       @id @default(autoincrement())
@@ -111,7 +114,7 @@ model Message {
   roomId                Int
   room                  Room      @relation(fields: [roomId], references: [id])
   createdAt             DateTime  @default(now())
-  value                 String
+  content               String
   
   @@map("messages")
 }
