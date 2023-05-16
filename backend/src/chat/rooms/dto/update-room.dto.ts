@@ -4,7 +4,7 @@ import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class UpdateRoomDto extends PartialType(CreateRoomDto) {
   @IsNumber()
-  id: number;
+  roomId: number;
 
   @IsString()
   roomName: string;

@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { MessagesService } from './messages.service';
-import { MessagesGateway } from './messages.gateway';
+import { DirectMessagesService } from './direct-messages.service';
+import { DirectMessagesGateway } from './direct-messages.gateway';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { SecurityModule } from 'src/security/security.module';
 import { SecurityService } from 'src/security/security.service';
-import { RoomsService } from '../rooms/rooms.service';
 
 @Module({
   imports: [
@@ -16,6 +15,6 @@ import { RoomsService } from '../rooms/rooms.service';
     }),
     SecurityModule,
   ],
-  providers: [MessagesGateway, MessagesService, SecurityService, RoomsService]
+  providers: [DirectMessagesGateway, DirectMessagesService, SecurityService]
 })
-export class MessagesModule {}
+export class DirectMessagesModule {}

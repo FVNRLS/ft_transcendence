@@ -4,8 +4,9 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { Socket } from 'socket.io';
 import { UseGuards } from '@nestjs/common';
-import { WsJwtAuthGuard } from 'src/ws-jwt-auth-guard/ws-jwt-auth-guard.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { WsJwtAuthGuard } from '../guards/ws-jwt-auth-guard/ws-jwt-auth-guard.guard';
+import { WsIsUserRoomCreatorGuard } from '../guards/ws-is-user-room-creator/ws-is-user-room-creator.guard';
 
 @WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
 export class RoomsGateway {
@@ -29,7 +30,7 @@ export class RoomsGateway {
     return { message: 'Reconnected and rooms rejoined' };
   }
 
-
+  // Chat Room Management
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('createRoom')
   create(
@@ -40,35 +41,37 @@ export class RoomsGateway {
   }
 
   @UseGuards(WsJwtAuthGuard)
-  @SubscribeMessage('findAllRooms')
-  findAll() {
-    return this.roomsService.findAll();
-  }
-
-  @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('findOneRoom')
-  findOne(@MessageBody() id: number) {
-    return this.roomsService.findOne(id);
+  findOne(@MessageBody('roomId') roomId: number) {
+    return this.roomsService.findOne(roomId);
   }
-
-  @UseGuards(WsJwtAuthGuard)
+  
+  @UseGuards(WsJwtAuthGuard, WsIsUserRoomCreatorGuard)
   @SubscribeMessage('updateRoom')
   update(
     @MessageBody() updateRoomDto: UpdateRoomDto,
     @ConnectedSocket() client: Socket,
     ) {
-    return this.roomsService.update(updateRoomDto.id, updateRoomDto, client);
-  }
-
-  @UseGuards(WsJwtAuthGuard)
+      return this.roomsService.update(updateRoomDto.roomId, updateRoomDto, client);
+    }
+    
+  @UseGuards(WsJwtAuthGuard, WsIsUserRoomCreatorGuard)
   @SubscribeMessage('removeRoom')
   remove(
-    @MessageBody('id') id: number,
+    @MessageBody('roomId') roomId: number,
     @ConnectedSocket() client: Socket
     ) {
-    return this.roomsService.remove(id, client);
+      return this.roomsService.remove(roomId, client);
+    }
+      
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('findAllRooms')
+  findAll() {
+    return this.roomsService.findAll();
   }
 
+
+  // User-Room Interactions
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('joinRoom')
   async joinRoom(
@@ -86,7 +89,7 @@ export class RoomsGateway {
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('leaveRoom')
   async leaveRoom(
-    @MessageBody() roomId: number, 
+    @MessageBody('roomId') roomId: number, 
     @ConnectedSocket() client: Socket,
   ) {
     try {
@@ -96,5 +99,12 @@ export class RoomsGateway {
       return {error: error.message};
     }
   }
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('getRoomMembers')
+  async getRoomMembers(@MessageBody('roomId') roomId: number) {
+    const roomMembers = await this.roomsService.getRoomMembers(roomId);
+    return roomMembers;
+  }  
   
 }

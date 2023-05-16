@@ -27,48 +27,48 @@ export class RoomsService {
     return await this.prisma.room.findMany();
   }
 
-  async findOne(id: number) {
+  async findOne(roomId: number) {
     const room = await this.prisma.room.findUnique({
-      where: { id },
+      where: { id: roomId },
     });
     if (!room) {
-      throw new Error(`No room found for id ${id}`);
+      throw new Error(`No room found for id ${roomId}`);
     }
     return room;
   }
 
-  async update(id: number, updateRoomDto: UpdateRoomDto, client: Socket) {
+  async update(roomId: number, updateRoomDto: UpdateRoomDto, client: Socket) {
     const room = await this.prisma.room.findUnique({
-      where: { id },
+      where: { id: roomId },
     });
     if (!room) {
-      throw new Error(`No room found for id ${id}`);
+      throw new Error(`No room found for id ${roomId}`);
     }
     if (room.userId !== client.data.userId) {
       throw new Error('You are not authorized to update this room');
     }
     return this.prisma.room.update({
-      where: { id },
+      where: { id: roomId },
       data: {
-        id: updateRoomDto.id,
+        id: updateRoomDto.roomId,
         roomName: updateRoomDto.roomName,
         userId: updateRoomDto.userId,
       },
     });
   }
 
-  async remove(id: number, client: Socket) {
+  async remove(roomId: number, client: Socket) {
     const room = await this.prisma.room.findUnique({
-      where: { id },
+      where: { id: roomId },
     });
     if (!room) {
-      throw new Error(`No room found for id ${id}`);
+      throw new Error(`No room found for id ${roomId}`);
     }
     if (room.userId !== client.data.userId) {
       throw new Error('You are not authorized to delete this room');
     }
     return this.prisma.room.delete({
-      where: { id },
+      where: { id: roomId },
     });
   }
 
@@ -151,6 +151,33 @@ export class RoomsService {
     return !!userRoom; // return true if userRoom exists, false otherwise
   }
   
+  async getRoomMembers(roomId: number) {
+    const room = await this.prisma.room.findUnique({ where: { id: roomId } });
   
+    if (!room) {
+      throw new Error('Room not found');
+    }
   
+    const userOnRooms = await this.prisma.userOnRooms.findMany({
+      where: { roomId },
+      include: { 
+        user: {
+          select: {
+            id: true,
+            createdAt: true,
+            updatedAt: true,
+            username: true,
+            email: true,
+            profilePicture: true,
+            // other fields you want to include
+          }
+        } 
+      },
+    });
+  
+    const roomMembers = userOnRooms.map((userOnRoom) => userOnRoom.user);
+  
+    return roomMembers;
+  }
+   
 }

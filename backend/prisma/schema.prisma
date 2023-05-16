@@ -28,6 +28,8 @@ model User {
   ratings             Rating[]
   friends             Friend[]
   messages            Message[]
+  sentMessages        DirectMessage[] @relation("DirectMessageSender")
+  receivedMessages    DirectMessage[] @relation("DirectMessageReceiver")
   userrooms           UserOnRooms[]
 
   @@map("users")
@@ -117,4 +119,16 @@ model Message {
   content               String
   
   @@map("messages")
+}
+
+model DirectMessage {
+  id         Int       @id @default(autoincrement())
+  senderId   Int
+  sender     User      @relation("DirectMessageSender", fields: [senderId], references: [id])
+  receiverId Int
+  receiver   User      @relation("DirectMessageReceiver", fields: [receiverId], references: [id])
+  createdAt  DateTime  @default(now())
+  content    String
+
+  @@map("directmessages")
 }

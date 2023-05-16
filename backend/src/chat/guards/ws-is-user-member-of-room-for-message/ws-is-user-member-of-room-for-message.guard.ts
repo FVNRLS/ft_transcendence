@@ -4,7 +4,7 @@ import { Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
-export class WsViewMessageGuard implements CanActivate {
+export class WsIsUserMemberOfRoomForMessageGuard implements CanActivate {
   constructor(private prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

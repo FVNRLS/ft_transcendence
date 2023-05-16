@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { RoomsService } from 'src/chat/rooms/rooms.service';
 @Injectable()
-export class WsRoomGuard implements CanActivate {
+export class WsIsUserInRoomGuard implements CanActivate {
   constructor(private readonly roomsService: RoomsService) {}
 
   canActivate(
