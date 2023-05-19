@@ -7,6 +7,8 @@ import { UseGuards } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { WsJwtAuthGuard } from '../guards/ws-jwt-auth-guard/ws-jwt-auth-guard.guard';
 import { WsIsUserRoomCreatorGuard } from '../guards/ws-is-user-room-creator/ws-is-user-room-creator.guard';
+import { SetUserRoleDto } from './dto/set-user-role.dto';
+import { HasRoomPermission } from '../decorators/has-room-permission.decorator';
 
 @WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
 export class RoomsGateway {
@@ -33,11 +35,16 @@ export class RoomsGateway {
   // Chat Room Management
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('createRoom')
-  create(
+  async create(
     @MessageBody() createRoomDto: CreateRoomDto,
     @ConnectedSocket() client: Socket,
-    ) {
-    return this.roomsService.create(createRoomDto, client);
+  ) {
+    const newRoom = await this.roomsService.create(createRoomDto, client);
+  
+    // Room creator automatically joins the room
+    await this.roomsService.joinRoom(newRoom.id, client);
+  
+    return newRoom;
   }
 
   @UseGuards(WsJwtAuthGuard)
@@ -105,6 +112,22 @@ export class RoomsGateway {
   async getRoomMembers(@MessageBody('roomId') roomId: number) {
     const roomMembers = await this.roomsService.getRoomMembers(roomId);
     return roomMembers;
-  }  
+  }
+
+  @HasRoomPermission('OWNER')
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('setUserRole')
+  async setUserRole(
+    @MessageBody() setUserRoleDto: SetUserRoleDto,
+    // @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      return await this.roomsService.setUserRole(setUserRoleDto.userId, setUserRoleDto.roomId, setUserRoleDto.role);
+    } catch (error) {
+      console.log('Error:', error.message);
+      return {error: error.message};
+    }
+  }
+  
   
 }

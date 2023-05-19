@@ -1,12 +1,25 @@
 // rooms/dto/create-room.dto.ts
-import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsEnum, IsOptional } from 'class-validator';
+
+export enum RoomType {
+  PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE',
+  PASSWORD = 'PASSWORD',
+  DIRECT = 'DIRECT'
+}
 
 export class CreateRoomDto {
   @IsString()
   @IsNotEmpty()
   roomName: string;
 
+  @IsEnum(RoomType)
+  roomType: RoomType;
+
   @IsString()
-  @IsNotEmpty()
-  cookie: string;
+  @IsOptional()
+  password?: string;
+
+  @IsNumber()
+  userId: number;
 }

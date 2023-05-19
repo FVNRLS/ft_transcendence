@@ -28,12 +28,24 @@ model User {
   ratings             Rating[]
   friends             Friend[]
   messages            Message[]
-  sentMessages        DirectMessage[] @relation("DirectMessageSender")
-  receivedMessages    DirectMessage[] @relation("DirectMessageReceiver")
   userrooms           UserOnRooms[]
+  blockedUsers        Block[] @relation("BlockBlocker")
+  blockingUsers       Block[] @relation("BlockBlocked")
 
   @@map("users")
 }
+
+model Block {
+  id         Int      @id @default(autoincrement())
+  blockerId  Int
+  blocker    User     @relation("BlockBlocker", fields: [blockerId], references: [id])
+  blockedId  Int
+  blocked    User     @relation("BlockBlocked", fields: [blockedId], references: [id])
+  
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
+}
+
 
 model Session {
   id                  Int         @id @default(autoincrement())
@@ -86,22 +98,11 @@ model Friend {
   @@map("friends")
 }
 
-model UserOnRooms {
-  id        Int      @id @default(autoincrement())
-  roomId    Int
-  room      Room     @relation(fields: [roomId], references: [id])
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@unique([roomId, userId])
-  @@map("useronrooms")
-}
-
-
-
 model Room {          
   id                    Int       @id @default(autoincrement())
   roomName              String
+  roomType              RoomType     @default(PUBLIC)
+  password              String? 
   userId                Int
   messages              Message[]
   userOnRooms           UserOnRooms[]
@@ -109,26 +110,40 @@ model Room {
   @@map("rooms")
 }
 
-model Message {
-  id                    Int       @id @default(autoincrement())
-  userId                Int
-  user                  User      @relation(fields: [userId], references: [id])
-  roomId                Int
-  room                  Room      @relation(fields: [roomId], references: [id])
-  createdAt             DateTime  @default(now())
-  content               String
-  
-  @@map("messages")
+model UserOnRooms {
+  id           Int      @id @default(autoincrement())
+  roomId       Int
+  room         Room     @relation(fields: [roomId], references: [id])
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  role         UserRole @default(MEMBER)
+
+  @@unique([roomId, userId])
+  @@map("useronrooms")
 }
 
-model DirectMessage {
-  id         Int       @id @default(autoincrement())
-  senderId   Int
-  sender     User      @relation("DirectMessageSender", fields: [senderId], references: [id])
-  receiverId Int
-  receiver   User      @relation("DirectMessageReceiver", fields: [receiverId], references: [id])
-  createdAt  DateTime  @default(now())
-  content    String
+enum RoomType {
+  PUBLIC
+  PRIVATE
+  PASSWORD
+  DIRECT
+}
 
-  @@map("directmessages")
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+
+model Message {
+  id                     Int       @id @default(autoincrement())
+  userId                 Int
+  user                   User      @relation(fields: [userId], references: [id])
+  roomId                 Int?
+  room                   Room?     @relation(fields: [roomId], references: [id])
+  createdAt              DateTime  @default(now())
+  content                String
+  
+  @@map("messages")
 }

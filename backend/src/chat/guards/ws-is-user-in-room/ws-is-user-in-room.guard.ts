@@ -1,13 +1,13 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { Observable } from 'rxjs';
 import { RoomsService } from 'src/chat/rooms/rooms.service';
+
 @Injectable()
 export class WsIsUserInRoomGuard implements CanActivate {
   constructor(private readonly roomsService: RoomsService) {}
 
-  canActivate(
+  async canActivate(
     context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  ): Promise<boolean> {
     const client = context.switchToWs().getClient();
     const data = context.switchToWs().getData();
 
@@ -15,6 +15,8 @@ export class WsIsUserInRoomGuard implements CanActivate {
       return false;
     }
 
-    return this.roomsService.isUserInRoom(client.data.userId, data.roomId);
+    const userRoom = await this.roomsService.getUserRoom(client.data.userId, data.roomId);
+
+    return !!userRoom; // returns true if userRoom is not null, otherwise returns false
   }
 }

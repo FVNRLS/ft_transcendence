@@ -4,6 +4,8 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Socket } from 'socket.io';
 import { SecurityService } from 'src/security/security.service';
+import { Prisma, UserRole } from '@prisma/client';
+
 
 @Injectable()
 export class RoomsService {
@@ -13,14 +15,16 @@ export class RoomsService {
     ) {}
   
 
-  async create(createRoomDto: CreateRoomDto, client: Socket) {
-    return await this.prisma.room.create({
-      data: {
-        roomName: createRoomDto.roomName,
-        userId: client.data.userId,
-      },
-    });
-  }
+    async create(createRoomDto: CreateRoomDto, client: Socket) {
+      return await this.prisma.room.create({
+        data: {
+          roomName: createRoomDto.roomName,
+          roomType: createRoomDto.roomType,
+          password: createRoomDto.password,
+          userId: client.data.userId,
+        },
+      });
+    }
   
 
   async findAll() {
@@ -52,6 +56,8 @@ export class RoomsService {
       data: {
         id: updateRoomDto.roomId,
         roomName: updateRoomDto.roomName,
+        roomType: updateRoomDto.roomType,
+        password: updateRoomDto.password,
         userId: updateRoomDto.userId,
       },
     });
@@ -142,14 +148,12 @@ export class RoomsService {
     return { message: 'Left room', roomId: roomId };
   }
 
-  async isUserInRoom(userId: number, roomId: number) {
-
-    const userRoom = await this.prisma.userOnRooms.findUnique({
+  async getUserRoom(userId: number, roomId: number) {
+    return await this.prisma.userOnRooms.findUnique({
       where: { roomId_userId: { roomId, userId } }
     });
-    
-    return !!userRoom; // return true if userRoom exists, false otherwise
   }
+  
   
   async getRoomMembers(roomId: number) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
@@ -178,6 +182,23 @@ export class RoomsService {
     const roomMembers = userOnRooms.map((userOnRoom) => userOnRoom.user);
   
     return roomMembers;
+  }
+
+  async setUserRole(userId: number, roomId: number, role: UserRole) {
+    const userRoom = await this.prisma.userOnRooms.findUnique({
+      where: { roomId_userId: { roomId, userId } }
+    });
+
+    if (!userRoom) {
+      throw new Error('User is not in this room');
+    }
+
+    return this.prisma.userOnRooms.update({
+      where: { roomId_userId: { roomId, userId } },
+      data: {
+        role,
+      },
+    });
   }
    
 }
