@@ -1,18 +1,28 @@
 import './Profile.css';
 import Header from '../Header/Header';
-import { useState } from 'react';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../Auth/AuthStorage'
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
+
+	const session = Cookies.get('session');
+
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (!session)
+		navigate('/not-logged');
+	}, [navigate, session]);
+
 
 	const [username, setUsername] = useState('');
 	const [signUpError, setSignUpError] = useState('');
 	const [file, setFile] = useState(null);
 	const [isLoading, setIsLoading] = useState(false);
 
-	const cookie = useSelector((state: RootState) => state.auth.cookie);
+	const cookie = Cookies.get('session');
 
 	const handleFileChange = (event:any) => {
 		setFile(event.target.files[0]);
@@ -27,7 +37,8 @@ const Profile = () => {
 		setIsLoading(true);
 			try {
 				const formData = new FormData();
-				formData.append('cookie', cookie);
+				if (cookie)
+					formData.append('cookie', cookie);
 				if (file)
 					formData.append('file', file);
 				const response = await axios.post('http://localhost:5000/storage/upload', formData, {

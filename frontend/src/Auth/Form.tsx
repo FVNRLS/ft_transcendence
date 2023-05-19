@@ -1,14 +1,12 @@
 import React, {useEffect, useState} from 'react'
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useDispatch } from 'react-redux';
-import { login } from './AuthSlice';
+import Cookies from 'js-cookie';
 import './Form.css'
 
 const Form = () => 
 {
 	const [isLoading, setIsLoading] = useState(false);
-	const [isAuthorized, setIsAuthorized] = useState(false);
 	const [signInError, setSignInError] = useState('');
 	const [signUpError, setSignUpError] = useState('');
 	const [switchUp, setSwitchUp] = useState(false);
@@ -17,18 +15,15 @@ const Form = () =>
 	const [password, setPassword] = useState('');
 
 	const navigate = useNavigate();
-	const dispatch = useDispatch();
 
 	const handleFileChange = (event:any) => {
 		setFile(event.target.files[0]);
 	};
 
-	//TODO: resolve the problem, that after authorization the code prints into browser url field - remove it
 	useEffect(() => {
 		const authorize = async () => {
 		  try {
 				await axios.get('http://localhost:5000/auth/authorize');
-				setIsAuthorized(true); // Update the flag if authorize succeeds
 			} catch (error) {
 				console.error(error);
 			}
@@ -45,8 +40,6 @@ const Form = () =>
 		formData.append('password', password);
 		if (file)
 			formData.append('file', file);
-		// if (isAuthorized) //singup only if authorized
-		// {
 			try {
 				const response = await axios.post('http://localhost:5000/auth/signup', formData, {
 					headers: {
@@ -54,7 +47,7 @@ const Form = () =>
 					}});
 				if (response.data.status === 201)
 				{
-					dispatch(login(response.data.cookie));
+					Cookies.set('session', response.data.cookie);
 					navigate('/');
 				}
 				else
@@ -64,14 +57,11 @@ const Form = () =>
 			} finally {
 				setIsLoading(false);
 			}
-		// }
 	}
 
 	const sendSignInData = async (event:any) => {
 		event.preventDefault();
 		setIsLoading(true);
-		// if (isAuthorized) //singup only if authorized
-		// {
 			try {
 				const response = await axios.post('http://localhost:5000/auth/login', {
 					username: username,
@@ -79,7 +69,7 @@ const Form = () =>
 				});
 				if (response.data.status === 201)
 				{
-					dispatch(login(response.data.cookie));
+					Cookies.set('session', response.data.cookie);
 					navigate('/');
 				}
 				else
@@ -89,7 +79,6 @@ const Form = () =>
 			} finally {
 				setIsLoading(false);
 			}
-		// }
 	}
 
 	const handleSwitch = () => {

@@ -1,9 +1,21 @@
 import './Chat.css'
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../Header/Header';
 import Pic from './download.jpeg';
+import Cookies from 'js-cookie';
 
 const Chat = () =>
 {
+	const session = Cookies.get('session');
+
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (!session)
+		navigate('/not-logged');
+	}, [navigate, session]);
+
 	return (
 	<>
 	<Header />

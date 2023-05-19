@@ -44,3 +44,17 @@
 	color: white;
 	background-color: #476cd2;
 }
+
+.tfa-btn {
+	background-color: transparent;
+	border: .3rem solid rgba(128, 128, 128, 0.51);
+	color: rgba(128, 128, 128, 1);
+	font-size: 2rem;
+	width: 7rem;
+	height: 3.5rem;
+	transition: .15s;
+}
+
+.tfa-btn:hover {
+	cursor: pointer;
+}

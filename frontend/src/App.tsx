@@ -8,8 +8,10 @@ import Profile from './Profile/Profile';
 import NotFound from './404/NotFound';
 import Stats from './Stats/Stats';
 import Friends from './Friends/Friends';
+import NotLogged from './Auth/NotLogged';
 
 function App() {
+
   return (
     <Routes>
         <Route path="/" element={<Homepage />} />
@@ -20,6 +22,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/stats" element={<Stats />} />
         <Route path="/friends" element={<Friends />} />
+        <Route path="/not-logged" element={<NotLogged />} />
         <Route path="*" element={<NotFound />} />
     </Routes>
   );

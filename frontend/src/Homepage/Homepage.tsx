@@ -1,14 +1,20 @@
-import Dashboard from '../Dashboard/Dashboard';
-import { useSelector } from 'react-redux';
-import type {RootState} from '../Auth/AuthStorage'
+import { useEffect } from 'react';
 import './Homepage.css'
+import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
 
 const CLIENT_ID = process.env.REACT_APP_ID;
 const REDIRECT_URI = 'http://localhost:5000/auth/authorize_callback';
 
 function Homepage() {
+  const session = Cookies.get('session');
 
-  const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (session)
+      navigate('/dashboard');
+  }, [navigate, session])
 
   const handleLogin = () => {
     const clientId = CLIENT_ID;
@@ -18,18 +24,13 @@ function Homepage() {
     window.location.href = authUrl;
   }
 
-  const homePageStyle = {paddingTop: isLoggedIn ? '10vh' : '0', height: isLoggedIn ? '90vh' : '100vh'};
+  const homePageStyle = {paddingTop: session ? '10vh' : '0', height: session ? '90vh' : '100vh'};
 
   return (
-    <div>
-    {isLoggedIn ? (<Dashboard />) :
-    (
       <div className='bg' style={homePageStyle}>
           <h1 className='App-header'>42 Estonian Hedgehogs' Ping Pong</h1>
           <button className='Auth-btn' onClick={handleLogin}>Authorize</button>
       </div>
-    )}
-    </div>
   );
 }
 

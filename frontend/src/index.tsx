@@ -3,19 +3,15 @@ import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter as Router} from "react-router-dom";
-import AuthStorage from "./Auth/AuthStorage";
-import { Provider } from "react-redux";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 );
 
 root.render(
-  <Provider store={AuthStorage}>
     <Router>
       <App />
     </Router>
-  </Provider>
 );
 
 // If you want to start measuring performance in your app, pass a function

@@ -4,6 +4,8 @@ import { faRocket, faSprayCan, faEye, faRotateRight } from '@fortawesome/free-so
 import Header from '../Header/Header';
 import io, {Socket} from 'socket.io-client';
 import './Game.css';
+import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 interface serverState {
 	ball: { x: number, y: number },
@@ -19,6 +21,16 @@ interface serverState {
 }
 
 const Game = () => {
+
+	const session = Cookies.get('session');
+
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (!session)
+		navigate('/not-logged');
+	}, [navigate, session]);
+
 
 	const [ready, setReady] = useState(false);
 	const [socket, setSocket] = useState<Socket | null>(null);

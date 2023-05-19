@@ -1,27 +1,28 @@
-import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import Header from "../Header/Header";
 import axios from 'axios';
-import type { RootState } from '../Auth/AuthStorage'
-import { logout } from '../Auth/AuthSlice'
-import { useDispatch } from 'react-redux';
 import './Dashboard.css'
+import Cookies from 'js-cookie';
 
 const Dashboard = () => {
 
-	const cookie = useSelector((state: RootState) => state.auth.cookie);
+	const cookie = Cookies.get('session');
+	const navigate = useNavigate();
 
-	const dispatch = useDispatch();
+	useEffect(() => {
+		if (!cookie)
+		navigate('/not-logged');
+	}, [navigate, cookie]);
+
 
 	const handleLogOut = async () => {
 		try {
-			const response = await axios.post('http://localhost:5000/auth/logout', 
-			{
-				cookie: cookie,
-			});
+			const response = await axios.post('http://localhost:5000/auth/logout', {cookie});
 			if (response.data.status === 200)
 			{
-				dispatch(logout());
+				Cookies.remove('session');
+				navigate('/');
 			}
 		} catch (error) {
 			console.error(error);
