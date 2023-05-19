@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   auth.controller.ts                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
+/*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 18:03:54 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/19 12:51:18 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, Controller, Get, Post, Redirect, UploadedFile, UseInterceptors} from "@nestjs/common";
+import { Body, Query, Controller, Get, Res, Post, Redirect, UploadedFile, UseInterceptors} from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AuthService } from "./auth.service"
 import { AuthDto } from "./dto";
@@ -33,10 +33,10 @@ export class AuthController {
   @Redirect(`https://api.intra.42.fr/oauth/authorize?client_id=${process.env.REACT_APP_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`, 302)
   authorize() {}
 
-  @Post("/authorize_callback")
-  async authorizeCallback(@Body("code") code: string): Promise<void> {
+  @Get("/authorize_callback")
+  async authorizeCallback(@Query('code') code: string, @Res() res: any): Promise<void> {
     try {
-     await this.authService.authorizeCallback(code);
+     await this.authService.authorizeCallback(code, res);
     } catch (error) {
       throw error;
     }

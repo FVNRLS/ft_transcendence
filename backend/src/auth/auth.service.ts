@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { Body, HttpException, HttpStatus, Injectable, Res } from '@nestjs/common';
 import { PrismaService } from "../prisma/prisma.service";
 import { SessionService } from "./session.service";
 import { SecurityService } from "../security/security.service";
@@ -33,10 +33,10 @@ export class AuthService {
   ) {}
 
   //CONTROLLER FUNCTIONS
-  async authorizeCallback(code: string): Promise<void> {
+  async authorizeCallback(code: string, res: any): Promise<void> {
     try {
       const CLIENT_ID = process.env.REACT_APP_ID;
-      const REDIRECT_URI = "http://localhost:3000/form";
+      const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
       const SECRET = process.env.REACT_APP_SECRET;
   
       const response = await axios.post("https://api.intra.42.fr/oauth/token", {
@@ -49,6 +49,7 @@ export class AuthService {
 
       const accessToken = response.data.access_token;
       await this.securityService.validateToken(accessToken);
+      res.redirect('http://localhost:3000/form');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -61,7 +62,7 @@ export class AuthService {
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<AuthResponse> {
     try {
       this.securityService.validateCredentials(dto);
-      
+
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
       await this.prisma.user.create({
         data: {

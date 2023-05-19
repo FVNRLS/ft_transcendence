@@ -45,8 +45,8 @@ const Form = () =>
 		formData.append('password', password);
 		if (file)
 			formData.append('file', file);
-		if (isAuthorized) //singup only if authorized
-		{
+		// if (isAuthorized) //singup only if authorized
+		// {
 			try {
 				const response = await axios.post('http://localhost:5000/auth/signup', formData, {
 					headers: {
@@ -64,14 +64,14 @@ const Form = () =>
 			} finally {
 				setIsLoading(false);
 			}
-		}
+		// }
 	}
 
 	const sendSignInData = async (event:any) => {
 		event.preventDefault();
 		setIsLoading(true);
-		if (isAuthorized) //singup only if authorized
-		{
+		// if (isAuthorized) //singup only if authorized
+		// {
 			try {
 				const response = await axios.post('http://localhost:5000/auth/login', {
 					username: username,
@@ -89,7 +89,7 @@ const Form = () =>
 			} finally {
 				setIsLoading(false);
 			}
-		}
+		// }
 	}
 
 	const handleSwitch = () => {

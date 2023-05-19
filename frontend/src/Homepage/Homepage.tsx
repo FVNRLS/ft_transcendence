@@ -4,7 +4,7 @@ import type {RootState} from '../Auth/AuthStorage'
 import './Homepage.css'
 
 const CLIENT_ID = process.env.REACT_APP_ID;
-const REDIRECT_URI = 'http://localhost:3000/form';
+const REDIRECT_URI = 'http://localhost:5000/auth/authorize_callback';
 
 function Homepage() {
 

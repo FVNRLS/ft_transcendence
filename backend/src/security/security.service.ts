@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   security.service.ts                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/01 18:28:53 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/19 12:47:00 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,10 +56,10 @@ export class SecurityService {
     return regex.test(password);
   }
 
-	async validateToken(dto: AuthDto): Promise<{ status: HttpStatus, message?: string }> {
+	async validateToken(token: string): Promise<{ status: HttpStatus, message?: string }> {
 		try {
 		  const url = "https://api.intra.42.fr/v2/achievements";
-		  await axios.get(url, { headers: { Authorization: `Bearer ${dto.token_42}` }, responseType: "arraybuffer" });
+		  await axios.get(url, { headers: { Authorization: `Bearer ${token}` }, responseType: "arraybuffer" });
 			
 		  return { status: HttpStatus.OK, message: "Token valid" };
 		} catch(error){
