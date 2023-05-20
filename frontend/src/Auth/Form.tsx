@@ -13,6 +13,7 @@ const Form = () =>
 	const [file, setFile] = useState(null);
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
+	const [token, setToken] = useState('');
 
 	const navigate = useNavigate();
 
@@ -21,16 +22,13 @@ const Form = () =>
 	};
 
 	useEffect(() => {
-		const authorize = async () => {
-		  try {
-				await axios.get('http://localhost:5000/auth/authorize');
-			} catch (error) {
-				console.error(error);
-			}
-		};
-	  
-		authorize();
-	}, []);
+		const url = new URL(window.location.href);
+		const searchParams = new URLSearchParams(url.search);
+		const tokenTMP = searchParams.get('token');
+		if (tokenTMP)
+			setToken(tokenTMP);
+		navigate('');
+	}, [navigate])
 
 	const sendSignUpData = async (event:any) => {
 		event.preventDefault();
@@ -38,6 +36,7 @@ const Form = () =>
 		let formData = new FormData();
 		formData.append('username', username);
 		formData.append('password', password);
+		formData.append('token_42', token);
 		if (file)
 			formData.append('file', file);
 			try {
@@ -47,7 +46,7 @@ const Form = () =>
 					}});
 				if (response.data.status === 201)
 				{
-					Cookies.set('session', response.data.cookie);
+					Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 3 });
 					navigate('/');
 				}
 				else
@@ -65,11 +64,12 @@ const Form = () =>
 			try {
 				const response = await axios.post('http://localhost:5000/auth/login', {
 					username: username,
-					password: password
+					password: password,
+					token_42: token
 				});
 				if (response.data.status === 201)
 				{
-					Cookies.set('session', response.data.cookie);
+					Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 3 });
 					navigate('/');
 				}
 				else

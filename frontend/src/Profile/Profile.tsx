@@ -18,6 +18,7 @@ const Profile = () => {
 
 
 	const [username, setUsername] = useState('');
+	const [email, setEmail] = useState('');
 	const [signUpError, setSignUpError] = useState('');
 	const [file, setFile] = useState(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +31,10 @@ const Profile = () => {
 
 	const handleUsernameChange = (event:any) => {
 		setUsername(event.target.value);
+	}
+
+	const handleEmailChange = (event:any) => {
+		setEmail(event.target.value);
 	}
 
 	const sendEditData = async (event:any) => {
@@ -77,6 +82,10 @@ const Profile = () => {
 				<label className='label-text'>
 					New username:
 					<input className='input-text' type="text" name="name" value={username} onChange={handleUsernameChange} />
+				</label>
+				<label className='label-text'>
+					Change Email:
+					<input className='input-text' type="text" name="name" value={email} onChange={handleEmailChange} />
 				</label>
 				<label className='submit-lbl'>
 					<input className='submit-btn' type="submit" value="Save" onClick={sendEditData} />

@@ -1,28 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Cookies from 'js-cookie';
 import "./Header.css";
 
 function Header() {
 	const scoreLeft = 0;
 	const scoreRight = 0;
 
-	const [isOn, setIsOn] = useState(false);
 	const [btnColor, setBtnColor] = useState('rgba(128, 128, 128, 0.5)');
+	const TFAcookie = Cookies.get('TFA');
+
+	useEffect(() => {
+		if (TFAcookie)
+			setBtnColor('#476cd2');
+		else
+			setBtnColor('rgba(128, 128, 128, 0.5)');
+			
+	}, [TFAcookie])
 
 	const handleSwitch = () => {
-		if (isOn)
+		if (TFAcookie)
 		{
 			setBtnColor('rgba(128, 128, 128, 0.5)');
-			setIsOn(false);
+			Cookies.remove('TFA');
 		}
 		else
 		{
 			setBtnColor('#476cd2');
-			setIsOn(true);
+			Cookies.set('TFA', 'true');
 		}
 	}
 
 	const btnStyle = { color: btnColor, borderColor: btnColor};
+	
 	return (
 		<header className='header'>
 			<ul className='header-list'>

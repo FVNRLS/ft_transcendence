@@ -43,6 +43,7 @@ model Session {
   jwtToken            String      @unique
   serializedCookie    String      @unique
   hashedCookie        String      @unique
+  token42             String
 
   @@map("sessions")
 }

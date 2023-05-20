@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   main.ts                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
+/*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:56:32 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 18:39:24 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/20 16:22:27 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
+import * as session from 'express-session';
 
 /*
 1. The NestFactory.create method creates a new NestJS application 
@@ -38,6 +39,12 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
   const PORT = process.env.PORT || 5000;
+
+  app.use(session({
+    secret: 'sekret;0', // Replace with your own secret key
+    resave: false,
+    saveUninitialized: false,
+  }));
 
   app.enableCors({
 		origin: true,

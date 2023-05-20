@@ -6,17 +6,18 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/19 12:51:18 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/05/20 17:14:35 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, Query, Controller, Get, Res, Post, Redirect, UploadedFile, UseInterceptors} from "@nestjs/common";
+import { Body, Query, Controller, Get, Res, Req, Post, UploadedFile, UseInterceptors} from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AuthService } from "./auth.service"
 import { AuthDto } from "./dto";
 import { AuthResponse } from "./dto/response.dto";
+import { Response, Request } from 'express';
 
-const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
+// const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
 
 @Controller("/auth")
 export class AuthController {
@@ -29,16 +30,17 @@ export class AuthController {
 		The authorizeCallback() function is called, and the authorization code is received as a parameter.
 		The authorization code can then be used to obtain an access token and complete the authorization process.
 	*/
-	@Get("/authorize")
-  @Redirect(`https://api.intra.42.fr/oauth/authorize?client_id=${process.env.REACT_APP_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`, 302)
-  authorize() {}
+//   @Get("/authorize")
+//   @Redirect(`https://api.intra.42.fr/oauth/authorize?client_id=${process.env.REACT_APP_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`, 200)
+//   authorize() {}
 
   @Get("/authorize_callback")
-  async authorizeCallback(@Query('code') code: string, @Res() res: any): Promise<void> {
+  async authorizeCallback(@Query('code') code: string, @Res() res: Response, ): Promise<void> {
     try {
-     await this.authService.authorizeCallback(code, res);
+		const token = await this.authService.authorizeCallback(code);
+		res.redirect(`http://localhost:3000/form?token=${token}`);
     } catch (error) {
-      throw error;
+    	throw error;
     }
   }
 

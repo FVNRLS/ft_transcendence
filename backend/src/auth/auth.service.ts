@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, HttpException, HttpStatus, Injectable, Res } from '@nestjs/common';
+import { Body, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from "../prisma/prisma.service";
 import { SessionService } from "./session.service";
 import { SecurityService } from "../security/security.service";
@@ -21,7 +21,6 @@ import { AuthResponse } from "./dto/response.dto"
 import { Session, User } from "@prisma/client";
 import { MailService } from "./mail.service";
 import axios from "axios";
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -33,7 +32,7 @@ export class AuthService {
   ) {}
 
   //CONTROLLER FUNCTIONS
-  async authorizeCallback(code: string, res: any): Promise<void> {
+  async authorizeCallback(code: string): Promise<string> {
     try {
       const CLIENT_ID = process.env.REACT_APP_ID;
       const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
@@ -47,10 +46,12 @@ export class AuthService {
         redirect_uri: REDIRECT_URI,
       });
 
-      const accessToken = response.data.access_token;
+      const accessToken: string = response.data.access_token;
       await this.securityService.validateToken(accessToken);
-      res.redirect('http://localhost:3000/form');
+      const encrypted = this.securityService.encryptToken(accessToken);
+      return (encrypted);
     } catch (error) {
+      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else {
@@ -91,7 +92,7 @@ export class AuthService {
         },
       })
       
-      const session = await this.sessionService.createSession(user);
+      const session = await this.sessionService.createSession(user, dto.token_42);
       await this.googleDriveService.setFirstProfilePicture(session.cookie, file);
 
       return { status: HttpStatus.CREATED, message: "You signed up successfully", cookie: session.cookie };
@@ -109,7 +110,6 @@ export class AuthService {
   async signin(dto: AuthDto): Promise<AuthResponse> {
     try {
       const user: User = await this.securityService.getVerifiedUserData(dto);
-      
       const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id } });
       if (existingSession) {
         try {
@@ -132,7 +132,7 @@ export class AuthService {
                 
         return { status: HttpStatus.ACCEPTED, message: "Please check your email and enter the provided 2FA code" };
       } else {
-        const session = await this.sessionService.createSession(user);
+        const session = await this.sessionService.createSession(user, dto.token_42);
         return { status: HttpStatus.CREATED, message: "You signed in successfully", cookie: session.cookie };
       }
     } catch (error) {
@@ -149,7 +149,7 @@ export class AuthService {
         const user: User = await this.securityService.getVerifiedUserData(dto);
         await this.securityService.validateTFACode(user, dto);        
 
-        const session = await this.sessionService.createSession(user);
+        const session = await this.sessionService.createSession(user, dto.token_42);
         
         return { status: HttpStatus.CREATED, message: "You signed in successfully", cookie: session.cookie };
     } catch (error) {
