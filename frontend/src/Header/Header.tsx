@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import "./Header.css";
+import axios from 'axios';
 
 function Header() {
 	const scoreLeft = 0;
@@ -18,7 +19,13 @@ function Header() {
 			
 	}, [TFAcookie])
 
-	const handleSwitch = () => {
+	const handleSwitch = async () => {
+		try
+		{
+			await axios.post("http://localhost:5000/security/change_tfa", {cookie: Cookies.get('session')});
+		} catch (error) {
+			console.log(error);
+		}
 		if (TFAcookie)
 		{
 			setBtnColor('rgba(128, 128, 128, 0.5)');
@@ -27,7 +34,7 @@ function Header() {
 		else
 		{
 			setBtnColor('#476cd2');
-			Cookies.set('TFA', 'true');
+			Cookies.set('TFA', 'true', {expires: 1 / 24 * 3});
 		}
 	}
 

@@ -9,6 +9,8 @@ const Form = () =>
 	const [isLoading, setIsLoading] = useState(false);
 	const [signInError, setSignInError] = useState('');
 	const [signUpError, setSignUpError] = useState('');
+	const [TFAform, setTFAform] = useState(false);
+	const [TFAcode, setTFAcode] = useState('');
 	const [switchUp, setSwitchUp] = useState(false);
 	const [file, setFile] = useState(null);
 	const [username, setUsername] = useState('');
@@ -74,11 +76,36 @@ const Form = () =>
 				}
 				else
 					setSignInError(response.data.message);
+					setTFAform(true);
 			} catch (error) {
 				console.error(error);
 			} finally {
 				setIsLoading(false);
 			}
+	}
+
+	const sendTFAcode = async (event:any) => {
+		event.preventDefault();
+		setIsLoading(true);
+		try {
+			const response = await axios.post('http://localhost:5000/auth/login_tfa', {
+				username: username,
+				password: password,
+				TFACode: TFAcode,
+				token_42: token,
+			});
+			if (response.data.status === 201)
+			{
+				Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 3 });
+				navigate('/');
+			}
+			else
+				setSignInError(response.data.message);
+		} catch (error) {
+			console.error(error);
+		} finally {
+			setIsLoading(false);
+		}
 	}
 
 	const handleSwitch = () => {
@@ -95,6 +122,10 @@ const Form = () =>
 
 	const handlePasswordChange = (event:any) => {
 		setPassword(event.target.value);
+	}
+
+	const handleTFAcodeChange = (event:any) => {
+		setTFAcode(event.target.value);
 	}
 
 	return (
@@ -126,21 +157,40 @@ const Form = () =>
 				</label>
 			</form>
 			) : (
-			<form name="signin" className='signin-form'>
-				<h1>Sign In</h1>
-				{signInError && <h2>{signInError}</h2>}
-				<label className='label-text'>
-					Username:
-					<input className='input-text' type="text" name="name" onChange={handleUsernameChange}/>
-				</label>
-				<label className='label-text'>
-					Password:
-					<input className='input-text' type="password" name="pass" onChange={handlePasswordChange}/>
-				</label>
-				<label className='submit-lbl'>
-					<input className='submit-btn' type="submit" onClick={sendSignInData}/>
-				</label>
-			</form>
+			<>
+				{!TFAform ? 
+				(
+					<form name="signin" className='signin-form'>
+					<h1>Sign In</h1>
+					{signInError && <h2>{signInError}</h2>}
+						<label className='label-text'>
+							Username:
+							<input className='input-text' type="text" name="name" onChange={handleUsernameChange}/>
+						</label>
+						<label className='label-text'>
+							Password:
+							<input className='input-text' type="password" name="pass" onChange={handlePasswordChange}/>
+						</label>
+						<label className='submit-lbl'>
+							<input className='submit-btn' type="submit" onClick={sendSignInData}/>
+						</label>
+					</form>
+				) :
+				(
+					<form name="signin" className='signin-form'>
+					<h1>Provide a TFA code</h1>
+					{signInError && <h2>{signInError}</h2>}
+						<label className='label-text'>
+							Code:
+							<input className='input-text' type="text" name="code" onChange={handleTFAcodeChange}/>
+						</label>
+						<label className='submit-lbl'>
+							<input className='submit-btn' type="submit" onClick={sendTFAcode}/>
+						</label>
+					</form>
+				)}
+				
+			</>
 			)}
 			<label className="switch">
 				<input type="checkbox" onChange={handleSwitch}/>

@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/20 17:59:14 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/05/21 13:01:43 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -220,10 +220,10 @@ Return the base64-encoded encrypted session string
 		}
 	}
 
-	encryptToken(token: string): string {
-		const COOKIE_SECRET = process.env.COOKIE_SECRET.slice(0, 32);;
+	async encryptToken(token: string): Promise<string> {
+		const SECRET = process.env.COOKIE_SECRET.slice(0, 32);
 		const iv = randomBytes(16);
-		const cipher = createCipheriv('aes-256-gcm', COOKIE_SECRET, iv);
+		const cipher = createCipheriv('aes-256-gcm', SECRET, iv);
 
 		const encryptedData = Buffer.concat([cipher.update(token, 'utf8'), cipher.final()]);
 		const tag = cipher.getAuthTag();
@@ -232,14 +232,20 @@ Return the base64-encoded encrypted session string
 		return encryptedToken;
 	}
 
-	decryptToken(encryptedToken: string): string {
-		const COOKIE_SECRET = process.env.COOKIE_SECRET.slice(0, 32);;
-		const encryptedBuffer = Buffer.from(encryptedToken, 'base64');
-		const iv = encryptedBuffer.slice(0, 16);
-		const encryptedData = encryptedBuffer.slice(16, -16); // Extract the encrypted data (excluding IV and tag)
-		const tag = encryptedBuffer.slice(-16); // Extract the authentication tag
+	async decryptToken(raw: string): Promise<string> {
+		const SECRET = process.env.COOKIE_SECRET.slice(0, 32);
+		
+		const encryptedToken = raw.replace(/ /g, '+');
 
-		const decipher = createDecipheriv('aes-256-gcm', COOKIE_SECRET, iv);
+		const encryptedBuffer = Buffer.from(encryptedToken, 'base64');
+		const iv = Buffer.alloc(16);
+		const encryptedData = Buffer.alloc(encryptedBuffer.length - 32); // Extract the encrypted data (excluding IV and tag)
+		const tag = Buffer.alloc(16); // Extract the authentication tag
+
+		encryptedBuffer.copy(iv, 0, 0, 16);
+		encryptedBuffer.copy(encryptedData, 0, 16, encryptedBuffer.length - 16);
+		encryptedBuffer.copy(tag, 0, encryptedBuffer.length - 16);
+		const decipher = createDecipheriv('aes-256-gcm', SECRET, iv);
 		decipher.setAuthTag(tag);
 
 		const decryptedToken = Buffer.concat([decipher.update(encryptedData), decipher.final()]).toString('utf8');
@@ -256,6 +262,7 @@ Return the base64-encoded encrypted session string
 	
 			return existingSession;
 		} catch (error) {
+			console.log(error);
 			if (error.name === "TokenExpiredError") {
 				const decryptedCookieHash = await this.decryptCookie(encryptedCookie);
 				const existingSession: Session = await this.prisma.session.findUnique({ where: { hashedCookie: decryptedCookieHash } });
@@ -343,7 +350,7 @@ Return the base64-encoded encrypted session string
 	
 	async validateTFACode(user: User, dto: AuthDto): Promise<void> {
 		try {
-			if (user.TFACode !== dto.TFACode) {
+			if (user.TFACode != dto.TFACode) {
 				throw new HttpException("Invalid code.", HttpStatus.UNAUTHORIZED);
 			}
 			

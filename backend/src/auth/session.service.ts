@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:37 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/20 18:00:02 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/05/21 13:02:47 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,18 +25,19 @@ export class SessionService {
 		private jwtService: JwtService,
 	) {}
 	
-	async createSession(user: User, token42?: string): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
+	async createSession(user: User, token42: string): Promise<{ status: HttpStatus, message?: string, cookie?: string }> {
 		try {
 			const sessionPayload = { userId: user.id };
 			const jwt_token = this.jwtService.sign(sessionPayload);
 			const serializedCookie = await this.securityService.serializeCookie(user, jwt_token);
 			const hashedCookie = await argon2.hash(serializedCookie);
-			const encryptedCookie = this.securityService.encryptToken(hashedCookie);
-			const decryptedToken = this.securityService.decryptToken(token42);
+			const encryptedCookie = await this.securityService.encryptCookie(hashedCookie);
+			const decryptedToken = await this.securityService.decryptToken(token42);
 			await this.pushSessionToDatabase(user, jwt_token, hashedCookie, serializedCookie, decryptedToken);
 			
 			return { status: HttpStatus.CREATED, message: "Login successful", cookie: encryptedCookie };
 		} catch (error) {
+			console.log(error);
 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	} 

@@ -48,10 +48,9 @@ export class AuthService {
 
       const accessToken: string = response.data.access_token;
       await this.securityService.validateToken(accessToken);
-      const encrypted = this.securityService.encryptToken(accessToken);
+      const encrypted = await this.securityService.encryptToken(accessToken);
       return (encrypted);
     } catch (error) {
-      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else {
@@ -60,10 +59,16 @@ export class AuthService {
     }
   }
 
+  async get42email(token: string): Promise<string> {
+    const decrypted = await this.securityService.decryptToken(token);
+    const response = await axios.get("https://api.intra.42.fr/v2/me", { headers: { Authorization: `Bearer ${decrypted}` }});
+    return (response.data.email);
+  }
+
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<AuthResponse> {
     try {
       this.securityService.validateCredentials(dto);
-
+      const email42 = await this.get42email(dto.token_42);
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
       await this.prisma.user.create({
         data: {
@@ -72,7 +77,7 @@ export class AuthService {
           salt: salt,
           profilePicture: "",
           TFAMode: false,
-          email: "",
+          email: email42,
           TFACode: "",
           TFAExpiresAt: "",
         },
