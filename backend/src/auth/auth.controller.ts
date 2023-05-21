@@ -6,20 +6,21 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/20 17:14:35 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/05/21 15:21:27 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, Query, Controller, Get, Res, Req, Post, UploadedFile, UseInterceptors} from "@nestjs/common";
+import { Body, Query, Controller, Get, Res, Headers, Post, UploadedFile, UseInterceptors} from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AuthService } from "./auth.service"
 import { AuthDto } from "./dto";
-import { AuthResponse } from "./dto/response.dto";
+import { AuthResponse, UserDataResponse } from "./dto/response.dto";
 import { Response, Request } from 'express';
 
 // const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
 
 @Controller("/auth")
+
 export class AuthController {
 	constructor( private authService: AuthService ) {}
 
@@ -74,9 +75,9 @@ export class AuthController {
 
 	@Post("/update_profile")
 	@UseInterceptors(FileInterceptor("file", { dest: "uploads" }))
-	async updateProfile(@Body("cookie") cookie: string, @UploadedFile() file?: Express.Multer.File, @Body() dto?:AuthDto, @Body("email") email?: string): Promise<AuthResponse> {
+	async updateProfile(@Body("cookie") cookie: string, @UploadedFile() file?: Express.Multer.File, @Body("username") username?: string, @Body("email") email?: string): Promise<AuthResponse> {
 		try {
-			return await this.authService.updateProfile(cookie, file, dto, email);
+			return await this.authService.updateProfile(cookie, file, username, email);
 		} catch (error) {
 			throw error;
 		}
@@ -86,6 +87,15 @@ export class AuthController {
 	async logout(@Body("cookie") cookie: string): Promise<AuthResponse> {
 		try {
 			return await this.authService.logout(cookie);
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	@Post("/get_data")
+	async getUserData(@Body('cookie') cookie: string): Promise<UserDataResponse> {
+		try {
+			return await this.authService.getUserData(cookie);
 		} catch (error) {
 			throw error;
 		}

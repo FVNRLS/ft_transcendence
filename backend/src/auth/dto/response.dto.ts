@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   response.dto.ts                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
+/*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:57:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/04/27 17:37:20 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/21 15:00:48 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,4 +26,9 @@ export interface FileResponse {
   mimetype: string,
   buffer: Buffer,
   size: number,
+}
+
+export interface UserDataResponse {
+  username: string,
+  email: string
 }

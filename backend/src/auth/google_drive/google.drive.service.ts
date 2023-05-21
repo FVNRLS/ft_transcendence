@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   google.drive.service.ts                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
+/*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/10 10:22:07 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/21 15:49:48 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,13 +87,14 @@ export class GoogleDriveService {
       const user: User = await this.prisma.user.findFirst({ where: { id: session.userId } });
       
       const googleAccessToken = await this.getGoogleDriveAcessToken();
-      
+
       const fileId = user.profilePicture;
       const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&fields=mimeType,data`;
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${googleAccessToken}` },
         responseType: "arraybuffer",
       });
+
 
       const fileData = response.data;
       const fileName = `profilePicture_${user.id}`;
@@ -108,6 +109,7 @@ export class GoogleDriveService {
         size: fileData.length,
       };
     } catch (error) {
+      // console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else {

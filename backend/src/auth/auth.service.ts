@@ -17,7 +17,7 @@ import { SecurityService } from "../security/security.service";
 import { JwtService } from "@nestjs/jwt";
 import { GoogleDriveService } from "./google_drive/google.drive.service";
 import { AuthDto } from "./dto";
-import { AuthResponse } from "./dto/response.dto"
+import { AuthResponse, UserDataResponse } from "./dto/response.dto"
 import { Session, User } from "@prisma/client";
 import { MailService } from "./mail.service";
 import axios from "axios";
@@ -166,7 +166,7 @@ export class AuthService {
     }
 	}
 
-  async updateProfile(cookie: string, file?: Express.Multer.File, dto?: AuthDto, email?: string): Promise<AuthResponse> {
+  async updateProfile(cookie: string, file?: Express.Multer.File, username?: string, email?: string): Promise<AuthResponse> {
     try {
       if (email) {
         await this.securityService.setEmailAddress(cookie, email);
@@ -179,16 +179,16 @@ export class AuthService {
       const session: Session = await this.securityService.verifyCookie(cookie);
       const user: User = await this.prisma.user.findUnique({ where: {id: session.userId} });
       
-      if (dto.password) {
-        const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
-        await this.prisma.user.update({ where: { username: user.username }, data: {
-          hashedPasswd: hashedPassword,
-          salt: salt
-        } });
-      }
+      // if (dto.password) {
+      //   const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
+      //   await this.prisma.user.update({ where: { username: user.username }, data: {
+      //     hashedPasswd: hashedPassword,
+      //     salt: salt
+      //   } });
+      // }
 
-      if (dto.username) {
-        await this.prisma.user.update({ where: { username: user.username }, data: { username: dto.username } });
+      if (username) {
+        await this.prisma.user.update({ where: { username: user.username }, data: { username: username } });
       }
 
       return { status: HttpStatus.OK, message: "Profile updated successfully" };
@@ -208,6 +208,22 @@ export class AuthService {
       await this.prisma.session.deleteMany({ where: { userId: session.userId } });
 
       return { status: HttpStatus.OK, message: "You have been logged out successfully." };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+  async getUserData(cookie: string): Promise<UserDataResponse> {
+    try {
+      const session: Session = await this.securityService.verifyCookie(cookie);
+      const user: User = await this.prisma.user.findUnique({where: {id: session.userId}});
+
+      return ({username: user.username, email: user.email});
+
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

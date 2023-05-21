@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Header from "../Header/Header";
 import axios from 'axios';
 import './Dashboard.css'
@@ -10,9 +10,23 @@ const Dashboard = () => {
 	const cookie = Cookies.get('session');
 	const navigate = useNavigate();
 
+	const [username, setUsername] = useState('');
+
 	useEffect(() => {
+
+		const getUsername = async () => {
+			try {
+				const response = await axios.post('http://localhost:5000/auth/get_data', { cookie });
+				setUsername(response.data.username);
+			} catch (error) {
+				console.log(error);
+			}
+		}
+
 		if (!cookie)
-		navigate('/not-logged');
+			navigate('/not-logged');
+		else
+			getUsername();
 	}, [navigate, cookie]);
 
 
@@ -34,7 +48,8 @@ const Dashboard = () => {
 			<Header />
 			<div className="dashboard-cont">
 				<section className='user-sec'>
-					{cookie && <button className='logout-btn' onClick={handleLogOut}>Log out</button>}
+					<h1>{username}</h1>
+					<button className='logout-btn' onClick={handleLogOut}>Log out</button>
 				</section>
 				<section>
 					<h1>Play game!</h1>
