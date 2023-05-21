@@ -45,4 +45,63 @@ export class MessagesService {
       take: limit,
     });
   }
+
+  async blockUser(blockerId: number, blockedId: number) {
+    // Check if this block relation already exists
+    const existingBlock = await this.prisma.block.findFirst({
+      where: {
+        blockerId: blockerId,
+        blockedId: blockedId,
+      },
+    });
+
+    if (existingBlock) {
+      return { message: 'User already blocked.' };
+    }
+
+    // Create the block relation
+    const newBlock = await this.prisma.block.create({
+      data: {
+        blockerId: blockerId,
+        blockedId: blockedId,
+      },
+    });
+
+    return { message: 'User successfully blocked.', block: newBlock };
+  }
+
+  async unblockUser(blockerId: number, blockedId: number) {
+    // Check if this block relation exists
+    const existingBlock = await this.prisma.block.findFirst({
+      where: {
+        blockerId: blockerId,
+        blockedId: blockedId,
+      },
+    });
+
+    if (!existingBlock) {
+      return { message: 'Block relation does not exist.' };
+    }
+
+    // Delete the block relation
+    await this.prisma.block.delete({
+      where: {
+        id: existingBlock.id,
+      },
+    });
+
+    return { message: 'User successfully unblocked.' };
+  }
+
+  async isBlocked(blockerId: number, blockedId: number): Promise<boolean> {
+    const block = await this.prisma.block.findFirst({
+      where: {
+        blockerId: blockerId,
+        blockedId: blockedId,
+      },
+    });
+  
+    return block !== null;
+  }
+  
 }

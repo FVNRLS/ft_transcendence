@@ -10,13 +10,16 @@ import { WsJwtAuthGuard } from '../guards/ws-jwt-auth-guard/ws-jwt-auth-guard.gu
 import { WsIsUserInRoomGuard } from '../guards/ws-is-user-in-room/ws-is-user-in-room.guard';
 import { WsPermissionGuard } from '../guards/ws-permission/ws-permission.guard';
 import { WsIsUserMemberOfRoomForMessageGuard } from '../guards/ws-is-user-member-of-room-for-message/ws-is-user-member-of-room-for-message.guard';
+import { RoomsService } from '../rooms/rooms.service';
+import { SendDirectMessageDto } from './dto/send-direct-message.dto';
 
 
 @WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
 export class MessagesGateway {
   @WebSocketServer() server: any;
   constructor(
-    private readonly messagesService: MessagesService
+    private readonly messagesService: MessagesService,
+    private readonly roomsService: RoomsService
     ) {}
 
   @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
@@ -30,6 +33,54 @@ export class MessagesGateway {
       // this.server.emit('newMessage', newMessage);
       return newMessage;
   }
+
+
+  // @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('sendDirectMessage')
+  async sendDirectMessage(
+    @MessageBody() sendDirectMessageDto: SendDirectMessageDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const senderId = client.data.userId; // sender
+      const receiverId = sendDirectMessageDto.receiverId; // receiver
+  
+      // Check if the sender has been blocked by the receiver or vice versa
+      const receiverBlockedSender = await this.messagesService.isBlocked(receiverId, senderId);
+      const senderBlockedReceiver = await this.messagesService.isBlocked(senderId, receiverId);
+  
+      if (receiverBlockedSender) {
+        return { message: 'You have been blocked by the receiver.' };
+      }
+  
+      if (senderBlockedReceiver) {
+        return { message: 'You have blocked this user.' };
+      }
+  
+      // Create a direct room or use the existing one
+      const room = await this.roomsService.createDirectRoom(senderId, receiverId);
+  
+      // Create a new message in the direct room
+      const newMessageDto: CreateMessageDto = {
+        roomId: room.id,
+        content: sendDirectMessageDto.content,
+        // sender information should be associated with message in your messagesService.create() method
+      };
+  
+      const newMessage = await this.messagesService.create(newMessageDto, client);
+  
+      // Broadcast the new message to all clients in the room
+      this.server.to(`room-${room.id}`).emit('newMessage', newMessage);
+  
+      return newMessage;
+    } catch (error) {
+      console.log('Error:', error.message);
+      return { error: error.message };
+    }
+  }
+  
+  
+  
 
   @UseGuards(WsJwtAuthGuard, WsPermissionGuard)
   @SubscribeMessage('findAllMessages')
@@ -60,5 +111,33 @@ export class MessagesGateway {
   @SubscribeMessage('getRoomMessages')
   getRoomMessages(@MessageBody() { roomId, limit = 100, offset = 0 }: GetRoomMessagesDto) {
     return this.messagesService.getRoomMessages(roomId, limit, offset);
+  }
+
+  @SubscribeMessage('blockUser')
+  async blockUser(@ConnectedSocket() client: Socket, @MessageBody() blockDto: { blockedId: number }) {
+    try {
+      const blockerId = client.data.userId; // Assuming the blocker's id is stored in the socket data
+      
+      const result = await this.messagesService.blockUser(blockerId, blockDto.blockedId);
+
+      return result;
+    } catch (error) {
+      console.log('Error:', error.message);
+      return { error: error.message };
+    }
+  }
+
+  @SubscribeMessage('unblockUser')
+  async unblockUser(@ConnectedSocket() client: Socket, @MessageBody() blockDto: { blockedId: number }) {
+    try {
+      const blockerId = client.data.userId; // Assuming the blocker's id is stored in the socket data
+      
+      const result = await this.messagesService.unblockUser(blockerId, blockDto.blockedId);
+
+      return result;
+    } catch (error) {
+      console.log('Error:', error.message);
+      return { error: error.message };
+    }
   }
 }

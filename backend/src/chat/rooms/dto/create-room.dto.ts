@@ -19,7 +19,4 @@ export class CreateRoomDto {
   @IsString()
   @IsOptional()
   password?: string;
-
-  @IsNumber()
-  userId: number;
 }

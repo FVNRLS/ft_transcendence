@@ -15,16 +15,57 @@ export class RoomsService {
     ) {}
   
 
-    async create(createRoomDto: CreateRoomDto, client: Socket) {
-      return await this.prisma.room.create({
-        data: {
-          roomName: createRoomDto.roomName,
-          roomType: createRoomDto.roomType,
-          password: createRoomDto.password,
-          userId: client.data.userId,
-        },
-      });
+  async create(createRoomDto: CreateRoomDto, client: Socket) {
+    return await this.prisma.room.create({
+      data: {
+        roomName: createRoomDto.roomName,
+        roomType: createRoomDto.roomType,
+        password: createRoomDto.password,
+        userId: client.data.userId,
+      },
+    });
+  }
+
+  async createDirectRoom(user1Id: number, user2Id: number) {
+    // Check if a direct room already exists between the two users
+    const existingRoom = await this.prisma.room.findFirst({
+      where: {
+        roomType: 'DIRECT',
+        userOnRooms: {
+          every: {
+            userId: {
+              in: [user1Id, user2Id]
+            }
+          }
+        }
+      },
+      include: {
+        userOnRooms: true,
+      },
+    });
+  
+    if (existingRoom) {
+      return existingRoom;
     }
+  
+  // Create a new direct room
+  const newRoom = await this.prisma.room.create({
+    data: {
+      roomName: `DM-${user1Id}-${user2Id}`, // Unique room name for direct message
+      roomType: 'DIRECT',
+      userId: user1Id, // Assign one of the users as the owner
+      userOnRooms: {
+        create: [
+          { userId: user1Id, role: 'MEMBER' },
+          { userId: user2Id, role: 'MEMBER' },
+        ],
+      },
+    },
+  });
+
+  
+    return newRoom;
+  }
   
 
   async findAll() {
@@ -185,6 +226,7 @@ export class RoomsService {
   }
 
   async setUserRole(userId: number, roomId: number, role: UserRole) {
+    console.log(`userId: ${userId}, roomId: ${roomId}, role: ${role}`);
     const userRoom = await this.prisma.userOnRooms.findUnique({
       where: { roomId_userId: { roomId, userId } }
     });
