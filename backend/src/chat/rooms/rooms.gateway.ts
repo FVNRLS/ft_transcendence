@@ -12,6 +12,8 @@ import { HasRoomPermission } from '../decorators/has-room-permission.decorator';
 import { Prisma, UserRole } from '@prisma/client';
 import { SecurityService } from 'src/security/security.service';
 
+let userToSocketIdMap: { [key: string]: string } = {};
+
 @WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
 export class RoomsGateway {
   constructor(
@@ -24,7 +26,10 @@ export class RoomsGateway {
     try {
       const cookie = client.handshake.headers.cookie; // Adjust this line based on how cookie is sent in handshake
       const session = await this.securityService.verifyCookie(cookie);
-      client.data = { userId: session.userId }; // Attach the userId to client data
+      const userId = session.userId;
+      client.data = { userId }; // Attach the userId to client data
+
+      userToSocketIdMap[userId] = client.id; // Add entry to map
       
       // You may want to rejoin rooms here or whatever you want to do on a successful connection
       const userRooms = await this.prisma.userOnRooms.findMany({
@@ -42,6 +47,14 @@ export class RoomsGateway {
       client.disconnect(); // disconnect the client if authentication fails
     }
   }
+
+  async handleDisconnect(@ConnectedSocket() client: Socket) {
+    const userId = Object.keys(userToSocketIdMap).find(key => userToSocketIdMap[key] === client.id);
+    if (userId) {
+      delete userToSocketIdMap[userId];
+    }
+  }
+  
 
   // @UseGuards(WsJwtAuthGuard)
   // @SubscribeMessage('rejoinRooms')

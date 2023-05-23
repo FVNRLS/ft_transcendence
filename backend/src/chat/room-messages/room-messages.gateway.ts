@@ -12,6 +12,7 @@ import { WsPermissionGuard } from '../guards/ws-permission/ws-permission.guard';
 import { WsIsUserMemberOfRoomForMessageGuard } from '../guards/ws-is-user-member-of-room-for-message/ws-is-user-member-of-room-for-message.guard';
 import { RoomsService } from '../rooms/rooms.service';
 import { SendDirectMessageDto } from './dto/send-direct-message.dto';
+import { AuthGateway } from '../auth/auth.gateway';
 
 
 @WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
@@ -59,6 +60,15 @@ export class MessagesGateway {
   
       // Create a direct room or use the existing one
       const room = await this.roomsService.createDirectRoom(senderId, receiverId);
+
+      // Make the client join the room
+      client.join(`room-${room.id}`);
+
+      // Make the receiver join the room
+      const receiverClientId = AuthGateway.userToSocketIdMap[receiverId];
+      if (receiverClientId) {
+        this.server.sockets.sockets.get(receiverClientId)?.join(`room-${room.id}`);
+      }
   
       // Create a new message in the direct room
       const newMessageDto: CreateMessageDto = {
@@ -69,6 +79,9 @@ export class MessagesGateway {
   
       const newMessage = await this.messagesService.create(newMessageDto, client);
   
+      console.log(`room-${room.id}`);
+      console.log(newMessage);
+
       // Broadcast the new message to all clients in the room
       this.server.to(`room-${room.id}`).emit('newMessage', newMessage);
   
