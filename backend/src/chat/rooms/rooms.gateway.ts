@@ -116,7 +116,7 @@ export class RoomsGateway {
     }
   }
 
-  // @UseGuards(WsJwtAuthGuard)
+  // @UseGuards(WsJwtAuthGuard)Roo
   @SubscribeMessage('getUserRooms')
   async getUserRooms(@ConnectedSocket() client: Socket) {
     const userId = client.data.userId; // Get the userId from the client
