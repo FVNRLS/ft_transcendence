@@ -12,7 +12,7 @@ import { HasRoomPermission } from '../decorators/has-room-permission.decorator';
 import { Prisma, UserRole } from '@prisma/client';
 import { SecurityService } from 'src/security/security.service';
 
-let userToSocketIdMap: { [key: string]: string } = {};
+// let userToSocketIdMap: { [key: string]: string } = {};
 
 @WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
 export class RoomsGateway {
@@ -22,53 +22,37 @@ export class RoomsGateway {
     private readonly securityService: SecurityService
     ) {}
 
-  async handleConnection(@ConnectedSocket() client: Socket) {
-    try {
-      const cookie = client.handshake.headers.cookie; // Adjust this line based on how cookie is sent in handshake
-      const session = await this.securityService.verifyCookie(cookie);
-      const userId = session.userId;
-      client.data = { userId }; // Attach the userId to client data
-
-      userToSocketIdMap[userId] = client.id; // Add entry to map
-      
-      // You may want to rejoin rooms here or whatever you want to do on a successful connection
-      const userRooms = await this.prisma.userOnRooms.findMany({
-        where: { userId: session.userId },
-      });
-    
-      userRooms.forEach((userRoom) => {
-        client.join(`room-${userRoom.roomId}`);
-      });
-    
-      client.emit('connection_success', { message: 'Reconnected and rooms rejoined' });
-
-    } catch (error) {
-      console.log('Invalid credentials');
-      client.disconnect(); // disconnect the client if authentication fails
-    }
-  }
-
-  async handleDisconnect(@ConnectedSocket() client: Socket) {
-    const userId = Object.keys(userToSocketIdMap).find(key => userToSocketIdMap[key] === client.id);
-    if (userId) {
-      delete userToSocketIdMap[userId];
-    }
-  }
-  
-
-  // @UseGuards(WsJwtAuthGuard)
-  // @SubscribeMessage('rejoinRooms')
   // async handleConnection(@ConnectedSocket() client: Socket) {
-  //   const userId = client.data.userId;
-  //   const userRooms = await this.prisma.userOnRooms.findMany({
-  //     where: { userId },
-  //   });
-  
-  //   userRooms.forEach((userRoom) => {
-  //     client.join(`room-${userRoom.roomId}`);
-  //   });
-  
-  //   return { message: 'Reconnected and rooms rejoined' };
+  //   try {
+  //     const cookie = client.handshake.headers.cookie; // Adjust this line based on how cookie is sent in handshake
+  //     const session = await this.securityService.verifyCookie(cookie);
+  //     const userId = session.userId;
+  //     client.data = { userId }; // Attach the userId to client data
+
+  //     userToSocketIdMap[userId] = client.id; // Add entry to map
+      
+  //     // You may want to rejoin rooms here or whatever you want to do on a successful connection
+  //     const userRooms = await this.prisma.userOnRooms.findMany({
+  //       where: { userId: session.userId },
+  //     });
+    
+  //     userRooms.forEach((userRoom) => {
+  //       client.join(`room-${userRoom.roomId}`);
+  //     });
+    
+  //     client.emit('connection_success', { message: 'Reconnected and rooms rejoined' });
+
+  //   } catch (error) {
+  //     console.log('Invalid credentials');
+  //     client.disconnect(); // disconnect the client if authentication fails
+  //   }
+  // }
+
+  // async handleDisconnect(@ConnectedSocket() client: Socket) {
+  //   const userId = Object.keys(userToSocketIdMap).find(key => userToSocketIdMap[key] === client.id);
+  //   if (userId) {
+  //     delete userToSocketIdMap[userId];
+  //   }
   // }
 
   // Chat Room Management
@@ -91,25 +75,6 @@ export class RoomsGateway {
   
     return newRoom;
   }
-
-  // @UseGuards(WsJwtAuthGuard)
-  // @SubscribeMessage('createDirectRoom')
-  // async createDirectRoom(
-  //   @MessageBody() members: { user1Id: number, user2Id: number },
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   try {
-  //     const newRoom = await this.roomsService.createDirectRoom(members.user1Id, members.user2Id);
-  
-  //     // Both users automatically join the room
-  //     await this.roomsService.joinRoom(newRoom.id, client);
-    
-  //     return newRoom;
-  //   } catch (error) {
-  //     console.log('Error:', error.message);
-  //     return {error: error.message};
-  //   }
-  // }
   
 
   @UseGuards(WsJwtAuthGuard)

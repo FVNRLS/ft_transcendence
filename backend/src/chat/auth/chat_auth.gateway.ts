@@ -5,7 +5,7 @@ import { SecurityService } from 'src/security/security.service';
 
 
 @WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
-export class AuthGateway {
+export class ChatAuthGateway {
    // Define userToSocketIdMap as a static property of the class
    static userToSocketIdMap: { [key: string]: string } = {};
 
@@ -21,7 +21,7 @@ export class AuthGateway {
       const userId = session.userId;
       client.data = { userId }; // Attach the userId to client data
 
-      AuthGateway.userToSocketIdMap[userId] = client.id; // Add entry to map
+      ChatAuthGateway.userToSocketIdMap[userId] = client.id; // Add entry to map
       
       // You may want to rejoin rooms here or whatever you want to do on a successful connection
       const userRooms = await this.prisma.userOnRooms.findMany({
@@ -41,9 +41,9 @@ export class AuthGateway {
   }
 
   async handleDisconnect(@ConnectedSocket() client: Socket) {
-    const userId = Object.keys(AuthGateway.userToSocketIdMap).find(key => AuthGateway.userToSocketIdMap[key] === client.id);
+    const userId = Object.keys(ChatAuthGateway.userToSocketIdMap).find(key => ChatAuthGateway.userToSocketIdMap[key] === client.id);
     if (userId) {
-      delete AuthGateway.userToSocketIdMap[userId];
+      delete ChatAuthGateway.userToSocketIdMap[userId];
     }
   }
 
