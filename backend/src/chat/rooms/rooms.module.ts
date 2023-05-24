@@ -5,6 +5,7 @@ import { SecurityService } from 'src/security/security.service';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { SecurityModule } from 'src/security/security.module';
+import { ChatUserService } from './chat_user.service';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import { SecurityModule } from 'src/security/security.module';
     }),
     SecurityModule,
   ],
-  providers: [RoomsGateway, RoomsService, SecurityService]
+  providers: [RoomsGateway, RoomsService, SecurityService, ChatUserService]
 })
 export class RoomsModule {}

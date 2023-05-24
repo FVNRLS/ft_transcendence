@@ -11,49 +11,28 @@ import { SetUserRoleDto } from './dto/set-user-role.dto';
 import { HasRoomPermission } from '../decorators/has-room-permission.decorator';
 import { Prisma, UserRole } from '@prisma/client';
 import { SecurityService } from 'src/security/security.service';
+import { ChatUserService } from './chat_user.service';
 
-// let userToSocketIdMap: { [key: string]: string } = {};
-
-@WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
+@WebSocketGateway(+process.env.CHAT_PORT, { 
+  cors: {
+      origin: "http://localhost:3000", // Replace with the origin you want to allow
+      methods: ["GET", "POST"],
+      credentials: true
+  } 
+})
 export class RoomsGateway {
   constructor(
     private readonly roomsService: RoomsService,
     private readonly prisma: PrismaService,
-    private readonly securityService: SecurityService
+    private readonly securityService: SecurityService,
+    private readonly chatUserService: ChatUserService
     ) {}
 
-  // async handleConnection(@ConnectedSocket() client: Socket) {
-  //   try {
-  //     const cookie = client.handshake.headers.cookie; // Adjust this line based on how cookie is sent in handshake
-  //     const session = await this.securityService.verifyCookie(cookie);
-  //     const userId = session.userId;
-  //     client.data = { userId }; // Attach the userId to client data
 
-  //     userToSocketIdMap[userId] = client.id; // Add entry to map
-      
-  //     // You may want to rejoin rooms here or whatever you want to do on a successful connection
-  //     const userRooms = await this.prisma.userOnRooms.findMany({
-  //       where: { userId: session.userId },
-  //     });
-    
-  //     userRooms.forEach((userRoom) => {
-  //       client.join(`room-${userRoom.roomId}`);
-  //     });
-    
-  //     client.emit('connection_success', { message: 'Reconnected and rooms rejoined' });
-
-  //   } catch (error) {
-  //     console.log('Invalid credentials');
-  //     client.disconnect(); // disconnect the client if authentication fails
-  //   }
-  // }
-
-  // async handleDisconnect(@ConnectedSocket() client: Socket) {
-  //   const userId = Object.keys(userToSocketIdMap).find(key => userToSocketIdMap[key] === client.id);
-  //   if (userId) {
-  //     delete userToSocketIdMap[userId];
-  //   }
-  // }
+  @SubscribeMessage('getCurrentUser')
+  getCurrentUser(@ConnectedSocket() client: Socket) {
+    return this.chatUserService.getCurrentUser(client);
+  }
 
   // Chat Room Management
   @UseGuards(WsJwtAuthGuard)
@@ -137,23 +116,37 @@ export class RoomsGateway {
     }
   }
 
-  @UseGuards(WsJwtAuthGuard)
+  // @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('getUserRooms')
   async getUserRooms(@ConnectedSocket() client: Socket) {
     const userId = client.data.userId; // Get the userId from the client
 
+    console.log("Userid");
+    console.log(userId);
     const userRooms = await this.prisma.userOnRooms.findMany({
-      where: { userId },
+      where: { userId: userId },
       include: { room: true }, // Include the room data
     });
-
-    return userRooms.map(userRoom => userRoom.room); // Return the rooms
+    
+    console.log("getUserRooms called");
+    console.log("User rooms");
+    console.log(userRooms)
+    console.log("Mapping");
+    console.log(userRooms.map(userRoom => userRoom.room));
+    client.emit('getUserRooms', userRooms.map(userRoom => userRoom.room));
+    return "Sucess";
   }
 
-  @UseGuards(WsJwtAuthGuard)
+  // @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('getRoomMembers')
-  async getRoomMembers(@MessageBody('roomId') roomId: number) {
-    const roomMembers = await this.roomsService.getRoomMembers(roomId);
+  async getRoomMembers(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('roomId') roomId: number,
+    @MessageBody('excludeClient') excludeClient: boolean = false
+  ) {
+    // Assuming the client id is stored in client.data.userId
+    const clientId = client.data.userId;
+    const roomMembers = await this.roomsService.getRoomMembers(roomId, clientId, excludeClient);
     return roomMembers;
   }
 

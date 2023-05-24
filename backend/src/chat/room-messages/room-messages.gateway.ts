@@ -15,7 +15,13 @@ import { SendDirectMessageDto } from './dto/send-direct-message.dto';
 import { ChatAuthGateway } from '../auth/chat_auth.gateway';
 
 
-@WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
+@WebSocketGateway(+process.env.CHAT_PORT, { 
+  cors: {
+      origin: "http://localhost:3000", // Replace with the origin you want to allow
+      methods: ["GET", "POST"],
+      credentials: true
+  } 
+})
 export class MessagesGateway {
   @WebSocketServer() server: any;
   constructor(

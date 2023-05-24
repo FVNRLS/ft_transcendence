@@ -4,7 +4,13 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { SecurityService } from 'src/security/security.service';
 
 
-@WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
+@WebSocketGateway(+process.env.CHAT_PORT, { 
+  cors: {
+      origin: "http://localhost:3000", // Replace with the origin you want to allow
+      methods: ["GET", "POST"],
+      credentials: true
+  } 
+})
 export class ChatAuthGateway {
    // Define userToSocketIdMap as a static property of the class
    static userToSocketIdMap: { [key: string]: string } = {};
@@ -16,10 +22,30 @@ export class ChatAuthGateway {
     
   async handleConnection(@ConnectedSocket() client: Socket) {
     try {
+      // console.log("HandleConnect");
       const cookie = client.handshake.headers.cookie; // Adjust this line based on how cookie is sent in handshake
-      const session = await this.securityService.verifyCookie(cookie);
+      console.log(cookie);
+
+      // Split the cookie string into individual cookies
+      const allCookies = cookie.split('; ');
+
+      // Use the find() function to locate the session cookie
+      const sessionCookieWithLabel = allCookies.find(cookie => cookie.startsWith('session='));
+
+      // If a session cookie was found, remove the 'session=' label from the start
+      const sessionCookie = sessionCookieWithLabel ? sessionCookieWithLabel.replace('session=', '') : '';
+
+      // // Add this line to strip "session=" from the start of the cookie
+      // const sessionCookie = cookie.replace('session=', '');
+
+
+      const session = await this.securityService.verifyCookie(sessionCookie);
       const userId = session.userId;
+      console.log("USERID");
+      console.log(userId);
       client.data = { userId }; // Attach the userId to client data
+      console.log("CLIENT.DATA.USERID FROM AUTH");
+      console.log(client.data.userId);
 
       ChatAuthGateway.userToSocketIdMap[userId] = client.id; // Add entry to map
       
@@ -33,6 +59,9 @@ export class ChatAuthGateway {
       });
     
       client.emit('connection_success', { message: 'Reconnected and rooms rejoined' });
+      // After userId has been assigned
+      client.emit('user_verified', { message: 'User has been verified' });
+
 
     } catch (error) {
       console.log('Invalid credentials');

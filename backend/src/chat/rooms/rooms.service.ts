@@ -196,7 +196,7 @@ export class RoomsService {
   }
   
   
-  async getRoomMembers(roomId: number) {
+  async getRoomMembers(roomId: number, clientId: number = null, excludeClient: boolean = false) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
   
     if (!room) {
@@ -214,16 +214,20 @@ export class RoomsService {
             username: true,
             email: true,
             profilePicture: true,
-            // other fields you want to include
           }
         } 
       },
     });
   
-    const roomMembers = userOnRooms.map((userOnRoom) => userOnRoom.user);
+    let roomMembers = userOnRooms.map((userOnRoom) => userOnRoom.user);
+    
+    if (excludeClient && clientId !== null) {
+      roomMembers = roomMembers.filter(member => member.id !== clientId);
+    }
   
     return roomMembers;
   }
+  
 
   async setUserRole(userId: number, roomId: number, role: UserRole) {
     console.log(`userId: ${userId}, roomId: ${roomId}, role: ${role}`);
