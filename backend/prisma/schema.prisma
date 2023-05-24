@@ -29,9 +29,23 @@ model User {
   friends             Friend[]
   messages            Message[]
   userrooms           UserOnRooms[]
+  blockedUsers        Block[] @relation("BlockBlocker")
+  blockingUsers       Block[] @relation("BlockBlocked")
 
   @@map("users")
 }
+
+model Block {
+  id         Int      @id @default(autoincrement())
+  blockerId  Int
+  blocker    User     @relation("BlockBlocker", fields: [blockerId], references: [id])
+  blockedId  Int
+  blocked    User     @relation("BlockBlocked", fields: [blockedId], references: [id])
+  
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
+}
+
 
 model Session {
   id                  Int         @id @default(autoincrement())
@@ -84,19 +98,11 @@ model Friend {
   @@map("friends")
 }
 
-model UserOnRooms {
-  id        Int                   @id @default(autoincrement())
-  roomId    Int
-  room      Room                  @relation(fields: [roomId], references: [id])
-  userId    Int
-  user      User                  @relation(fields: [userId], references: [id])
-
-  @@map("(useronrooms)")
-}
-
 model Room {          
   id                    Int       @id @default(autoincrement())
   roomName              String
+  roomType              RoomType     @default(PUBLIC)
+  password              String? 
   userId                Int
   messages              Message[]
   userOnRooms           UserOnRooms[]
@@ -104,14 +110,40 @@ model Room {
   @@map("rooms")
 }
 
+model UserOnRooms {
+  id           Int      @id @default(autoincrement())
+  roomId       Int
+  room         Room     @relation(fields: [roomId], references: [id])
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  role         UserRole @default(MEMBER)
+
+  @@unique([roomId, userId])
+  @@map("useronrooms")
+}
+
+enum RoomType {
+  PUBLIC
+  PRIVATE
+  PASSWORD
+  DIRECT
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+
 model Message {
-  id                    Int       @id @default(autoincrement())
-  userId                Int
-  user                  User      @relation(fields: [userId], references: [id])
-  roomId                Int
-  room                  Room      @relation(fields: [roomId], references: [id])
-  createdAt             DateTime  @default(now())
-  value                 String
+  id                     Int       @id @default(autoincrement())
+  userId                 Int
+  user                   User      @relation(fields: [userId], references: [id])
+  roomId                 Int?
+  room                   Room?     @relation(fields: [roomId], references: [id])
+  createdAt              DateTime  @default(now())
+  content                String
   
   @@map("messages")
 }
