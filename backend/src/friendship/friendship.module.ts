@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   friendship.module.ts                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
+/*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:29 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/03 14:29:31 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/22 12:10:54 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { SecurityModule } from 'src/security/security.module';
 import { FriendshipController } from './friendship.controller';
 import { FriendshipService } from './friendship.service';
+import { GoogleDriveService } from 'src/auth/google_drive/google.drive.service';
 import { SessionService } from 'src/auth/session.service';
 import { SecurityService } from 'src/security/security.service';
 
@@ -28,7 +29,7 @@ import { SecurityService } from 'src/security/security.service';
     }),
     SecurityModule,
   ],
-  providers: [FriendshipService, SecurityService, SessionService],
+  providers: [FriendshipService, SecurityService, SessionService, GoogleDriveService],
   controllers: [FriendshipController],
 })
 export class FriendshipModule {}

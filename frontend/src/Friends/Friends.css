@@ -26,6 +26,92 @@
 	width: 31rem;
 	height: 40rem;
 	display: flex;
-	justify-content: center;
+	flex-direction: column;
 	align-items: center;
+	overflow-y: scroll;
+}
+
+.user-li
+{
+	width: 100%;
+	height: 15%;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.user-li:hover
+{
+	background-color: rgba(0, 0, 0, 0.051);
+}
+
+.user-li img {
+	height: 70%;
+	margin-left: 5%;
+}
+
+.user-li h1 {
+	font-size: large;
+	margin: 0;
+}
+
+.user-li button {
+	border: 0;
+	color: white;
+	background-color: #476cd2af;
+	width: 15%;
+	height: 30%;
+	margin-right: 5%;
+}
+
+.user-li button:hover {
+	cursor: pointer;
+	background-color: #476cd2;
+}
+
+.input-wrap {
+	position: relative;
+}
+
+.input-wrap .spinner {
+	position: absolute;
+	width: 30px;
+	height: 30px;
+	top: 20%;
+	right: 3%;
+	transform: translateY(-50%);
+	border-top-color: #476cd2;
+	animation: spin-input 1s linear infinite;
+}
+
+@keyframes spin-input {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(180deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.user-li p {
+	font-family: "Montserrat", sans-serif;
+	color:#476cd2;
+	text-align: center;
+	margin: 0;
+	padding: 0;
+	width: 15%;
+	margin-right: 5%;
+}
+
+.user-li .icon {
+	margin-right: 5%;
+	transition: .2s;
+}
+
+.user-li .icon:hover {
+	color: #0fc384;
+	cursor: pointer;
 }

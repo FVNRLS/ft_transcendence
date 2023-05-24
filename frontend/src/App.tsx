@@ -7,8 +7,9 @@ import Chat from './Chat/Chat';
 import Profile from './Profile/Profile';
 import NotFound from './404/NotFound';
 import Stats from './Stats/Stats';
-import Friends from './Friends/Friends';
+import SearchFriends from './Friends/SearchFriends';
 import NotLogged from './Auth/NotLogged';
+import Friends from './Friends/Friends';
 
 function App() {
 
@@ -21,8 +22,9 @@ function App() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/stats" element={<Stats />} />
-        <Route path="/friends" element={<Friends />} />
+        <Route path="/search" element={<SearchFriends />} />
         <Route path="/not-logged" element={<NotLogged />} />
+        <Route path="/friends" element={<Friends />} />
         <Route path="*" element={<NotFound />} />
     </Routes>
   );

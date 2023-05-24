@@ -3,16 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   friendship.controller.ts                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
+/*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:20 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/11 12:54:24 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/24 16:27:43 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Controller, Post, Body } from "@nestjs/common";
 import { FriendshipDataResponse, FriendshipDto, FriendshipStatusResponse } from "./dto";
 import { FriendshipService } from "./friendship.service";
+import { UserListDataResponse } from "./dto";
+
 
 @Controller("/friendship")
 export class FriendshipController {
@@ -57,7 +59,7 @@ export class FriendshipController {
   }
 
   @Post("/get_accepted")
-  async getAcceptedFriends(@Body("cookie") cookie: string): Promise<FriendshipDataResponse[]> {
+  async getAcceptedFriends(@Body("cookie") cookie: string): Promise<UserListDataResponse[]> {
     try {
       return await this.friendshipService.getFriends(cookie);
     } catch (error) {
@@ -66,9 +68,18 @@ export class FriendshipController {
   }
 
   @Post("/get_to_accept")
-  async getFriendsToAccept(@Body("cookie") cookie: string): Promise<FriendshipDataResponse[]> {
+  async getFriendsToAccept(@Body("cookie") cookie: string): Promise<UserListDataResponse[]> {
     try {
       return await this.friendshipService.getFriendsToAccept(cookie);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post("/get_users")
+  async getUsers(@Body("cookie") cookie: string): Promise<UserListDataResponse[]> {
+    try {
+      return await this.friendshipService.getUserList(cookie);
     } catch (error) {
       throw error;
     }

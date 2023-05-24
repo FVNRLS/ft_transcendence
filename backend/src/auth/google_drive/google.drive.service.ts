@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/21 15:49:48 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/05/24 11:17:35 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,11 +80,13 @@ export class GoogleDriveService {
     }
   }
 
-  async getProfilePicture(@Body("cookie") cookie: string): Promise<FileResponse> {
+  async getProfilePicture(@Body("cookie") cookie: string, user?: User): Promise<FileResponse> {
     try {
       await this.securityService.verifyCookie(cookie);
       const session: Session = await this.securityService.verifyCookie(cookie);
-      const user: User = await this.prisma.user.findFirst({ where: { id: session.userId } });
+
+      if (!user)
+        user = await this.prisma.user.findFirst({ where: { id: session.userId } });
       
       const googleAccessToken = await this.getGoogleDriveAcessToken();
 

@@ -3,24 +3,26 @@
 /*                                                        :::      ::::::::   */
 /*   friendship.service.ts                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
+/*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/11 18:09:00 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/11 18:09:04 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/05/24 16:28:50 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { FriendshipDto, FriendshipStatusResponse, FriendshipDataResponse } from './dto';
+import { FriendshipDto, FriendshipStatusResponse, FriendshipDataResponse, UserListDataResponse } from './dto';
 import { PrismaService } from "../prisma/prisma.service";
 import { SecurityService } from 'src/security/security.service';
 import { Friend, Session, User } from '@prisma/client';
+import { GoogleDriveService } from 'src/auth/google_drive/google.drive.service';
 
 @Injectable()
 export class FriendshipService {
   constructor(
     private prisma: PrismaService,
 		private securityService: SecurityService,
+    private googleDriveService: GoogleDriveService,
   ) {}
   
   //CONTROLLER FUNCTIONS
@@ -154,10 +156,26 @@ export class FriendshipService {
   }
 
   //TODO: find out the better way to determine if user is online or not
-  async getFriends(cookie: string): Promise<FriendshipDataResponse[]> {
+  async getFriends(cookie: string): Promise<UserListDataResponse[]> {
     try {
       const status: string = "accepted";
-      return await this.getFriendlist(cookie, status);
+      const accepted = await this.getFriendlist(cookie, status);
+
+      const friends = await this.prisma.user.findMany({
+        where: 
+            { username: { in: accepted.map(friend => friend.friendName) } },
+  
+      });
+
+      let friendList: UserListDataResponse[] = [];
+      for (let i: number = 0; i < friends.length; i++) {
+        const friend = friends[i];
+        const pic = await this.googleDriveService.getProfilePicture(cookie, friend);
+        const friendResponse = {username: friend.username, picture: pic};
+        friendList.push(friendResponse);
+      };
+      
+      return friendList;
     } catch (error) {
 			if (error instanceof HttpException) {
 				throw error;
@@ -167,20 +185,28 @@ export class FriendshipService {
 		}
   }
 
-  async getFriendsToAccept(cookie: string): Promise<FriendshipDataResponse[]> {
+  async getFriendsToAccept(cookie: string): Promise<UserListDataResponse[]> {
     try {
       const session = await this.securityService.verifyCookie(cookie);
       const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });
       
-      const friends: Friend[] = await this.prisma.friend.findMany({ where: { friendName: user.username, status: "pending"} });
-      if (friends.length === 0) {
-        throw new HttpException("It looks like you have no pending friendship requests yet.", HttpStatus.NO_CONTENT);
-      }
+      // const friends: Friend[] = await this.prisma.friend.findMany({ where: { friendName: user.username, status: "pending"} });
+      // if (friends.length === 0) {
+      //   throw new HttpException("It looks like you have no pending friendship requests yet.", HttpStatus.NO_CONTENT);
+      // }
+      const pending = await this.getFriendlist(cookie, "pending");
 
-      let friendList: FriendshipDataResponse[] = [];
+      const friends = await this.prisma.user.findMany({
+        where: 
+            { username: { in: pending.map(friend => friend.friendName) } },
+  
+      });
+
+      let friendList: UserListDataResponse[] = [];
       for (let i: number = 0; i < friends.length; i++) {
         const friend = friends[i];
-        const friendResponse = await this.getFriend(friend, user);
+        const pic = await this.googleDriveService.getProfilePicture(cookie, friend);
+        const friendResponse = {username: friend.username, picture: pic};
         friendList.push(friendResponse);
       };
       
@@ -245,9 +271,9 @@ export class FriendshipService {
         where: { friendId: session.userId, status } });
   
       const friendList = contactedFriends.concat(friendsContactedMe);
-      if (friendList.length === 0) {
-        throw new HttpException("Oh no! It looks like you don't have friends yet!", HttpStatus.NO_CONTENT);
-      }
+      // if (friendList.length === 0) {
+      //   throw new HttpException("Oh no! It looks like you don't have friends yet!", HttpStatus.NO_CONTENT);
+      // }
 
       let friendListResponse: FriendshipDataResponse[] = [];
       for (let i: number = 0; i < friendList.length; i++) {
@@ -283,4 +309,42 @@ export class FriendshipService {
       throw error;
 		}
 	}
+
+  async getUserList(cookie: string): Promise<UserListDataResponse[]> {
+    try {
+      const session = await this.securityService.verifyCookie(cookie);
+      const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });      
+  
+      const friends = await this.getFriendlist(cookie, "accepted");
+      const pending = await this.getFriendlist(cookie, "pending");
+
+      const users = await this.prisma.user.findMany({
+        where: {
+          NOT: [
+            { username: { in: friends.map(friend => friend.friendName) } },
+            { username: { in: pending.map(pendingFriend => pendingFriend.friendName) } }
+          ]
+        }
+      });
+
+
+      let userListResponse: UserListDataResponse[] = [];
+      for (let i: number = 0; i < users.length; i++) {
+        const userTmp = users[i];
+        if (userTmp.username != user.username)
+        {
+          const pic = await this.googleDriveService.getProfilePicture(cookie, userTmp);
+          const userResponse = {username: userTmp.username, picture: pic};
+          userListResponse.push(userResponse);
+        }
+      }
+
+      userListResponse.sort((a, b) => a.username.localeCompare(b.username));
+  
+      return userListResponse;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
+

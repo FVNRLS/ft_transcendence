@@ -1,5 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUserGroup, faUser } from '@fortawesome/free-solid-svg-icons'
 import Header from "../Header/Header";
 import axios from 'axios';
 import './Dashboard.css'
@@ -29,27 +31,22 @@ const Dashboard = () => {
 			getUsername();
 	}, [navigate, cookie]);
 
-
-	const handleLogOut = async () => {
-		try {
-			const response = await axios.post('http://localhost:5000/auth/logout', {cookie});
-			if (response.data.status === 200)
-			{
-				Cookies.remove('session');
-				navigate('/');
-			}
-		} catch (error) {
-			console.error(error);
-		}
-	}
-
 	return (
 		<div className="bg">
 			<Header />
 			<div className="dashboard-cont">
 				<section className='user-sec'>
-					<h1>{username}</h1>
-					<button className='logout-btn' onClick={handleLogOut}>Log out</button>
+					<div className='side-sec' onClick={() => {navigate('/friends');}}>
+						<FontAwesomeIcon className="icon" icon={faUserGroup} size="5x" color='#476cd2c9'/>
+						<h1>Friends</h1>
+					</div>
+					<div className='logout-sec'>
+						<h1>{username}</h1>
+					</div>
+					<div className='side-sec' onClick={() => {navigate('/profile');}}>
+						<FontAwesomeIcon className="icon" icon={faUser} size="5x" color='#476cd2c9'/>
+						<h1>Profile</h1>
+					</div>
 				</section>
 				<section>
 					<h1>Play game!</h1>
@@ -61,7 +58,7 @@ const Dashboard = () => {
 				</section>
 				<section>
 					<h1>Find Friends</h1>
-					<Link className="link-btn" to='/friends'>Search</Link>
+					<Link className="link-btn" to='/search'>Search</Link>
 				</section>
 				<section>
 					<h1>Chat with someone!</h1>
