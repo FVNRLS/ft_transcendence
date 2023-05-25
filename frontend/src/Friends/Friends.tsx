@@ -67,16 +67,30 @@ const Friends = () => {
 		justifyContent: isLoading ? 'center' : 'flex-start',
 	}
 
+	const inviteBtnStyle = {
+		backgroundColor: invitePage ? 'transparent' : 'rgba(0, 0, 0, 0.1)'
+	}
+
+	const friendsBtnStyle = {
+		backgroundColor: !invitePage ? 'transparent' : 'rgba(0, 0, 0, 0.1)'
+	}
+
 	return (
 		<>
 		<Header />
 		<div className="bg">
-				<div>
-					<button onClick={() => {setInvitePage(false)}}>Friends</button>
-					<button onClick={() => {setInvitePage(true)}}>Invitations</button>
-				</div>
+				{/* <div>
+					<button className="top-btn" onClick={() => {setInvitePage(false)}}>Friends</button>
+					<button className="top-btn" onClick={() => {setInvitePage(true)}}>Invitations</button>
+				</div>  */}
 				{invitePage &&
 				<div className="results-cont" style={spinnerStyle}>
+					{!isLoading && (
+						<div className="top-div">
+							<button className="top-btn" style={friendsBtnStyle} onClick={() => {setInvitePage(false)}}>Friends</button>
+							<button className="top-btn" style={inviteBtnStyle} onClick={() => {setInvitePage(true)}}>Invitations</button>
+						</div>
+					)}
 					{isLoading && <div className="spinner"/>}
 					{!isLoading && invitators?.map((user, index) => (
 						<li key={index} className="user-li">
@@ -90,6 +104,12 @@ const Friends = () => {
 				</div>}
 				{!invitePage && 
 				<div className="results-cont" style={spinnerStyle}>
+					{!isLoading && (
+						<div className="top-div">
+							<button className="top-btn" style={friendsBtnStyle} onClick={() => {setInvitePage(false)}}>Friends</button>
+							<button className="top-btn" style={inviteBtnStyle} onClick={() => {setInvitePage(true)}}>Invitations</button>
+						</div>
+					)}
 					{isLoading && <div className="spinner"/>}
 					{!isLoading && friends?.map((user, index) => (
 						<li key={index} className="user-li">

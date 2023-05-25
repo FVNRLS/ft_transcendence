@@ -115,3 +115,21 @@
 	color: #0fc384;
 	cursor: pointer;
 }
+
+.top-div {
+	width: 100%;
+	height: 10%;
+	margin-bottom: 2%;
+}
+
+.top-btn {
+	border: 0;
+	width: 50%;
+	height: 100%;
+	font-size: 1.2rem;
+	font-family: "Montserrat", sans-serif;
+}
+
+.top-btn:hover {
+	cursor: pointer;
+}
