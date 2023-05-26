@@ -30,8 +30,11 @@ export class RoomsGateway {
 
 
   @SubscribeMessage('getCurrentUser')
-  getCurrentUser(@ConnectedSocket() client: Socket) {
-    return this.chatUserService.getCurrentUser(client);
+  async getCurrentUser(@ConnectedSocket() client: Socket) {
+    // emit user data to client
+    const user = await this.chatUserService.getCurrentUser(client);
+    client.emit('currentUser', user);
+    return user;
   }
 
   // Chat Room Management
@@ -116,39 +119,70 @@ export class RoomsGateway {
     }
   }
 
-  // @UseGuards(WsJwtAuthGuard)Roo
-  @SubscribeMessage('getUserRooms')
-  async getUserRooms(@ConnectedSocket() client: Socket) {
-    const userId = client.data.userId; // Get the userId from the client
+  // // @UseGuards(WsJwtAuthGuard)Roo
+  // @SubscribeMessage('getUserRooms')
+  // async getUserRooms(@ConnectedSocket() client: Socket) {
+  //   const userId = client.data.userId; // Get the userId from the client
 
-    console.log("Userid");
-    console.log(userId);
-    const userRooms = await this.prisma.userOnRooms.findMany({
-      where: { userId: userId },
-      include: { room: true }, // Include the room data
-    });
-    
-    console.log("getUserRooms called");
-    console.log("User rooms");
-    console.log(userRooms)
-    console.log("Mapping");
-    console.log(userRooms.map(userRoom => userRoom.room));
-    client.emit('getUserRooms', userRooms.map(userRoom => userRoom.room));
-    return "Sucess";
-  }
+  //   const userRooms = await this.prisma.userOnRooms.findMany({
+  //     where: { userId: userId },
+  //     include: { room: true }, // Include the room data
+  //   });
+  //   client.emit('getUserRooms', userRooms.map(userRoom => userRoom.room));
+  //   return "Sucess";
+  // }
 
-  // @UseGuards(WsJwtAuthGuard)
-  @SubscribeMessage('getRoomMembers')
-  async getRoomMembers(
-    @ConnectedSocket() client: Socket,
-    @MessageBody('roomId') roomId: number,
-    @MessageBody('excludeClient') excludeClient: boolean = false
-  ) {
-    // Assuming the client id is stored in client.data.userId
-    const clientId = client.data.userId;
-    const roomMembers = await this.roomsService.getRoomMembers(roomId, clientId, excludeClient);
-    return roomMembers;
-  }
+@SubscribeMessage('getUserRooms')
+async getUserRooms(@ConnectedSocket() client: Socket) {
+  const userId = client.data.userId; // Get the userId from the client
+
+  const userRooms = await this.prisma.userOnRooms.findMany({
+    where: { userId: userId },
+    include: {
+      room: {
+        select: {
+          id: true,
+          roomName: true,
+          roomType: true,
+          // Include users in each room
+          userOnRooms: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  // Include other fields as required
+                }
+              }
+            }
+          },
+          // Include other room data as required
+        }
+      },
+    },
+  });
+
+  client.emit('getUserRooms', userRooms.map(userRoom => ({
+    ...userRoom.room,
+    users: userRoom.room.userOnRooms.map(ur => ur.user),
+  })));
+
+  return "Success";
+}
+
+
+  // // @UseGuards(WsJwtAuthGuard)
+  // @SubscribeMessage('getRoomMembers')
+  // async getRoomMembers(
+  //   @ConnectedSocket() client: Socket,
+  //   @MessageBody('roomId') roomId: number,
+  //   @MessageBody('excludeClient') excludeClient: boolean = false
+  // ) {
+  //   // Assuming the client id is stored in client.data.userId
+  //   const clientId = client.data.userId;
+  //   const roomMembers = await this.roomsService.getRoomMembers(roomId, clientId, excludeClient);
+  //   return roomMembers;
+  // }
 
 
 

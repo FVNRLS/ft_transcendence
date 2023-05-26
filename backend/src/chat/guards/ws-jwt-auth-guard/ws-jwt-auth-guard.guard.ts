@@ -17,19 +17,10 @@ export class WsJwtAuthGuard implements CanActivate {
   }
 
   async validateRequest(client, data): Promise<boolean> {
-    console.log("IJIJIJIJI")
-    console.log(data)
+    if (client.data.userId)
+      return true;
     const cookie = data.cookie;
-    if (cookie)
-      console.log(cookie);
-    else
-      console.log("Undefined");
-
     try {
-      if (cookie)
-        console.log(cookie);
-      else
-        console.log("UNDEFINED");
       const session = await this.securityService.verifyCookie(cookie);
       client.data.userId = session.userId;
       return true;

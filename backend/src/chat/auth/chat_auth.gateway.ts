@@ -1,3 +1,4 @@
+import { ConsoleLogger } from '@nestjs/common';
 import { WebSocketGateway, SubscribeMessage, MessageBody, ConnectedSocket, WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -24,7 +25,6 @@ export class ChatAuthGateway {
     try {
       // console.log("HandleConnect");
       const cookie = client.handshake.headers.cookie; // Adjust this line based on how cookie is sent in handshake
-      console.log(cookie);
 
       // Split the cookie string into individual cookies
       const allCookies = cookie.split('; ');
@@ -33,19 +33,17 @@ export class ChatAuthGateway {
       const sessionCookieWithLabel = allCookies.find(cookie => cookie.startsWith('session='));
 
       // If a session cookie was found, remove the 'session=' label from the start
-      const sessionCookie = sessionCookieWithLabel ? sessionCookieWithLabel.replace('session=', '') : '';
+      const sessionCookie = sessionCookieWithLabel ? sessionCookieWithLabel.replace('session=', '') : allCookies[0];
+
 
       // // Add this line to strip "session=" from the start of the cookie
       // const sessionCookie = cookie.replace('session=', '');
 
 
       const session = await this.securityService.verifyCookie(sessionCookie);
+      
       const userId = session.userId;
-      console.log("USERID");
-      console.log(userId);
       client.data = { userId }; // Attach the userId to client data
-      console.log("CLIENT.DATA.USERID FROM AUTH");
-      console.log(client.data.userId);
 
       ChatAuthGateway.userToSocketIdMap[userId] = client.id; // Add entry to map
       
