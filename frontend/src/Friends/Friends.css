@@ -69,6 +69,20 @@
 	background-color: #476cd2;
 }
 
+.user-li div button {
+	border: 0;
+	color: white;
+	background-color: #476cd2af;
+	width: 60%;
+	height: 30%;
+	margin-right: 5%;
+}
+
+.user-li div button:hover {
+	cursor: pointer;
+	background-color: #476cd2;
+}
+
 .input-wrap {
 	position: relative;
 }
@@ -106,14 +120,31 @@
 	margin-right: 5%;
 }
 
-.user-li .icon {
-	margin-right: 5%;
-	transition: .2s;
+.user-li .icon-gr {
+	transform: scale(1.2);
 }
 
-.user-li .icon:hover {
+.user-li .icon-gr:hover {
 	color: #0fc384;
 	cursor: pointer;
+}
+
+.user-li .icon-red {
+	transform: scale(1.2);
+}
+
+.user-li .icon-red:hover {
+	color: rgb(205, 0, 0);
+	cursor: pointer;
+}
+
+.user-li div {
+	width: 30%;
+	height: 100%;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-right: 5%;
 }
 
 .top-div {

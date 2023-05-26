@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import './Friends.css'
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 
 interface User {
 	username: string,
@@ -63,6 +63,26 @@ const Friends = () => {
 		}
 	}
 
+	const deleteFriend = async (user: User) => {
+		setFriends(friends?.filter((usr) => usr.username !== user.username) as User[]);
+
+		try {
+			await axios.post("http://localhost:5000/friendship/delete", {cookie: session, friendName: user.username});
+		} catch (error) {
+			console.log(error);
+		}
+	}
+
+	const rejectFriend = async (user: User) => {
+		setInvitators(invitators?.filter((usr) => usr.username !== user.username) as User[]);
+
+		try {
+			await axios.post("http://localhost:5000/friendship/reject", {cookie: session, friendName: user.username});
+		} catch (error) {
+			console.log(error);
+		}
+	}
+
 	const spinnerStyle = {
 		justifyContent: isLoading ? 'center' : 'flex-start',
 	}
@@ -75,14 +95,14 @@ const Friends = () => {
 		backgroundColor: !invitePage ? 'transparent' : 'rgba(0, 0, 0, 0.1)'
 	}
 
+	const divStyle = {
+		width: invitePage ? '20%' : '30%',
+	}
+
 	return (
 		<>
 		<Header />
 		<div className="bg">
-				{/* <div>
-					<button className="top-btn" onClick={() => {setInvitePage(false)}}>Friends</button>
-					<button className="top-btn" onClick={() => {setInvitePage(true)}}>Invitations</button>
-				</div>  */}
 				{invitePage &&
 				<div className="results-cont" style={spinnerStyle}>
 					{!isLoading && (
@@ -96,8 +116,14 @@ const Friends = () => {
 						<li key={index} className="user-li">
 							<img src={user.picture} alt="profile pic"/>
 							<h1>{user.username}</h1>
-							{!user.added && <FontAwesomeIcon className="icon" icon={faCheck}
-							size="2x" color="#0fc384b5" onClick={() => {acceptFriend(user)}} />}
+							{!user.added && (
+								<div style={divStyle}>
+									<FontAwesomeIcon className="icon-gr" icon={faCheck}
+									size="2x" color="#0fc384b5" onClick={() => {acceptFriend(user)}} />
+									<FontAwesomeIcon className="icon-red" icon={faXmark}
+								size="2x" color="red" onClick={() => {rejectFriend(user)}} />
+								</div>
+							)}
 							{user.added && <p>Accepted</p>}
 						</li>
 					))}
@@ -115,7 +141,11 @@ const Friends = () => {
 						<li key={index} className="user-li">
 							<img src={user.picture} alt="profile pic"/>
 							<h1>{user.username}</h1>
-							{!user.added && <button onClick={() => {navigate('/chat')}}>Message</button>}
+							<div>
+								<button onClick={() => {navigate('/chat')}}>Message</button>
+								<FontAwesomeIcon className="icon-red" icon={faXmark}
+								size="2x" color="red" onClick={() => {deleteFriend(user)}} />
+							</div>
 						</li>
 					))}
 				</div>}
