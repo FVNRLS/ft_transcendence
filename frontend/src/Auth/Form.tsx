@@ -16,6 +16,7 @@ const Form = () =>
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
 	const [token, setToken] = useState('');
+	const [isBad, setIsBad] = useState(true);
 
 	const navigate = useNavigate();
 
@@ -52,7 +53,10 @@ const Form = () =>
 					navigate('/');
 				}
 				else
+				{
+					setIsBad(true);
 					setSignUpError(response.data.message);
+				}
 			} catch (error) {
 				console.error(error);
 			} finally {
@@ -74,10 +78,16 @@ const Form = () =>
 					Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 3 });
 					navigate('/');
 				}
-				else
+				else if (response.data.status === 202)
 				{
+					setIsBad(false);
 					setSignInError(response.data.message);
 					setTFAform(true);
+				}
+				else
+				{
+					setIsBad(true);
+					setSignInError(response.data.message);
 				}
 			} catch (error) {
 				console.error(error);
@@ -102,7 +112,10 @@ const Form = () =>
 				navigate('/');
 			}
 			else
+			{
+				setIsBad(true);
 				setSignInError(response.data.message);
+			}
 		} catch (error) {
 			console.error(error);
 		} finally {
@@ -116,6 +129,10 @@ const Form = () =>
 
 	const cont_style = {
 		height: switchUp ? '100vh' : '40rem',
+	};
+
+	const messageStyle = {
+		color: isBad ? '#f53939' : '#16A892',
 	};
 
 	const handleUsernameChange = (event:any) => {
@@ -181,7 +198,7 @@ const Form = () =>
 				(
 					<form name="signin" className='signin-form'>
 					<h1>Provide a TFA code</h1>
-					{signInError && <h2>{signInError}</h2>}
+					{signInError && <h2 style={messageStyle}>{signInError}</h2>}
 						<label className='label-text'>
 							Code:
 							<input className='input-text' type="text" name="code" onChange={handleTFAcodeChange}/>

@@ -102,11 +102,11 @@ export class AuthService {
 
       return { status: HttpStatus.CREATED, message: "You signed up successfully", cookie: session.cookie };
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
       if (error.code === "P2002") {
-				throw new HttpException("Username already exists", HttpStatus.CONFLICT);
+				return { status: HttpStatus.CONFLICT, message: "Username already exists"};
+      }
+      if (error instanceof HttpException) {
+        return { status: HttpStatus.UNAUTHORIZED, message: error.message};
       }
 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -121,7 +121,7 @@ export class AuthService {
           const jwtToken = existingSession.jwtToken;
           this.jwtService.verify(jwtToken, { ignoreExpiration: false });
 
-					throw new HttpException("You are already signed in", HttpStatus.ACCEPTED);
+					throw new HttpException("You are already signed in", 403);
         } catch (error) {
           if (error.name === "TokenExpiredError") {
             await this.prisma.session.delete({ where: { id: existingSession.id } });
@@ -142,7 +142,7 @@ export class AuthService {
       }
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error;
+        return { status: HttpStatus.UNAUTHORIZED, message: error.message};
       } else {
 				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
       }
@@ -159,7 +159,7 @@ export class AuthService {
         return { status: HttpStatus.CREATED, message: "You signed in successfully", cookie: session.cookie };
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error;
+        return { status: HttpStatus.UNAUTHORIZED, message: error.message};
       } else {
 				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
       }
@@ -188,13 +188,17 @@ export class AuthService {
       // }
 
       if (username) {
+        try {
         await this.prisma.user.update({ where: { username: user.username }, data: { username: username } });
+        } catch (error) {
+          throw new HttpException("Username is already taken", HttpStatus.CONFLICT);
+        }
       }
 
       return { status: HttpStatus.OK, message: "Profile updated successfully" };
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error;
+        return { status: HttpStatus.CONFLICT, message: error.message };
       } else {
 				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
       }

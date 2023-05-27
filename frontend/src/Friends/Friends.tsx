@@ -45,8 +45,11 @@ const Friends = () => {
 				setIsLoading(false);
 			}
 		}
-		getUserList();
-	}, [session]);
+		if (!session)
+			navigate('/not-logged');
+		else
+			getUserList();
+	}, [session, navigate]);
 
 	const acceptFriend = async (user: User) => {
 		const invList = invitators?.map((usr:User) => {

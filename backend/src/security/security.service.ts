@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/21 14:30:42 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/05/27 13:46:14 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -132,6 +132,8 @@ export class SecurityService {
 
 			return user;
 		} catch (error) {
+			if (error instanceof HttpException)
+				throw new HttpException("Invalid credentials", HttpStatus.UNAUTHORIZED);
 			throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}

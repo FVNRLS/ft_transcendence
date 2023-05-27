@@ -12,6 +12,7 @@ const Profile = () => {
 	const [oldUsername, setOldUsername] = useState('');
 	const [oldEmail, setOldEmail] = useState('');
 	const [picURL, setPicURL] = useState('');
+	const [isBad, setIsBad] = useState(false);
 
 	const navigate = useNavigate();
 
@@ -90,14 +91,21 @@ const Profile = () => {
 				headers: {
 				"Content-Type": "multipart/form-data",
 			}});
-			// if (response.data.status !== 200)
-				setSignUpError(response.data.message);
+			if (response.data.status !== 200)
+				setIsBad(true);
+			else
+				setIsBad(false);
+			setSignUpError(response.data.message);
 		} catch (error) {
 			console.error(error);
 		} finally {
 			setIsLoading(false);
 		}
-		}
+	}
+
+	const messageStyle = {
+		color: isBad ? '#f53939' : '#16A892',
+	};
 
 	return (
 		<div className='bg'>
@@ -107,7 +115,7 @@ const Profile = () => {
 			: (
 			<form name="edit-prof" className='edit-form' style={{padding: 0}}>
 				<h1>Edit Profile</h1>
-				{signUpError && <h2>{signUpError}</h2>}
+				{signUpError && <h2 style={messageStyle}>{signUpError}</h2>}
 				<div className='img-cont'>
 				{file ? <img src={URL.createObjectURL(file)} alt="uploaded-img" /> : 
 				(<img src={picURL} alt="profile pic"/>)}
