@@ -15,18 +15,18 @@ export class RoomsService {
     ) {}
   
 
-  async create(createRoomDto: CreateRoomDto, client: Socket) {
+  async create(createRoomDto: CreateRoomDto, client_id: number) {
     return await this.prisma.room.create({
       data: {
         roomName: createRoomDto.roomName,
         roomType: createRoomDto.roomType,
         password: createRoomDto.password,
-        userId: client.data.userId,
+        userId: client_id,
       },
     });
   }
 
-  async createDirectRoom(user1Id: number, user2Id: number) {
+  async createDirectRoom(user1Id: number, client_id: number) {
     // Check if a direct room already exists between the two users
     const existingRoom = await this.prisma.room.findFirst({
       where: {
@@ -34,7 +34,7 @@ export class RoomsService {
         userOnRooms: {
           every: {
             userId: {
-              in: [user1Id, user2Id]
+              in: [user1Id, client_id]
             }
           }
         }
@@ -51,19 +51,17 @@ export class RoomsService {
   // Create a new direct room
   const newRoom = await this.prisma.room.create({
     data: {
-      roomName: `DM-${user1Id}-${user2Id}`, // Unique room name for direct message
+      roomName: `DM-${user1Id}-${client_id}`, // Unique room name for direct message
       roomType: 'DIRECT',
       userId: user1Id, // Assign one of the users as the owner
       userOnRooms: {
         create: [
           { userId: user1Id, role: 'MEMBER' },
-          { userId: user2Id, role: 'MEMBER' },
+          { userId: client_id, role: 'MEMBER' },
         ],
       },
     },
   });
-
-  
     return newRoom;
   }
   

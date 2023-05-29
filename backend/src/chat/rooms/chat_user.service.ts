@@ -35,4 +35,15 @@ export class ChatUserService {
 
     return user;
   }
+
+  async getUserIdByUsername(username: string) {
+    if (!username) {
+      return null;
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { username: username },
+      select: { id: true }
+    });
+    return user ? user.id : null;
+  }
 }

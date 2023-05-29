@@ -8,34 +8,62 @@ import io from 'socket.io-client';
 import { Socket } from 'socket.io-client';
 import axios from 'axios';
 
-// Define User interface here
 interface User {
 	id: number;
 	username: string;
-	// include any other fields that a user might have
 }
 
-// Define Room interface here
 interface Room {
   id: number;
   roomName: string;
   roomType: 'PUBLIC' | 'PRIVATE' | 'PASSWORD' | 'DIRECT';
   password?: string;
   userId: number;
-  users: User[]; // Add users array to the Room interface
+  users: User[];
 }
 
-const Chat = () =>
-{
+const Chat = () => {
   const session = Cookies.get('session');
   const navigate = useNavigate();
   const [channels, setChannels] = useState<Room[]>([]);
   const [directMessages, setDirectMessages] = useState<Room[]>([]);
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [username, setUsername] = useState("");
 
-
-  // Define socketRef as a ref to a Socket instance or null
   const socketRef = useRef<Socket | null>(null);
+
+  const createChat = () => {
+    setIsSidebarOpen(true);
+  };
+
+  const createNewChat = (type: 'GROUP' | 'DIRECT', username: string | null) => {
+    let chatDetails: { roomType: 'GROUP' | 'DIRECT', roomName: string, members: { id: number }[] } = {
+      roomType: type,
+      roomName: 'New Chat',
+      members: []
+    };
+  
+    if (type === 'DIRECT' && username) {
+      socketRef.current?.emit('getUserIdByUsername', { username: username }, (response: { userId: number | null }) => {
+        if (response.userId) {
+          chatDetails.members.push({id: response.userId});
+          socketRef.current?.emit('createRoom', chatDetails);
+          setUsername("");
+          setIsSidebarOpen(false);
+        } else {
+          // Handle the case when the user does not exist
+          console.log('User does not exist');
+        }
+      });
+    } else {
+      // socketRef.current?.emit('createRoom', chatDetails);
+      setUsername("");
+      setIsSidebarOpen(false);
+    }
+  };
+  
+  
 
   useEffect(() => {
     if (!session)
@@ -46,48 +74,37 @@ const Chat = () =>
 	  });
 
     socketRef.current?.on('connect', () => {
-      console.log('Socket.IO connection opened');
-
-      // Emit 'getUserRooms' event
       socketRef.current?.on('user_verified', () => {
         socketRef.current?.emit('getCurrentUser');
         socketRef.current?.emit('getUserRooms');
       });
     });
 
-    
     socketRef.current?.on('currentUser', (user: User) => {
-      // 'currentUser' should be replaced with the actual event name
-      // the server will use to send the user data back
       setLoggedInUser(user);
     });
-  
-    
-    // Add a listener for the 'getUserRooms' event
+
     socketRef.current?.on('getUserRooms', (rooms: Room[]) => {
       const directRooms = rooms.filter((room: Room) => room.roomType === 'DIRECT');
-      console.log("Direct rooms:", directRooms);
-      setDirectMessages(directRooms);  // Set direct rooms
-      
+      setDirectMessages(directRooms);
+
       const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
-      console.log("Non-direct rooms:", nonDirectRooms);
-      setChannels(nonDirectRooms);  // Set non direct rooms
+      setChannels(nonDirectRooms);
     });
 
     socketRef.current?.on('disconnect', () => {
       console.log('Socket.IO connection closed');
     });
 
-    // Provide a type for the error parameter
     socketRef.current?.on('error', (error: any) => {
       console.error('Socket.IO error', error);
     });
 
     return () => {
-      // Check that socketRef.current is not null before calling methods on it
       socketRef.current?.off('getUserRooms');
       socketRef.current?.disconnect();
     };
+
   }, [navigate, session]);
 
   return (
@@ -101,21 +118,31 @@ const Chat = () =>
             </div>
             <div className="channels">
               <h3>Channels</h3>
+              <button onClick={createChat}>Create new chat</button>
               <ul style={{overflowY: 'auto', maxHeight: '200px'}}>
                 {channels.map((channel, index) => (
                   <li key={index}><button>{channel.roomName}</button></li>
                 ))}
               </ul>
             </div>
+            {isSidebarOpen && (
+              <div className="new-chat-sidebar">
+                <h3>Create a New Chat</h3>
+                <button onClick={() => createNewChat('GROUP', "Test1")}>Create Group Chat</button>
+                <button onClick={() => setIsSidebarOpen(false)}>Close</button>
+                <div className="new-direct-message">
+                  <h3>Create Direct Message</h3>
+                  <input type="text" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+                  <button onClick={() => createNewChat('DIRECT', username)}>Create Direct Message</button>
+                </div>
+              </div>
+            )}
             <div className="direct-messages">
               <h3>Direct Messages</h3>
 				<ul style={{overflowY: 'auto', maxHeight: '200px'}}>
 					{directMessages.map((dm, index) => {
-					// Assuming 'users' array in a DIRECT room always contains two users
-					// and the current user is always the first user in the array
-          let otherUser = dm.users.find(user => user.id !== loggedInUser?.id);
+					let otherUser = dm.users.find(user => user.id !== loggedInUser?.id);
           let otherUsername = otherUser ? otherUser.username : 'Unknown user';
-					// let otherUsername = dm.users[1].username;
 
 					return (
 						<li key={index}><button>{otherUsername}</button></li>

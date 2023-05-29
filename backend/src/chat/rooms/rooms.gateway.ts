@@ -1,6 +1,6 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, ConnectedSocket, WsException } from '@nestjs/websockets';
 import { RoomsService } from './rooms.service';
-import { CreateRoomDto } from './dto/create-room.dto';
+import { CreateRoomDto, RoomType } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { Socket } from 'socket.io';
 import { UseGuards } from '@nestjs/common';
@@ -37,25 +37,51 @@ export class RoomsGateway {
     return user;
   }
 
-  // Chat Room Management
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('getUserIdByUsername')
+  async getUserIdByUsername(
+    @MessageBody('username') username: string,
+  ) {
+    console.log("GetUserIdByName");
+    const id = await this.chatUserService.getUserIdByUsername(username);
+    return { userId: id };
+  }
+
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('createRoom')
   async create(
     @MessageBody() createRoomDto: CreateRoomDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const newRoom = await this.roomsService.create(createRoomDto, client);
-
-    // Get the userId from the client or wherever you store it
+    let newRoom; // Define newRoom here
     const userId = client.data.userId;
   
-    // Room creator automatically joins the room
-    await this.roomsService.joinRoom(newRoom.id, client);
-
-    // Set the room creator's role to 'owner'
-    await this.roomsService.setUserRole(userId, newRoom.id, UserRole.OWNER); 
+    if (createRoomDto.roomType == RoomType.DIRECT) {
+      newRoom = await this.roomsService.createDirectRoom(createRoomDto.members[0].id, client.data.userId);
+    } else {
+      newRoom = await this.roomsService.create(createRoomDto, client.data.userId);
+      
+      // Room creator automatically joins the room
+      await this.roomsService.joinRoom(newRoom.id, client);
+      
+      // Set the room creator's role to 'owner'
+      await this.roomsService.setUserRole(userId, newRoom.id, UserRole.OWNER); 
+    }
   
     return newRoom;
+  }
+  
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('createDirectRoom')
+  async createDirectRoom(
+    @MessageBody() user1Id: number,
+    @ConnectedSocket() client: Socket,
+  ) {
+    // Create the direct room with the client and user1Id
+    const room = await this.roomsService.createDirectRoom(user1Id, client.data.userId);
+
+    return room;
   }
   
 
