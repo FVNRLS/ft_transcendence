@@ -46,4 +46,15 @@ export class ChatUserService {
     });
     return user ? user.id : null;
   }
+
+  async getUsersIdsByUsernames(usernames: string[]) {
+    const ids = await Promise.all(usernames.map(async (username: string) => {
+      const user = await this.prisma.user.findUnique({
+        where: { username: username },
+        select: { id: true }
+      });
+      return user ? user.id : null;
+    }));
+    return { userIds: ids };
+  }
 }

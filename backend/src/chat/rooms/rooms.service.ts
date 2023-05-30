@@ -16,7 +16,7 @@ export class RoomsService {
   
 
   async create(createRoomDto: CreateRoomDto, client_id: number) {
-    return await this.prisma.room.create({
+    const room = await this.prisma.room.create({
       data: {
         roomName: createRoomDto.roomName,
         roomType: createRoomDto.roomType,
@@ -24,7 +24,28 @@ export class RoomsService {
         userId: client_id,
       },
     });
+    const userIds = createRoomDto.members.map(member => member.id);
+    if (!userIds) {
+      console.log("USERIDS IS NULL");
+    } else {
+      await this.addUsersToRoom(room.id, userIds);
+    }
+    return room;
   }
+
+  async addUsersToRoom(roomId: number, userIds: number[]) {
+    // Add users to the room in the database
+    for (let userId of userIds) {
+        await this.prisma.userOnRooms.create({
+            data: {
+                roomId: roomId,
+                userId: userId,
+                role: UserRole.MEMBER, // you can change the role based on your need
+            },
+        });
+    }
+}
+
 
   async createDirectRoom(user1Id: number, client_id: number) {
     // Check if a direct room already exists between the two users
