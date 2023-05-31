@@ -35,14 +35,18 @@ export class RoomsService {
 
   async addUsersToRoom(roomId: number, userIds: number[]) {
     // Add users to the room in the database
-    for (let userId of userIds) {
-        await this.prisma.userOnRooms.create({
-            data: {
-                roomId: roomId,
-                userId: userId,
-                role: UserRole.MEMBER, // you can change the role based on your need
-            },
-        });
+    if (roomId) {
+      for (let userId of userIds) {
+        if (userId) {
+          await this.prisma.userOnRooms.create({
+              data: {
+                  roomId: roomId,
+                  userId: userId,
+                  role: UserRole.MEMBER, // you can change the role based on your need
+              },
+          });
+      }
+        }
     }
 }
 
