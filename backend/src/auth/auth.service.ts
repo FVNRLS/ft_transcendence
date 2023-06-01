@@ -51,6 +51,7 @@ export class AuthService {
       const encrypted = await this.securityService.encryptToken(accessToken);
       return (encrypted);
     } catch (error) {
+      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else {

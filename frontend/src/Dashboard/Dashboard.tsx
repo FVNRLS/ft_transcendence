@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserGroup, faUser } from '@fortawesome/free-solid-svg-icons'
+import { faUserGroup, faUser, faComments, faMagnifyingGlass, faTableTennisPaddleBall } from '@fortawesome/free-solid-svg-icons'
 import Header from "../Header/Header";
 import axios from 'axios';
 import './Dashboard.css'
@@ -35,34 +35,30 @@ const Dashboard = () => {
 		<div className="bg">
 			<Header />
 			<div className="dashboard-cont">
+				{/* <div className='nickname-cont'>
+					<h1>{username}</h1>
+				</div> */}
 				<section className='user-sec'>
+					<div className='side-sec' onClick={() => {navigate('/search');}}>
+						<FontAwesomeIcon className="icon" icon={faMagnifyingGlass} size="4x" color='#476cd2c9'/>
+						<h1>People</h1>
+					</div>
 					<div className='side-sec' onClick={() => {navigate('/friends');}}>
-						<FontAwesomeIcon className="icon" icon={faUserGroup} size="5x" color='#476cd2c9'/>
+						<FontAwesomeIcon className="icon" icon={faUserGroup} size="4x" color='#476cd2c9'/>
 						<h1>Friends</h1>
 					</div>
-					<div className='logout-sec'>
-						<h1>{username}</h1>
+					<div className='side-sec-play' onClick={() => {navigate('/game');}}>
+						<FontAwesomeIcon className="icon" icon={faTableTennisPaddleBall} size="8x" color='#6B40DEC9'/>
+						<h1>Play</h1>
 					</div>
 					<div className='side-sec' onClick={() => {navigate('/profile');}}>
-						<FontAwesomeIcon className="icon" icon={faUser} size="5x" color='#476cd2c9'/>
+						<FontAwesomeIcon className="icon" icon={faUser} size="4x" color='#476cd2c9'/>
 						<h1>Profile</h1>
 					</div>
-				</section>
-				<section>
-					<h1>Play game!</h1>
-					<Link className="link-btn" to='/game'>Start</Link>
-				</section>
-				<section>
-					<h1>See game statistics...</h1>
-					<Link className="link-btn" to='/stats'>Open</Link>
-				</section>
-				<section>
-					<h1>Find Friends</h1>
-					<Link className="link-btn" to='/search'>Search</Link>
-				</section>
-				<section>
-					<h1>Chat with someone!</h1>
-					<Link className="link-btn" to='/chat'>Open</Link>
+					<div className='side-sec' onClick={() => {navigate('/chat');}}>
+						<FontAwesomeIcon className="icon" icon={faComments} size="4x" color='#476cd2c9'/>
+						<h1>Chat</h1>
+					</div>
 				</section>
 			</div>
 		</div>

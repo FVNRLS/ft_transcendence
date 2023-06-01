@@ -2,8 +2,8 @@
 	width: 80%;
 	height: 80%;
 	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-between;
+	flex-direction: column;
+	justify-content: space-evenly;
 	align-items: center;
 }
 
@@ -107,4 +107,29 @@
 	font-size: 2rem;
 	margin-top: 1rem;
 	color:#476cd2c9;
+}
+
+.side-sec-play {
+	transition: .3s;
+	justify-self: center;
+}
+
+.side-sec-play:hover {
+	transform: scale(1.1);
+	cursor: pointer;
+}
+
+.side-sec-play h1 {
+	font-size: 2rem;
+	margin-top: 1rem;
+	color:#6B40DEC9;
+}
+
+.nickname-cont {
+	width: 20%;
+	height: 15%;
+	background-color: #ffffffce;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
