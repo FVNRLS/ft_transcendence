@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/27 13:46:14 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/02 12:05:16 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ export class SecurityService {
 		return ;
 	}
 
-	private validateUsername(username: string): boolean {
+	validateUsername(username: string): boolean {
     const regex = /^[a-zA-Z0-9]+$/; // Regular expression to check for alphanumeric characters
     return regex.test(username); // Returns true if username matches the regular expression
   }
