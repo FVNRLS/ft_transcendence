@@ -45,6 +45,7 @@ function Header() {
 
 	const handleLogOut = async () => {
 		try {
+			await axios.post("http://localhost:5000/auth/set_status", {cookie, status: 'offline'});
 			const response = await axios.post('http://localhost:5000/auth/logout', {cookie});
 			if (response.data.status === 200)
 			{

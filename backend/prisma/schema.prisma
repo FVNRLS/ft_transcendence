@@ -23,6 +23,7 @@ model User {
   TFACode             String
   TFAExpiresAt        String
   profilePicture      String
+  status              String
   sessions            Session[]
   scores              Score[]
   ratings             Rating[]

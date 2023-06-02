@@ -43,6 +43,7 @@
 .user-li:hover
 {
 	background-color: rgba(0, 0, 0, 0.051);
+	cursor: pointer;
 }
 
 .user-li img {
@@ -131,6 +132,7 @@
 
 .user-li .icon-red {
 	transform: scale(1.2);
+	margin-right: 6%;
 }
 
 .user-li .icon-red:hover {
@@ -139,12 +141,12 @@
 }
 
 .user-li div {
-	width: 30%;
+	width: 25%;
 	height: 100%;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	margin-right: 5%;
+	margin-left: 5%;
 }
 
 .top-div {
@@ -163,4 +165,48 @@
 
 .top-btn:hover {
 	cursor: pointer;
+}
+
+.status-online {
+	position: relative;
+	max-width: 10px;
+	max-height: 10px;
+	border-radius: 50%;
+	background-color: #0fc384;
+	cursor: pointer;
+  }
+
+.status-online:hover::before {
+	content: "Online";
+	position: absolute;
+	top: -25px;
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 5px;
+	background-color: rgba(0, 0, 0, 0.8);
+	color: white;
+	border-radius: 4px;
+	font-size: 12px;
+}
+
+.status-offline {
+	position: relative;
+	max-width: 10px;
+	max-height: 10px;
+	border-radius: 50%;
+	background-color: rgba(128, 128, 128, 0.51);
+	cursor: pointer;
+}
+
+.status-offline:hover::before {
+	content: "Offline";
+	position: absolute;
+	top: -30px;
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 5px;
+	background-color: rgb(71, 71, 71);
+	color: white;
+	border-radius: 4px;
+	font-size: 12px;
 }

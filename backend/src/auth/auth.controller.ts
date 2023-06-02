@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/22 12:17:16 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/02 17:27:52 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,6 +96,15 @@ export class AuthController {
 	async getUserData(@Body('cookie') cookie: string): Promise<UserDataResponse> {
 		try {
 			return await this.authService.getUserData(cookie);
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	@Post("/set_status")
+	async setUserStatus(@Body('cookie') cookie: string, @Body('status') status: string): Promise<AuthResponse> {
+		try {
+			return await this.authService.setUserStatus(cookie, status);
 		} catch (error) {
 			throw error;
 		}

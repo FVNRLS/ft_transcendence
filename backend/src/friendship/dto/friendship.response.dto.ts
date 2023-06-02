@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/03 13:10:11 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/24 16:11:13 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/02 17:55:40 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,4 +26,5 @@ export interface FriendshipDataResponse {
 export interface UserListDataResponse {
   username: string;
   picture: FileResponse;
+  status?: string;
 }

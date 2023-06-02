@@ -85,6 +85,7 @@ export class AuthService {
           email: email42,
           TFACode: "",
           TFAExpiresAt: "",
+          status: "online",
         },
       })
 
@@ -244,6 +245,24 @@ export class AuthService {
       const user: User = await this.prisma.user.findUnique({where: {id: session.userId}});
 
       return ({username: user.username, email: user.email});
+
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+  async setUserStatus(cookie: string, status: string): Promise<AuthResponse> {
+    try {
+      const session: Session = await this.securityService.verifyCookie(cookie);
+      const user: User = await this.prisma.user.findUnique({where: {id: session.userId}});
+
+      await this.prisma.user.update({ where: { username: user.username }, data: { status: status } });
+
+      return ({status: HttpStatus.OK, message: "Status updated"});
 
     } catch (error) {
       if (error instanceof HttpException) {

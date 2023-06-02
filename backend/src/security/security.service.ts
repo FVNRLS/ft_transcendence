@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:55:23 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/06/02 12:05:16 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/02 17:02:52 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,6 +108,7 @@ export class SecurityService {
 					TFAExpiresAt: true,
 					createdAt: true,
 					updatedAt: true,
+					status: true,
 					sessions: {
 						select: {
 							id: true,

@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/11 18:09:00 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/30 13:14:55 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/02 18:03:35 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -171,7 +171,7 @@ export class FriendshipService {
       for (let i: number = 0; i < friends.length; i++) {
         const friend = friends[i];
         const pic = await this.googleDriveService.getProfilePicture(cookie, friend);
-        const friendResponse = {username: friend.username, picture: pic};
+        const friendResponse = {username: friend.username, picture: pic, status: friend.status};
         friendList.push(friendResponse);
       };
       
@@ -189,16 +189,22 @@ export class FriendshipService {
     try {
       const session = await this.securityService.verifyCookie(cookie);
       const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });
-      
-      // const friends: Friend[] = await this.prisma.friend.findMany({ where: { friendName: user.username, status: "pending"} });
-      // if (friends.length === 0) {
-      //   throw new HttpException("It looks like you have no pending friendship requests yet.", HttpStatus.NO_CONTENT);
-      // }
-      const pending = await this.getFriendlist(cookie, "pending");
+
+      const friendsContactedMe = await this.prisma.friend.findMany({
+        where: { friendId: session.userId, status: "pending" } });
+
+      let friendListResponse: FriendshipDataResponse[] = [];
+      for (let i: number = 0; i < friendsContactedMe.length; i++) {
+        const friend = friendsContactedMe[i];
+        const friendResponse = await this.getFriend(friend, user);
+        friendListResponse.push(friendResponse);
+      }
+
+      friendListResponse.sort((a, b) => a.friendName.localeCompare(b.friendName));
 
       const friends = await this.prisma.user.findMany({
         where: 
-            { username: { in: pending.map(friend => friend.friendName) } },
+            { username: { in: friendListResponse.map(friend => friend.friendName) } },
   
       });
 

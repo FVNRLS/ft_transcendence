@@ -10,6 +10,7 @@ import { faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 interface User {
 	username: string,
 	picture: string,
+	status: string,
 	added: boolean
 }
 
@@ -141,14 +142,17 @@ const Friends = () => {
 					)}
 					{isLoading && <div className="spinner"/>}
 					{!isLoading && friends?.map((user, index) => (
-						<li key={index} className="user-li">
-							<img src={user.picture} alt="profile pic"/>
-							<h1>{user.username}</h1>
+						<li key={index} className="user-li" onClick={() => {navigate('/chat')}}>
 							<div>
-								<button onClick={() => {navigate('/chat')}}>Message</button>
-								<FontAwesomeIcon className="icon-red" icon={faXmark}
-								size="2x" color="red" onClick={() => {deleteFriend(user)}} />
+								<div className={user.status === 'online' ? 'status-online' : 'status-offline'}></div>
+								<img src={user.picture} alt="profile pic"/>
 							</div>
+							<h1>{user.username}</h1>
+							{/* <div> */}
+								{/* <button onClick={() => {navigate('/chat')}}>Message</button> */}
+								<FontAwesomeIcon className="icon-red" icon={faXmark}
+								size="2x" color="red" onClick={(event) => {event.stopPropagation(); deleteFriend(user)}} />
+							{/* </div> */}
 						</li>
 					))}
 				</div>}
