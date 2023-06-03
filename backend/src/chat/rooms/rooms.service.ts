@@ -15,18 +15,43 @@ export class RoomsService {
     ) {}
   
 
-  async create(createRoomDto: CreateRoomDto, client: Socket) {
-    return await this.prisma.room.create({
+  async create(createRoomDto: CreateRoomDto, client_id: number) {
+    const room = await this.prisma.room.create({
       data: {
         roomName: createRoomDto.roomName,
         roomType: createRoomDto.roomType,
         password: createRoomDto.password,
-        userId: client.data.userId,
+        userId: client_id,
       },
     });
+    const userIds = createRoomDto.members.map(member => member.id);
+    if (!userIds) {
+      console.log("USERIDS IS NULL");
+    } else {
+      await this.addUsersToRoom(room.id, userIds);
+    }
+    return room;
   }
 
-  async createDirectRoom(user1Id: number, user2Id: number) {
+  async addUsersToRoom(roomId: number, userIds: number[]) {
+    // Add users to the room in the database
+    if (roomId) {
+      for (let userId of userIds) {
+        if (userId) {
+          await this.prisma.userOnRooms.create({
+              data: {
+                  roomId: roomId,
+                  userId: userId,
+                  role: UserRole.MEMBER, // you can change the role based on your need
+              },
+          });
+      }
+        }
+    }
+}
+
+
+  async createDirectRoom(user1Id: number, client_id: number) {
     // Check if a direct room already exists between the two users
     const existingRoom = await this.prisma.room.findFirst({
       where: {
@@ -34,7 +59,7 @@ export class RoomsService {
         userOnRooms: {
           every: {
             userId: {
-              in: [user1Id, user2Id]
+              in: [user1Id, client_id]
             }
           }
         }
@@ -51,19 +76,17 @@ export class RoomsService {
   // Create a new direct room
   const newRoom = await this.prisma.room.create({
     data: {
-      roomName: `DM-${user1Id}-${user2Id}`, // Unique room name for direct message
+      roomName: `DM-${user1Id}-${client_id}`, // Unique room name for direct message
       roomType: 'DIRECT',
       userId: user1Id, // Assign one of the users as the owner
       userOnRooms: {
         create: [
           { userId: user1Id, role: 'MEMBER' },
-          { userId: user2Id, role: 'MEMBER' },
+          { userId: client_id, role: 'MEMBER' },
         ],
       },
     },
   });
-
-  
     return newRoom;
   }
   
@@ -196,7 +219,7 @@ export class RoomsService {
   }
   
   
-  async getRoomMembers(roomId: number) {
+  async getRoomMembers(roomId: number, clientId: number = null, excludeClient: boolean = false) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
   
     if (!room) {
@@ -214,16 +237,20 @@ export class RoomsService {
             username: true,
             email: true,
             profilePicture: true,
-            // other fields you want to include
           }
         } 
       },
     });
   
-    const roomMembers = userOnRooms.map((userOnRoom) => userOnRoom.user);
+    let roomMembers = userOnRooms.map((userOnRoom) => userOnRoom.user);
+    
+    if (excludeClient && clientId !== null) {
+      roomMembers = roomMembers.filter(member => member.id !== clientId);
+    }
   
     return roomMembers;
   }
+  
 
   async setUserRole(userId: number, roomId: number, role: UserRole) {
     console.log(`userId: ${userId}, roomId: ${roomId}, role: ${role}`);

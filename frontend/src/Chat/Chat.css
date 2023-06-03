@@ -12,12 +12,13 @@ ul
 
   /* Sidebar */
 .sidebar {
-	display: flex;
-	flex-direction: column;
-	justify-content: space-evenly;
-	flex: 1;
-	padding: 20px;
-	background-color: #ffffffce;
+display: flex;
+flex-direction: column;
+/* removed justify-content: space-evenly; */
+flex: 1;
+padding: 20px;
+background-color: #ffffffce;
+height: 100%; /* ensure the sidebar takes full height */
 }
   
 .profile {
@@ -46,7 +47,10 @@ ul
   
 .channels, .direct-messages {
 	margin-bottom: 20px;
-}
+	flex: 1; /* allow these sections to grow and shrink */
+	overflow-y: auto; /* add scrolling when content is too tall */
+	max-height: calc(50% - 10px); /* subtract margin-bottom to calculate max-height */
+  }
   
 .channels h3, .direct-messages h3 {
 	font-size: 20px;
@@ -165,3 +169,13 @@ ul
 .message-input button:hover {
 	background-color: #476cd2;
 }
+
+.other-message {
+	display: flex;
+	justify-content: flex-start; /* default to left side */
+}
+  
+.user-message {
+	justify-content: flex-end; /* override for user's messages */
+}
+  

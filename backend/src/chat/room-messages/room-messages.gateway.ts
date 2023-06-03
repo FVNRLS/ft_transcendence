@@ -12,10 +12,16 @@ import { WsPermissionGuard } from '../guards/ws-permission/ws-permission.guard';
 import { WsIsUserMemberOfRoomForMessageGuard } from '../guards/ws-is-user-member-of-room-for-message/ws-is-user-member-of-room-for-message.guard';
 import { RoomsService } from '../rooms/rooms.service';
 import { SendDirectMessageDto } from './dto/send-direct-message.dto';
-import { AuthGateway } from '../auth/auth.gateway';
+import { ChatAuthGateway } from '../auth/chat_auth.gateway';
 
 
-@WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
+@WebSocketGateway(+process.env.CHAT_PORT, { 
+  cors: {
+      origin: "http://localhost:3000", // Replace with the origin you want to allow
+      methods: ["GET", "POST"],
+      credentials: true
+  } 
+})
 export class MessagesGateway {
   @WebSocketServer() server: any;
   constructor(
@@ -65,7 +71,7 @@ export class MessagesGateway {
       client.join(`room-${room.id}`);
 
       // Make the receiver join the room
-      const receiverClientId = AuthGateway.userToSocketIdMap[receiverId];
+      const receiverClientId = ChatAuthGateway.userToSocketIdMap[receiverId];
       if (receiverClientId) {
         this.server.sockets.sockets.get(receiverClientId)?.join(`room-${room.id}`);
       }

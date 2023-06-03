@@ -1,6 +1,6 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody, ConnectedSocket, WsException } from '@nestjs/websockets';
+import { WebSocketGateway, SubscribeMessage, MessageBody, ConnectedSocket, WsException, WebSocketServer } from '@nestjs/websockets';
 import { RoomsService } from './rooms.service';
-import { CreateRoomDto } from './dto/create-room.dto';
+import { CreateRoomDto, RoomType } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { Socket } from 'socket.io';
 import { UseGuards } from '@nestjs/common';
@@ -11,105 +11,168 @@ import { SetUserRoleDto } from './dto/set-user-role.dto';
 import { HasRoomPermission } from '../decorators/has-room-permission.decorator';
 import { Prisma, UserRole } from '@prisma/client';
 import { SecurityService } from 'src/security/security.service';
+import { ChatUserService } from './chat_user.service';
+import { ChatAuthGateway } from '../auth/chat_auth.gateway';
 
-let userToSocketIdMap: { [key: string]: string } = {};
-
-@WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
+@WebSocketGateway(+process.env.CHAT_PORT, { 
+  cors: {
+      origin: "http://localhost:3000", // Replace with the origin you want to allow
+      methods: ["GET", "POST"],
+      credentials: true
+  } 
+})
 export class RoomsGateway {
+  @WebSocketServer() server: any;
   constructor(
     private readonly roomsService: RoomsService,
     private readonly prisma: PrismaService,
-    private readonly securityService: SecurityService
+    private readonly securityService: SecurityService,
+    private readonly chatUserService: ChatUserService
     ) {}
 
-  async handleConnection(@ConnectedSocket() client: Socket) {
-    try {
-      const cookie = client.handshake.headers.cookie; // Adjust this line based on how cookie is sent in handshake
-      const session = await this.securityService.verifyCookie(cookie);
-      const userId = session.userId;
-      client.data = { userId }; // Attach the userId to client data
 
-      userToSocketIdMap[userId] = client.id; // Add entry to map
-      
-      // You may want to rejoin rooms here or whatever you want to do on a successful connection
-      const userRooms = await this.prisma.userOnRooms.findMany({
-        where: { userId: session.userId },
-      });
-    
-      userRooms.forEach((userRoom) => {
-        client.join(`room-${userRoom.roomId}`);
-      });
-    
-      client.emit('connection_success', { message: 'Reconnected and rooms rejoined' });
-
-    } catch (error) {
-      console.log('Invalid credentials');
-      client.disconnect(); // disconnect the client if authentication fails
-    }
+  @SubscribeMessage('getCurrentUser')
+  async getCurrentUser(@ConnectedSocket() client: Socket) {
+    // emit user data to client
+    const user = await this.chatUserService.getCurrentUser(client);
+    client.emit('currentUser', user);
+    return user;
   }
 
-  async handleDisconnect(@ConnectedSocket() client: Socket) {
-    const userId = Object.keys(userToSocketIdMap).find(key => userToSocketIdMap[key] === client.id);
-    if (userId) {
-      delete userToSocketIdMap[userId];
-    }
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('getUserIdByUsername')
+  async getUserIdByUsername(
+    @MessageBody('username') username: string,
+  ) {
+    console.log("GetUserIdByName");
+    const id = await this.chatUserService.getUserIdByUsername(username);
+    return { userId: id };
+  }
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('getUsersIdsByUsernames')
+  async getUsersIdsByUsernames(
+    @MessageBody('usernames') usernames: string[],
+  ) {
+    // const ids = await Promise.all(usernames.map(async (username: string) => {
+    //   const user = await this.prisma.user.findUnique({
+    //     where: { username: username },
+    //     select: { id: true }
+    //   });
+    //   return user ? user.id : null;
+    // }));
+    // return { userIds: ids };
+    return await this.chatUserService.getUsersIdsByUsernames(usernames);
+
   }
   
 
   // @UseGuards(WsJwtAuthGuard)
-  // @SubscribeMessage('rejoinRooms')
-  // async handleConnection(@ConnectedSocket() client: Socket) {
+  // @SubscribeMessage('createRoom')
+  // async create(
+  //   @MessageBody() createRoomDto: CreateRoomDto,
+  //   @ConnectedSocket() client: Socket,
+  // ) {
+  //   console.log(createRoomDto.members);
+  //   let newRoom; // Define newRoom here
   //   const userId = client.data.userId;
-  //   const userRooms = await this.prisma.userOnRooms.findMany({
-  //     where: { userId },
-  //   });
   
-  //   userRooms.forEach((userRoom) => {
-  //     client.join(`room-${userRoom.roomId}`);
-  //   });
+  //   if (createRoomDto.roomType == RoomType.DIRECT) {
+  //     newRoom = await this.roomsService.createDirectRoom(createRoomDto.members[0].id, client.data.userId);
+  //   } else {
+  //     newRoom = await this.roomsService.create(createRoomDto, client.data.userId);
+      
+  //     // Room creator automatically joins the room
+  //     await this.roomsService.joinRoom(newRoom.id, client);
+      
+  //     // Set the room creator's role to 'owner'
+  //     await this.roomsService.setUserRole(userId, newRoom.id, UserRole.OWNER); 
+  //   }
   
-  //   return { message: 'Reconnected and rooms rejoined' };
+  //   return newRoom;
   // }
 
-  // Chat Room Management
+
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('createRoom')
   async create(
     @MessageBody() createRoomDto: CreateRoomDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const newRoom = await this.roomsService.create(createRoomDto, client);
-
-    // Get the userId from the client or wherever you store it
+    console.log(createRoomDto.members);
+    let newRoom; // Define newRoom here
     const userId = client.data.userId;
   
-    // Room creator automatically joins the room
-    await this.roomsService.joinRoom(newRoom.id, client);
+    if (createRoomDto.roomType == RoomType.DIRECT) {
+      newRoom = await this.roomsService.createDirectRoom(createRoomDto.members[0].id, client.data.userId);
+    } else {
+      newRoom = await this.roomsService.create(createRoomDto, client.data.userId);
+      
+      // Room creator automatically joins the room
+      await this.roomsService.joinRoom(newRoom.id, client);
+      
+      // Set the room creator's role to 'owner'
+      await this.roomsService.setUserRole(userId, newRoom.id, UserRole.OWNER); 
 
-    // Set the room creator's role to 'owner'
-    await this.roomsService.setUserRole(userId, newRoom.id, UserRole.OWNER); 
+      // If members are specified in the DTO, add them to the room
+      if(createRoomDto.members) {
+        const userIds = createRoomDto.members.map(member => member.id);
+    
+        // If users are currently connected, join them to the room in the Socket.IO server
+        userIds.forEach(userId => {
+          const socketId = ChatAuthGateway.userToSocketIdMap[userId];
+          if (socketId && this.server.sockets.sockets[socketId]) {
+            this.server.sockets.sockets[socketId].join(`room-${newRoom.id}`);
+          }
+        });
+      }
+    }
   
     return newRoom;
   }
 
-  // @UseGuards(WsJwtAuthGuard)
-  // @SubscribeMessage('createDirectRoom')
-  // async createDirectRoom(
-  //   @MessageBody() members: { user1Id: number, user2Id: number },
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   try {
-  //     const newRoom = await this.roomsService.createDirectRoom(members.user1Id, members.user2Id);
   
-  //     // Both users automatically join the room
-  //     await this.roomsService.joinRoom(newRoom.id, client);
-    
-  //     return newRoom;
-  //   } catch (error) {
-  //     console.log('Error:', error.message);
-  //     return {error: error.message};
+  // @UseGuards(WsJwtAuthGuard)
+  // @SubscribeMessage('createRoom')
+  // async create(createRoomDto: CreateRoomDto, client_id: number) {
+  //   const room = await this.prisma.room.create({
+  //     data: {
+  //       roomName: createRoomDto.roomName,
+  //       roomType: createRoomDto.roomType,
+  //       password: createRoomDto.password,
+  //       userId: client_id,
+  //     },
+  //   });
+  
+  //   // If members are specified in the DTO, add them to the room
+  //   if(createRoomDto.members) {
+  //     const userIds = createRoomDto.members.map(member => member.id);
+  
+  //     // If users are currently connected, join them to the room in the Socket.IO server
+  //     userIds.forEach(userId => {
+  //       const socketId = ChatAuthGateway.userToSocketIdMap[userId];
+  //       if (socketId && this.server.sockets.sockets[socketId]) {
+  //         this.server.sockets.sockets[socketId].join(`room-${room.id}`);
+  //       }
+  //     });
   //   }
+  
+  //   return room;
   // }
+  
+  
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('createDirectRoom')
+  async createDirectRoom(
+    @MessageBody() user1Id: number,
+    @ConnectedSocket() client: Socket,
+  ) {
+    // Create the direct room with the client and user1Id
+    const room = await this.roomsService.createDirectRoom(user1Id, client.data.userId);
+
+    return room;
+  }
   
 
   @UseGuards(WsJwtAuthGuard)
@@ -172,25 +235,86 @@ export class RoomsGateway {
     }
   }
 
-  @UseGuards(WsJwtAuthGuard)
+  // // @UseGuards(WsJwtAuthGuard)Roo
+  // @SubscribeMessage('getUserRooms')
+  // async getUserRooms(@ConnectedSocket() client: Socket) {
+  //   const userId = client.data.userId; // Get the userId from the client
+
+  //   const userRooms = await this.prisma.userOnRooms.findMany({
+  //     where: { userId: userId },
+  //     include: { room: true }, // Include the room data
+  //   });
+  //   client.emit('getUserRooms', userRooms.map(userRoom => userRoom.room));
+  //   return "Sucess";
+  // }
+
   @SubscribeMessage('getUserRooms')
   async getUserRooms(@ConnectedSocket() client: Socket) {
     const userId = client.data.userId; // Get the userId from the client
-
+  
     const userRooms = await this.prisma.userOnRooms.findMany({
-      where: { userId },
-      include: { room: true }, // Include the room data
+      where: { userId: userId },
+      include: {
+        room: {
+          select: {
+            id: true,
+            roomName: true,
+            roomType: true,
+            // Include users in each room
+            userOnRooms: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                    // Include other fields as required
+                  }
+                }
+              }
+            },
+            // Include last 100 messages in each room
+            messages: {
+              select: {
+                id: true,
+                userId: true,
+                roomId: true,
+                createdAt: true,
+                content: true,
+              },
+              orderBy: {
+                createdAt: 'asc',
+              },
+              take: 100,
+            },
+            // Include other room data as required
+          }
+        },
+      },
     });
-
-    return userRooms.map(userRoom => userRoom.room); // Return the rooms
+  
+    client.emit('getUserRooms', userRooms.map(userRoom => ({
+      ...userRoom.room,
+      users: userRoom.room.userOnRooms.map(ur => ur.user),
+      messages: userRoom.room.messages,
+    })));
+  
+    return "Success";
   }
+  
 
-  @UseGuards(WsJwtAuthGuard)
-  @SubscribeMessage('getRoomMembers')
-  async getRoomMembers(@MessageBody('roomId') roomId: number) {
-    const roomMembers = await this.roomsService.getRoomMembers(roomId);
-    return roomMembers;
-  }
+
+  // // @UseGuards(WsJwtAuthGuard)
+  // @SubscribeMessage('getRoomMembers')
+  // async getRoomMembers(
+  //   @ConnectedSocket() client: Socket,
+  //   @MessageBody('roomId') roomId: number,
+  //   @MessageBody('excludeClient') excludeClient: boolean = false
+  // ) {
+  //   // Assuming the client id is stored in client.data.userId
+  //   const clientId = client.data.userId;
+  //   const roomMembers = await this.roomsService.getRoomMembers(roomId, clientId, excludeClient);
+  //   return roomMembers;
+  // }
 
 
 
