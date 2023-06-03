@@ -1,6 +1,6 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, ConnectedSocket, WsException, WebSocketServer } from '@nestjs/websockets';
 import { RoomsService } from './rooms.service';
-import { CreateRoomDto, RoomType } from './dto/create-room.dto';
+import { CreateRoomDto, MemberDto, RoomType } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { Socket } from 'socket.io';
 import { UseGuards } from '@nestjs/common';
@@ -66,33 +66,6 @@ export class RoomsGateway {
 
   }
   
-
-  // @UseGuards(WsJwtAuthGuard)
-  // @SubscribeMessage('createRoom')
-  // async create(
-  //   @MessageBody() createRoomDto: CreateRoomDto,
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   console.log(createRoomDto.members);
-  //   let newRoom; // Define newRoom here
-  //   const userId = client.data.userId;
-  
-  //   if (createRoomDto.roomType == RoomType.DIRECT) {
-  //     newRoom = await this.roomsService.createDirectRoom(createRoomDto.members[0].id, client.data.userId);
-  //   } else {
-  //     newRoom = await this.roomsService.create(createRoomDto, client.data.userId);
-      
-  //     // Room creator automatically joins the room
-  //     await this.roomsService.joinRoom(newRoom.id, client);
-      
-  //     // Set the room creator's role to 'owner'
-  //     await this.roomsService.setUserRole(userId, newRoom.id, UserRole.OWNER); 
-  //   }
-  
-  //   return newRoom;
-  // }
-
-
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('createRoom')
   async create(
@@ -102,32 +75,58 @@ export class RoomsGateway {
     console.log(createRoomDto.members);
     let newRoom; // Define newRoom here
     const userId = client.data.userId;
-  
-    if (createRoomDto.roomType == RoomType.DIRECT) {
-      newRoom = await this.roomsService.createDirectRoom(createRoomDto.members[0].id, client.data.userId);
-    } else {
-      newRoom = await this.roomsService.create(createRoomDto, client.data.userId);
-      
-      // Room creator automatically joins the room
-      await this.roomsService.joinRoom(newRoom.id, client);
-      
-      // Set the room creator's role to 'owner'
-      await this.roomsService.setUserRole(userId, newRoom.id, UserRole.OWNER); 
 
-      // If members are specified in the DTO, add them to the room
-      if(createRoomDto.members) {
-        const userIds = createRoomDto.members.map(member => member.id);
-    
-        // If users are currently connected, join them to the room in the Socket.IO server
-        userIds.forEach(userId => {
-          const socketId = ChatAuthGateway.userToSocketIdMap[userId];
-          if (socketId && this.server.sockets.sockets[socketId]) {
-            this.server.sockets.sockets[socketId].join(`room-${newRoom.id}`);
-          }
-        });
-      }
+    // Create a new member with the userId as id
+    const newMember: MemberDto = {
+      id: userId,
+    };
+  
+    // Add the new member to the members array
+    if (createRoomDto.members) {
+      createRoomDto.members.push(newMember);
+    } else {
+      createRoomDto.members = [newMember];
     }
   
+    if (createRoomDto.roomType == RoomType.DIRECT) {
+      createRoomDto.members[1] = newMember;
+      // Remove all elements except those at index 0 and 1
+      if (createRoomDto.members.length > 2) {
+        createRoomDto.members.splice(2);
+      }
+      newRoom = await this.roomsService.createDirectRoom(createRoomDto);
+    } else {
+      newRoom = await this.roomsService.createGroupRoom(createRoomDto);
+      
+      // // Room creator automatically joins the room
+      // await this.roomsService.joinRoom(newRoom.id, client);
+
+      // // Set the room creator's role to 'owner'
+      // await this.roomsService.setUserRole(userId, newRoom.id, UserRole.OWNER); 
+
+      // If members are specified in the DTO, add them to the room
+    }
+
+    if(createRoomDto.members) {
+      const userIds = createRoomDto.members.map(member => member.id);
+  
+      // If users are currently connected, join them to the room in the Socket.IO server
+      userIds.forEach(userId => {
+        const socketId = ChatAuthGateway.userToSocketIdMap[userId];
+        console.log("AAA");
+        console.log(socketId);
+        // console.log(this.server.sockets.sockets.get(socketId));
+        console.log(userId);
+        console.log("BBB");
+        if (socketId && this.server.sockets.sockets.get(socketId)) {
+          // this.server.sockets.sockets[socketId].join(`room-${newRoom.id}`);
+          const roomName = `room-${newRoom.id}`;
+          this.server.sockets.sockets.get(socketId).join(roomName);
+          this.server.to(socketId).emit('joinedRoom', newRoom);
+          console.log(userId);
+        }
+      });
+    }
     return newRoom;
   }
 
@@ -162,17 +161,17 @@ export class RoomsGateway {
   
   
 
-  @UseGuards(WsJwtAuthGuard)
-  @SubscribeMessage('createDirectRoom')
-  async createDirectRoom(
-    @MessageBody() user1Id: number,
-    @ConnectedSocket() client: Socket,
-  ) {
-    // Create the direct room with the client and user1Id
-    const room = await this.roomsService.createDirectRoom(user1Id, client.data.userId);
+  // @UseGuards(WsJwtAuthGuard)
+  // @SubscribeMessage('createDirectRoom')
+  // async createDirectRoom(
+  //   @MessageBody() user1Id: number,
+  //   @ConnectedSocket() client: Socket,
+  // ) {
+  //   // Create the direct room with the client and user1Id
+  //   const room = await this.roomsService.createDirectRoom(user1Id, client.data.userId);
 
-    return room;
-  }
+  //   return room;
+  // }
   
 
   @UseGuards(WsJwtAuthGuard)

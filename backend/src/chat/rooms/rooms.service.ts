@@ -15,7 +15,8 @@ export class RoomsService {
     ) {}
   
 
-  async create(createRoomDto: CreateRoomDto, client_id: number) {
+  async createGroupRoom(createRoomDto: CreateRoomDto) {
+    const client_id = createRoomDto.members[createRoomDto.members.length - 1].id;
     const room = await this.prisma.room.create({
       data: {
         roomName: createRoomDto.roomName,
@@ -30,6 +31,7 @@ export class RoomsService {
     } else {
       await this.addUsersToRoom(room.id, userIds);
     }
+    this.setUserRole(client_id, room.id, UserRole.OWNER);
     return room;
   }
 
@@ -51,7 +53,11 @@ export class RoomsService {
 }
 
 
-  async createDirectRoom(user1Id: number, client_id: number) {
+  async createDirectRoom(createRoomDto: CreateRoomDto) {
+
+    const user1Id = createRoomDto.members[0].id;
+    const client_id = createRoomDto.members[1].id;
+
     // Check if a direct room already exists between the two users
     const existingRoom = await this.prisma.room.findFirst({
       where: {
@@ -174,13 +180,13 @@ export class RoomsService {
     // return { message: 'Joined room', roomId: roomId };
 
     // Check if the user is already in the room in the Socket
-    const roomName = `room-${roomId}`;
-    if (client.rooms.has(roomName)) {
-      return { message: 'User already in room', roomId: roomId };
-    } else {
-      client.join(roomName);
-      return { message: 'Joined room', roomId: roomId };
-    }
+    // const roomName = `room-${roomId}`;
+    // if (client.rooms.has(roomName)) {
+    //   return { message: 'User already in room', roomId: roomId };
+    // } else {
+    //   client.join(roomName);
+    //   return { message: 'Joined room', roomId: roomId };
+    // }
   }
 
   async leaveRoom(roomId: number, client: Socket) {

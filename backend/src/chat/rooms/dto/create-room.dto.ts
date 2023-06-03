@@ -8,7 +8,7 @@ export enum RoomType {
   DIRECT = 'DIRECT'
 }
 
-class MemberDto {
+export class MemberDto {
   @IsInt()
   id: number;
 }

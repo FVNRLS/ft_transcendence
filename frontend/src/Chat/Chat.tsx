@@ -127,11 +127,7 @@ const Chat = () => {
       // Clear the input field
       setMessageInput("");
     }
-  };
-
-  // Ref for storing the latest value of directRooms
-  const directRoomsRef = useRef<Room[]>([]);
-  
+  };  
   
   // UseEffect hook for initializing socket connection, fetching user and rooms data
   useEffect(() => {
@@ -173,6 +169,17 @@ const Chat = () => {
 
       const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
       setChannels(nonDirectRooms);
+    });
+
+    // New handler for joinedRoom event
+    socketRef.current?.on('joinedRoom', (newRoom: Room) => {
+      console.log("Joined Room");
+      console.log(newRoom);
+      if(newRoom.roomType === 'DIRECT') {
+        setDirectRooms((prevRooms) => [...prevRooms, newRoom]);
+      } else {
+        setChannels((prevRooms) => [...prevRooms, newRoom]);
+      }
     });
 
     socketRef.current?.on('newMessage', (newMessage: Message) => {
