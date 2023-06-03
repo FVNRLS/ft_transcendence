@@ -248,43 +248,59 @@ export class RoomsGateway {
   //   return "Sucess";
   // }
 
-@SubscribeMessage('getUserRooms')
-async getUserRooms(@ConnectedSocket() client: Socket) {
-  const userId = client.data.userId; // Get the userId from the client
-
-  const userRooms = await this.prisma.userOnRooms.findMany({
-    where: { userId: userId },
-    include: {
-      room: {
-        select: {
-          id: true,
-          roomName: true,
-          roomType: true,
-          // Include users in each room
-          userOnRooms: {
-            select: {
-              user: {
-                select: {
-                  id: true,
-                  username: true,
-                  // Include other fields as required
+  @SubscribeMessage('getUserRooms')
+  async getUserRooms(@ConnectedSocket() client: Socket) {
+    const userId = client.data.userId; // Get the userId from the client
+  
+    const userRooms = await this.prisma.userOnRooms.findMany({
+      where: { userId: userId },
+      include: {
+        room: {
+          select: {
+            id: true,
+            roomName: true,
+            roomType: true,
+            // Include users in each room
+            userOnRooms: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                    // Include other fields as required
+                  }
                 }
               }
-            }
-          },
-          // Include other room data as required
-        }
+            },
+            // Include last 100 messages in each room
+            messages: {
+              select: {
+                id: true,
+                userId: true,
+                roomId: true,
+                createdAt: true,
+                content: true,
+              },
+              orderBy: {
+                createdAt: 'asc',
+              },
+              take: 100,
+            },
+            // Include other room data as required
+          }
+        },
       },
-    },
-  });
-
-  client.emit('getUserRooms', userRooms.map(userRoom => ({
-    ...userRoom.room,
-    users: userRoom.room.userOnRooms.map(ur => ur.user),
-  })));
-
-  return "Success";
-}
+    });
+  
+    client.emit('getUserRooms', userRooms.map(userRoom => ({
+      ...userRoom.room,
+      users: userRoom.room.userOnRooms.map(ur => ur.user),
+      messages: userRoom.room.messages,
+    })));
+  
+    return "Success";
+  }
+  
 
 
   // // @UseGuards(WsJwtAuthGuard)

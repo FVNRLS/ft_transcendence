@@ -169,3 +169,13 @@ height: 100%; /* ensure the sidebar takes full height */
 .message-input button:hover {
 	background-color: #476cd2;
 }
+
+.other-message {
+	display: flex;
+	justify-content: flex-start; /* default to left side */
+}
+  
+.user-message {
+	justify-content: flex-end; /* override for user's messages */
+}
+  

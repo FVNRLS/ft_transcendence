@@ -7,7 +7,15 @@ import Pic from './download.jpeg';
 import Cookies from 'js-cookie';
 import io from 'socket.io-client';
 import { Socket } from 'socket.io-client';
-import axios from 'axios';
+
+
+interface Message {
+  id: number;
+  userId: number;
+  roomId: number;
+  createdAt: Date;
+  content: string;
+}
 
 // Defining interface for User and Room
 interface User {
@@ -22,7 +30,9 @@ interface Room {
   password?: string;
   userId: number;
   users: User[];
+  messages: Message[]; // Adding the messages array to the Room interface
 }
+
 
 interface ChatDetails {
   roomType: 'DIRECT' | 'PUBLIC' | 'PRIVATE' | 'PASSWORD';
@@ -39,11 +49,14 @@ const Chat = () => {
 
   // State variables for channels, direct messages, logged-in user, sidebar status, group chat and direct message usernames
   const [channels, setChannels] = useState<Room[]>([]);
-  const [directMessages, setDirectMessages] = useState<Room[]>([]);
+  const [directRooms, setDirectRooms] = useState<Room[]>([]);
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [groupChatUsername, setGroupChatUsername] = useState("");
   const [directMessageUsername, setDirectMessageUsername] = useState("");
+  const [messageInput, setMessageInput] = useState("");
+
 
   // Reference for the socket
   const socketRef = useRef<Socket | null>(null);
@@ -99,6 +112,26 @@ const Chat = () => {
       console.log('User does not exist');
     }
   };
+
+  const handleSendMessage = () => {
+    if (selectedRoom && messageInput.trim().length > 0) {
+      // Prepare the message data
+      const messageData: Partial<Message> = {
+        roomId: selectedRoom.id,
+        content: messageInput.trim(),
+      };
+  
+      // Emit the 'sendMessageToRoom' event
+      socketRef.current?.emit('sendMessageToRoom', messageData);
+  
+      // Clear the input field
+      setMessageInput("");
+    }
+  };
+
+  // Ref for storing the latest value of directRooms
+  const directRoomsRef = useRef<Room[]>([]);
+  
   
   // UseEffect hook for initializing socket connection, fetching user and rooms data
   useEffect(() => {
@@ -116,6 +149,7 @@ const Chat = () => {
     // Clean up on unmount
     return () => {
       socketRef.current?.off('getUserRooms');
+      socketRef.current?.off('newMessage');
       socketRef.current?.disconnect();
     };
 
@@ -134,12 +168,77 @@ const Chat = () => {
     });
 
     socketRef.current?.on('getUserRooms', (rooms: Room[]) => {
-      const directRooms = rooms.filter((room: Room) => room.roomType === 'DIRECT');
-      setDirectMessages(directRooms);
+      const directRooms2 = rooms.filter((room: Room) => room.roomType === 'DIRECT');
+      setDirectRooms(directRooms2);
 
       const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
       setChannels(nonDirectRooms);
     });
+
+    socketRef.current?.on('newMessage', (newMessage: Message) => {
+      console.log("New Message");
+      console.log(newMessage);
+    
+      // Define a helper function to find the room in an array of rooms
+      const findRoomIndex = (rooms: Room[]) => rooms.findIndex(room => room.id === newMessage.roomId);
+
+    
+      // Update the channels state
+      setChannels(prev => {
+        let roomIndex = findRoomIndex(prev);
+        // If room is found in channels
+        if (roomIndex !== -1) {
+          const updatedRoom = { ...prev[roomIndex] };
+          updatedRoom.messages.push(newMessage);
+    
+          // Update the state and return
+          return [
+            ...prev.slice(0, roomIndex),
+            updatedRoom,
+            ...prev.slice(roomIndex + 1),
+          ];
+        }
+        // If room is not found, return the state as it is
+        return prev;
+      });
+    
+      // Update the directRooms state
+      setDirectRooms(prev => {
+        let roomIndex = findRoomIndex(prev);
+        // If room is found in directRooms
+        if (roomIndex !== -1) {
+          const updatedRoom = { ...prev[roomIndex] };
+          updatedRoom.messages.push(newMessage);
+    
+          // Update the state and return
+          return [
+            ...prev.slice(0, roomIndex),
+            updatedRoom,
+            ...prev.slice(roomIndex + 1),
+          ];
+        }
+        // If room is not found, return the state as it is
+        return prev;
+      });
+    
+        // If the room is currently selected, update selectedRoom as well
+        if (selectedRoom && selectedRoom.id === newMessage.roomId) {
+          setSelectedRoom(prev => {
+            // If this is the currently selected room, update it
+            if (prev && prev.id === newMessage.roomId) {
+              return { 
+                ...prev, 
+                messages: [...prev.messages, newMessage] 
+              };
+            }
+            // If not, return the state as it is
+            return prev;
+          });
+        }
+    });
+    
+    
+    
 
     socketRef.current?.on('disconnect', () => {
       console.log('Socket.IO connection closed');
@@ -180,7 +279,7 @@ const Chat = () => {
                     <ul>
                       {channels.map((channel, index) => (
                         <li key={index}>
-                          <button>{channel.roomName}</button>
+                          <button onClick={() => setSelectedRoom(channel)}>{channel.roomName}</button>
                         </li>
                       ))}
                     </ul>
@@ -192,13 +291,13 @@ const Chat = () => {
                   <h3>Direct Messages</h3>
                   <div className="direct-messages" style={{ maxHeight: '10vh', overflowY: 'auto' }}>
                     <ul>
-                      {directMessages.map((dm, index) => {
+                      {directRooms.map((dm, index) => {
                         let otherUser = dm.users.find(user => user.id !== loggedInUser?.id);
                         let otherUsername = otherUser ? otherUser.username : 'Unknown user';
 
                         return (
                           <li key={index}>
-                            <button>{otherUsername}</button>
+                            <button onClick={() => setSelectedRoom(dm)}>{otherUsername}</button>
                           </li>
                         );
                       })}
@@ -242,27 +341,23 @@ const Chat = () => {
             {/* Messages */}
             <div className="messages">
               {/* First message */}
-              <div className="message">
-                <img src={Pic} alt="Profile" />
-                <div className="message-content">
-                  <p>Message text goes here.</p>
-                  <span className="message-time">12:34 PM</span>
+              {selectedRoom && selectedRoom.messages.map((message, index) => (
+                <div 
+                  className={`message ${loggedInUser && loggedInUser.id === message.userId ? "user-message" : "other-message"}`} 
+                  key={index}
+                >
+                  <img src={Pic} alt="Profile" />
+                  <div className="message-content">
+                    <p>{message.content}</p>
+                    <span className="message-time">{new Date(message.createdAt).toLocaleTimeString()}</span>
+                  </div>
                 </div>
-              </div>
-              {/* Second message */}
-              <div className="message">
-                <img src={Pic} alt="Profile" />
-                <div className="message-content">
-                  <p>Another message text goes here.</p>
-                  <span className="message-time">12:35 PM</span>
-                </div>
-              </div>
+              ))}
             </div>
-            
             {/* Message Input */}
             <div className="message-input">
-              <input type="text" placeholder="Type a message..." />
-              <button>Send</button>
+            <input type="text" placeholder="Type a message..." value={messageInput} onChange={e => setMessageInput(e.target.value)} />
+            <button onClick={handleSendMessage}>Send</button>
             </div>
           </div>
         </div>
