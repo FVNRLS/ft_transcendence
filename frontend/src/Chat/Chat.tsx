@@ -169,18 +169,31 @@ const Chat = () => {
 
       const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
       setChannels(nonDirectRooms);
+      console.log(directRooms2);
     });
 
-    // New handler for joinedRoom event
+    // // New handler for joinedRoom event
+    // socketRef.current?.on('joinedRoom', (newRoom: Room) => {
+    //   console.log("Joined Room");
+    //   console.log(newRoom);
+    //   if(newRoom.roomType === 'DIRECT') {
+    //     setDirectRooms((prevRooms) => [...prevRooms, newRoom]);
+    //   } else {
+    //     setChannels((prevRooms) => [...prevRooms, newRoom]);
+    //   }
+    //   // console.log(directRooms);
+    // });
+
     socketRef.current?.on('joinedRoom', (newRoom: Room) => {
       console.log("Joined Room");
       console.log(newRoom);
-      if(newRoom.roomType === 'DIRECT') {
+      if(newRoom.roomType === 'DIRECT' && newRoom.users) {
         setDirectRooms((prevRooms) => [...prevRooms, newRoom]);
-      } else {
+      } else if (newRoom.users) {
         setChannels((prevRooms) => [...prevRooms, newRoom]);
       }
     });
+    
 
     socketRef.current?.on('newMessage', (newMessage: Message) => {
       console.log("New Message");
