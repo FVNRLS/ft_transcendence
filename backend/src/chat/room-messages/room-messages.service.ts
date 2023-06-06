@@ -40,7 +40,7 @@ export class MessagesService {
   async getRoomMessages(roomId: number, limit: number = 100, offset: number = 0) {
     return await this.prisma.message.findMany({
       where: { roomId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'asc' },
       skip: offset,
       take: limit,
     });

@@ -3,7 +3,7 @@ import { SecurityService } from 'src/security/security.service';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { SecurityModule } from 'src/security/security.module';
-import { AuthGateway } from './auth.gateway';
+import { ChatAuthGateway } from './chat_auth.gateway';
 
 @Module({
   imports: [
@@ -14,6 +14,6 @@ import { AuthGateway } from './auth.gateway';
     }),
     SecurityModule,
   ],
-  providers: [AuthGateway, SecurityService]
+  providers: [ChatAuthGateway, SecurityService]
 })
-export class AuthModule {}
+export class ChatAuthModule {}

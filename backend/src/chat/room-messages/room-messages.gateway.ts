@@ -12,10 +12,16 @@ import { WsPermissionGuard } from '../guards/ws-permission/ws-permission.guard';
 import { WsIsUserMemberOfRoomForMessageGuard } from '../guards/ws-is-user-member-of-room-for-message/ws-is-user-member-of-room-for-message.guard';
 import { RoomsService } from '../rooms/rooms.service';
 import { SendDirectMessageDto } from './dto/send-direct-message.dto';
-import { AuthGateway } from '../auth/auth.gateway';
+import { ChatAuthGateway } from '../auth/chat_auth.gateway';
 
 
-@WebSocketGateway(+process.env.CHAT_PORT, { cors: "*" })
+@WebSocketGateway(+process.env.CHAT_PORT, { 
+  cors: {
+      origin: "http://localhost:3000", // Replace with the origin you want to allow
+      methods: ["GET", "POST"],
+      credentials: true
+  } 
+})
 export class MessagesGateway {
   @WebSocketServer() server: any;
   constructor(
@@ -34,67 +40,7 @@ export class MessagesGateway {
       // this.server.emit('newMessage', newMessage);
       return newMessage;
   }
-
-
-  // @UseGuards(WsJwtAuthGuard)
-  @SubscribeMessage('sendDirectMessage')
-  async sendDirectMessage(
-    @MessageBody() sendDirectMessageDto: SendDirectMessageDto,
-    @ConnectedSocket() client: Socket,
-  ) {
-    try {
-      const senderId = client.data.userId; // sender
-      const receiverId = sendDirectMessageDto.receiverId; // receiver
   
-      // Check if the sender has been blocked by the receiver or vice versa
-      const receiverBlockedSender = await this.messagesService.isBlocked(receiverId, senderId);
-      const senderBlockedReceiver = await this.messagesService.isBlocked(senderId, receiverId);
-  
-      if (receiverBlockedSender) {
-        return { message: 'You have been blocked by the receiver.' };
-      }
-  
-      if (senderBlockedReceiver) {
-        return { message: 'You have blocked this user.' };
-      }
-  
-      // Create a direct room or use the existing one
-      const room = await this.roomsService.createDirectRoom(senderId, receiverId);
-
-      // Make the client join the room
-      client.join(`room-${room.id}`);
-
-      // Make the receiver join the room
-      const receiverClientId = AuthGateway.userToSocketIdMap[receiverId];
-      if (receiverClientId) {
-        this.server.sockets.sockets.get(receiverClientId)?.join(`room-${room.id}`);
-      }
-  
-      // Create a new message in the direct room
-      const newMessageDto: CreateMessageDto = {
-        roomId: room.id,
-        content: sendDirectMessageDto.content,
-        // sender information should be associated with message in your messagesService.create() method
-      };
-  
-      const newMessage = await this.messagesService.create(newMessageDto, client);
-  
-      console.log(`room-${room.id}`);
-      console.log(newMessage);
-
-      // Broadcast the new message to all clients in the room
-      this.server.to(`room-${room.id}`).emit('newMessage', newMessage);
-  
-      return newMessage;
-    } catch (error) {
-      console.log('Error:', error.message);
-      return { error: error.message };
-    }
-  }
-  
-  
-  
-
   @UseGuards(WsJwtAuthGuard, WsPermissionGuard)
   @SubscribeMessage('findAllMessages')
   findAll() {
