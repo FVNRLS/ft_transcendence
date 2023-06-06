@@ -13,6 +13,7 @@ import { Prisma, UserRole } from '@prisma/client';
 import { SecurityService } from 'src/security/security.service';
 import { ChatUserService } from './chat_user.service';
 import { ChatAuthGateway } from '../auth/chat_auth.gateway';
+import { RoomDetailsDto } from './entities/room.entity';
 
 @WebSocketGateway(+process.env.CHAT_PORT, { 
   cors: {
@@ -26,7 +27,6 @@ export class RoomsGateway {
   constructor(
     private readonly roomsService: RoomsService,
     private readonly prisma: PrismaService,
-    private readonly securityService: SecurityService,
     private readonly chatUserService: ChatUserService
     ) {}
 
@@ -44,7 +44,6 @@ export class RoomsGateway {
   async getUserIdByUsername(
     @MessageBody('username') username: string,
   ) {
-    console.log("GetUserIdByName");
     const id = await this.chatUserService.getUserIdByUsername(username);
     return { userId: id };
   }
@@ -54,82 +53,153 @@ export class RoomsGateway {
   async getUsersIdsByUsernames(
     @MessageBody('usernames') usernames: string[],
   ) {
-    // const ids = await Promise.all(usernames.map(async (username: string) => {
-    //   const user = await this.prisma.user.findUnique({
-    //     where: { username: username },
-    //     select: { id: true }
-    //   });
-    //   return user ? user.id : null;
-    // }));
-    // return { userIds: ids };
     return await this.chatUserService.getUsersIdsByUsernames(usernames);
-
   }
   
+  // @UseGuards(WsJwtAuthGuard)
+  // @SubscribeMessage('createRoom')
+  // async create(
+  //   @MessageBody() createRoomDto: CreateRoomDto,
+  //   @ConnectedSocket() client: Socket,
+  // ) {
+  //   let newRoom; // Define newRoom here
+  //   const userId = client.data.userId;
+
+  //   // Create a new member with the userId as id
+  //   const newMember: MemberDto = {
+  //     id: userId,
+  //   };
+  
+  //   // Add the new member to the members array
+  //   if (createRoomDto.members) {
+  //     createRoomDto.members.push(newMember);
+  //   } else {
+  //     createRoomDto.members = [newMember];
+  //   }
+  
+  //   if (createRoomDto.roomType == RoomType.DIRECT) {
+  //     createRoomDto.members[1] = newMember;
+  //     // Remove all elements except those at index 0 and 1
+  //     if (createRoomDto.members.length > 2) {
+  //       createRoomDto.members.splice(2);
+  //     }
+  //     newRoom = await this.roomsService.createDirectRoom(createRoomDto);
+  //   } else {
+  //     newRoom = await this.roomsService.createGroupRoom(createRoomDto);
+  //   }
+
+  //  newRoom = {
+  //     ...newRoom,
+  //     users: newRoom.userOnRooms.map(ur => ur.user),
+  //     messages: newRoom.messages,
+  //   };
+
+  //   if(createRoomDto.members) {
+  //     const userIds = createRoomDto.members.map(member => member.id);
+  
+  //     // If users are currently connected, join them to the room in the Socket.IO server
+  //     userIds.forEach(userId => {
+  //       const socketId = ChatAuthGateway.userToSocketIdMap[userId];
+  //       if (socketId && this.server.sockets.sockets.get(socketId)) {
+  //         // this.server.sockets.sockets[socketId].join(`room-${newRoom.id}`);
+  //         const roomName = `room-${newRoom.id}`;
+  //         this.server.sockets.sockets.get(socketId).join(roomName);
+  //         this.server.to(socketId).emit('joinedRoom', newRoom);
+  //       }
+  //     });
+  //   }
+  //   console.log("New Room");
+  //   console.log(newRoom);
+  //   return newRoom;
+  // }
+
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('createRoom')
   async create(
     @MessageBody() createRoomDto: CreateRoomDto,
     @ConnectedSocket() client: Socket,
   ) {
-    let newRoom; // Define newRoom here
     const userId = client.data.userId;
-
-    // Create a new member with the userId as id
-    const newMember: MemberDto = {
-      id: userId,
-    };
+    
+    // Add the current user to the members array
+    this.addCurrentUserToMembers(createRoomDto, userId);
   
-    // Add the new member to the members array
+    // Create room based on its type
+    let newRoom = await this.createRoomBasedOnType(createRoomDto);
+
+    if (!newRoom) {
+      return "Error: DM already exists";
+    }
+  
+    // Update the room data
+    newRoom = this.updateRoomData(newRoom);
+  
+    // Notify connected users about the newly created room
+    this.notifyConnectedUsers(newRoom);
+    
+    return newRoom;
+  }
+  
+  addCurrentUserToMembers(createRoomDto: CreateRoomDto, userId: number) {
+    const newMember: MemberDto = { id: userId };
+    
     if (createRoomDto.members) {
       createRoomDto.members.push(newMember);
     } else {
       createRoomDto.members = [newMember];
     }
-  
+    
     if (createRoomDto.roomType == RoomType.DIRECT) {
       createRoomDto.members[1] = newMember;
-      // Remove all elements except those at index 0 and 1
       if (createRoomDto.members.length > 2) {
         createRoomDto.members.splice(2);
       }
-      newRoom = await this.roomsService.createDirectRoom(createRoomDto);
-    } else {
-      newRoom = await this.roomsService.createGroupRoom(createRoomDto);
-      
-      // // Room creator automatically joins the room
-      // await this.roomsService.joinRoom(newRoom.id, client);
-
-      // // Set the room creator's role to 'owner'
-      // await this.roomsService.setUserRole(userId, newRoom.id, UserRole.OWNER); 
-
-      // If members are specified in the DTO, add them to the room
     }
-
-   newRoom = {
+  }
+  
+  async createRoomBasedOnType(createRoomDto: CreateRoomDto) {
+    return createRoomDto.roomType == RoomType.DIRECT
+      ? await this.roomsService.createDirectRoom(createRoomDto)
+      : await this.roomsService.createGroupRoom(createRoomDto);
+  }
+  
+  updateRoomData(newRoom: any) {
+    return {
       ...newRoom,
       users: newRoom.userOnRooms.map(ur => ur.user),
       messages: newRoom.messages,
     };
-
-    if(createRoomDto.members) {
-      const userIds = createRoomDto.members.map(member => member.id);
+  }
   
-      // If users are currently connected, join them to the room in the Socket.IO server
+  // notifyConnectedUsers(newRoom: RoomDetailsDto, createRoomDto: CreateRoomDto) {
+  //   if(createRoomDto.members) {
+  //     const userIds = createRoomDto.members.map(member => member.id);
+  //     userIds.forEach(userId => {
+  //       const socketId = ChatAuthGateway.userToSocketIdMap[userId];
+  //       if (socketId && this.server.sockets.sockets.get(socketId)) {
+  //         const roomName = `room-${newRoom.id}`;
+  //         this.server.sockets.sockets.get(socketId).join(roomName);
+  //         this.server.to(socketId).emit('joinedRoom', newRoom);
+  //       }
+  //     });
+  //   }
+  // }
+
+  notifyConnectedUsers(newRoom: RoomDetailsDto) {
+    if(newRoom.userOnRooms) {
+      const userIds = newRoom.userOnRooms.map(userOnRoom => userOnRoom.user.id);
       userIds.forEach(userId => {
         const socketId = ChatAuthGateway.userToSocketIdMap[userId];
         if (socketId && this.server.sockets.sockets.get(socketId)) {
-          // this.server.sockets.sockets[socketId].join(`room-${newRoom.id}`);
           const roomName = `room-${newRoom.id}`;
           this.server.sockets.sockets.get(socketId).join(roomName);
           this.server.to(socketId).emit('joinedRoom', newRoom);
         }
       });
     }
-    console.log("New Room");
-    console.log(newRoom);
-    return newRoom;
   }
+
+  
 
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('findOneRoom')
