@@ -15,13 +15,13 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 function App() {
-
   const session = Cookies.get('session');
 
   // Register the event listeners
   useEffect(() => {
+
     const setOnline = async () => {
-      if (session)
+      if (session !== undefined)
       {
         try {
           await axios.post("http://localhost:5000/auth/set_status", {cookie: session, status: 'online'});
@@ -32,7 +32,7 @@ function App() {
     };
   
     const setOffline = async () => {
-      if (session)
+      if (session !== undefined)
       {
         try {
           await axios.post("http://localhost:5000/auth/set_status", {cookie: session, status: 'offline'});
