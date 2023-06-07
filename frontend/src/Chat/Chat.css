@@ -10,22 +10,43 @@ ul
 	width: 70vw;
 }
 
+.chat-section .sec-name {
+	display: flex;
+	align-items: center;
+	justify-content: space-evenly;
+	margin-top: 20px;
+}
+
+.chat-section .sec-name h3 {
+	margin: 0;
+	color: rgb(60, 60, 60);
+	width: 10rem;
+}
+
+.chat-section .sec-name .plus-icon {
+	transform: scale(1.1);
+}
+
+.chat-section .sec-name .plus-icon:hover {
+	cursor: pointer;
+}
+
   /* Sidebar */
 .sidebar {
-display: flex;
-flex-direction: column;
-/* removed justify-content: space-evenly; */
-flex: 1;
-padding: 20px;
-background-color: #ffffffce;
-height: 100%; /* ensure the sidebar takes full height */
+	display: flex;
+	flex-direction: column;
+	/* removed justify-content: space-evenly; */
+	flex: 1;
+	background-color: #ffffffce;
+	height: 100%; /* ensure the sidebar takes full height */
 }
   
 .profile {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	margin-bottom: 20px;
+	margin-top: 40px;
+	margin-bottom: 40px;
 }
   
 .profile img {
@@ -59,7 +80,7 @@ height: 100%; /* ensure the sidebar takes full height */
 	padding: .5rem;
 	margin-bottom: 10px;
 }
-  
+
 .channels ul li, .direct-messages ul li {
 	margin-bottom: 5px;
 	display: flex;
@@ -71,7 +92,7 @@ height: 100%; /* ensure the sidebar takes full height */
 .channels ul li button, .direct-messages ul li button {
 	display: block;
 	padding: 5px;
-	width: 100%;
+	width: 80%;
 	font-size: large;
 	border-radius: 5px;
 	color: rgb(71, 71, 71);
@@ -94,6 +115,9 @@ height: 100%; /* ensure the sidebar takes full height */
 	flex: 1;
 	padding: 20px;
 	overflow-y: scroll;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
 }
   
 .message {
@@ -111,7 +135,7 @@ height: 100%; /* ensure the sidebar takes full height */
   
 .message-content {
 	background-color: #ffffffce;
-	padding: 20px;
+	padding: 10px 20px;
 	border-radius: 10px;
 	color: rgb(71, 71, 71);
 }
@@ -122,11 +146,12 @@ height: 100%; /* ensure the sidebar takes full height */
 }
   
 .message-content p {
+	margin: 5px 0;
 	font-size: 16px;
 }
   
 .message-time {
-	font-size: 14px;
+	font-size: 10px;
 	color: #999;
 	margin-left: auto;
 }
@@ -158,16 +183,16 @@ height: 100%; /* ensure the sidebar takes full height */
   
 .message-input button {
 	background-color: #476cd2c9;
-	color: #fff;
+	color: rgba(255, 255, 255, 0.702);
 	border: none;
 	padding: 10px 20px;
 	font-size: large;
 	cursor: pointer;
-	transition: .4s;
 }
 
 .message-input button:hover {
 	background-color: #476cd2;
+	color: white;
 }
 
 .other-message {
@@ -178,4 +203,67 @@ height: 100%; /* ensure the sidebar takes full height */
 .user-message {
 	justify-content: flex-end; /* override for user's messages */
 }
-  
+
+.user-message-content {
+	background-color: #476cd2c9;
+	color: rgba(255, 255, 255, 0.702);
+}
+
+.creation-window {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.new-chat-create {
+	width: 45%;
+	height: 60%;
+	background-color: #ffffffce;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-evenly;
+}
+
+.new-chat-create h3 {
+	margin: 0;
+	font-family: "Montserrat", sans-serif;
+	font-weight: bold;
+}
+
+.new-chat-create button {
+	border: 0;
+	padding: 7px 15px;
+	color: rgba(255, 255, 255, 0.702);
+	background-color: #476cd2c9;
+}
+
+.new-chat-create button:hover {
+	color: white;
+	cursor: pointer;
+	background-color: #476cd2;
+}
+
+.new-chat-create input {
+	border: 0;
+	padding: 7px 10px;
+	color:rgb(71, 71, 71);
+}
+
+.new-chat-create input:focus {
+	outline: none;
+}
+
+.new-chat-create select {
+	border: 0;
+	padding: 5px 10px;
+	color:rgb(71, 71, 71);
+}
+
+.new-chat-create select:focus {
+	outline: none;
+}
+
+.new-chat-create-group {
+	height: 70%;
+}
