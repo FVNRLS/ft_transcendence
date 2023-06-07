@@ -55,63 +55,6 @@ export class RoomsGateway {
   ) {
     return await this.chatUserService.getUsersIdsByUsernames(usernames);
   }
-  
-  // @UseGuards(WsJwtAuthGuard)
-  // @SubscribeMessage('createRoom')
-  // async create(
-  //   @MessageBody() createRoomDto: CreateRoomDto,
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   let newRoom; // Define newRoom here
-  //   const userId = client.data.userId;
-
-  //   // Create a new member with the userId as id
-  //   const newMember: MemberDto = {
-  //     id: userId,
-  //   };
-  
-  //   // Add the new member to the members array
-  //   if (createRoomDto.members) {
-  //     createRoomDto.members.push(newMember);
-  //   } else {
-  //     createRoomDto.members = [newMember];
-  //   }
-  
-  //   if (createRoomDto.roomType == RoomType.DIRECT) {
-  //     createRoomDto.members[1] = newMember;
-  //     // Remove all elements except those at index 0 and 1
-  //     if (createRoomDto.members.length > 2) {
-  //       createRoomDto.members.splice(2);
-  //     }
-  //     newRoom = await this.roomsService.createDirectRoom(createRoomDto);
-  //   } else {
-  //     newRoom = await this.roomsService.createGroupRoom(createRoomDto);
-  //   }
-
-  //  newRoom = {
-  //     ...newRoom,
-  //     users: newRoom.userOnRooms.map(ur => ur.user),
-  //     messages: newRoom.messages,
-  //   };
-
-  //   if(createRoomDto.members) {
-  //     const userIds = createRoomDto.members.map(member => member.id);
-  
-  //     // If users are currently connected, join them to the room in the Socket.IO server
-  //     userIds.forEach(userId => {
-  //       const socketId = ChatAuthGateway.userToSocketIdMap[userId];
-  //       if (socketId && this.server.sockets.sockets.get(socketId)) {
-  //         // this.server.sockets.sockets[socketId].join(`room-${newRoom.id}`);
-  //         const roomName = `room-${newRoom.id}`;
-  //         this.server.sockets.sockets.get(socketId).join(roomName);
-  //         this.server.to(socketId).emit('joinedRoom', newRoom);
-  //       }
-  //     });
-  //   }
-  //   console.log("New Room");
-  //   console.log(newRoom);
-  //   return newRoom;
-  // }
 
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('createRoom')
@@ -261,9 +204,67 @@ export class RoomsGateway {
     }
   }
 
+  // @SubscribeMessage('getUserRooms')
+  // async getUserRooms(@ConnectedSocket() client: Socket) {
+  //   const userId = client.data.userId; // Get the userId from the client
+  
+  //   const userRooms = await this.prisma.userOnRooms.findMany({
+  //     where: { userId: userId },
+  //     include: {
+  //       room: {
+  //         select: {
+  //           id: true,
+  //           roomName: true,
+  //           roomType: true,
+  //           // Include users in each room
+  //           userOnRooms: {
+  //             select: {
+  //               user: {
+  //                 select: {
+  //                   id: true,
+  //                   username: true,
+  //                   // Include other fields as required
+  //                 }
+  //               }
+  //             }
+  //           },
+  //           // Include last 100 messages in each room
+  //           messages: {
+  //             select: {
+  //               id: true,
+  //               userId: true,
+  //               roomId: true,
+  //               createdAt: true,
+  //               content: true,
+  //             },
+  //             orderBy: {
+  //               createdAt: 'asc',
+  //             },
+  //             take: 100,
+  //           },
+  //           // Include other room data as required
+  //         }
+  //       },
+  //     },
+  //   });
+  
+  //   client.emit('getUserRooms', userRooms.map(userRoom => ({
+  //     ...userRoom.room,
+  //     users: userRoom.room.userOnRooms.map(ur => ur.user),
+  //     messages: userRoom.room.messages,
+  //   })));
+  
+  //   return "Success";
+  // }
+
   @SubscribeMessage('getUserRooms')
   async getUserRooms(@ConnectedSocket() client: Socket) {
     const userId = client.data.userId; // Get the userId from the client
+
+    // Fetch blocked users by the logged-in user
+    const blockedUsers = await this.prisma.block.findMany({
+      where: { blockerId: userId },
+    });
   
     const userRooms = await this.prisma.userOnRooms.findMany({
       where: { userId: userId },
@@ -298,6 +299,18 @@ export class RoomsGateway {
                 createdAt: 'asc',
               },
               take: 100,
+               // Exclude messages from blocked users
+               where: {
+                NOT: blockedUsers.map(blockedUser => {
+                  return {
+                    userId: blockedUser.blockedId,
+                    createdAt: {
+                      gte: blockedUser.createdAt,
+                    },
+                  };
+                }),
+              },
+              
             },
             // Include other room data as required
           }

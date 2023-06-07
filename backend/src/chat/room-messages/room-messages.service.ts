@@ -46,19 +46,48 @@ export class MessagesService {
     });
   }
 
+  // async blockUser(blockerId: number, blockedId: number) {
+  //   // Check if this block relation already exists
+  //   const existingBlock = await this.prisma.block.findFirst({
+  //     where: {
+  //       blockerId: blockerId,
+  //       blockedId: blockedId,
+  //     },
+  //   });
+
+  //   if (existingBlock) {
+  //     return { message: 'User already blocked.' };
+  //   }
+
+  //   // Create the block relation
+  //   const newBlock = await this.prisma.block.create({
+  //     data: {
+  //       blockerId: blockerId,
+  //       blockedId: blockedId,
+  //     },
+  //   });
+
+  //   return { message: 'User successfully blocked.', block: newBlock };
+  // }
+
   async blockUser(blockerId: number, blockedId: number) {
     // Check if this block relation already exists
     const existingBlock = await this.prisma.block.findFirst({
-      where: {
-        blockerId: blockerId,
-        blockedId: blockedId,
-      },
+          where: {
+            blockerId: blockerId,
+            blockedId: blockedId,
+          },
     });
-
+  
     if (existingBlock) {
       return { message: 'User already blocked.' };
     }
-
+  
+    // Check if blockedId is defined
+    if (blockedId === undefined) {
+      throw new Error('BlockedId is undefined');
+    }
+  
     // Create the block relation
     const newBlock = await this.prisma.block.create({
       data: {
@@ -66,9 +95,11 @@ export class MessagesService {
         blockedId: blockedId,
       },
     });
-
+  
     return { message: 'User successfully blocked.', block: newBlock };
   }
+  
+  
 
   async unblockUser(blockerId: number, blockedId: number) {
     // Check if this block relation exists
