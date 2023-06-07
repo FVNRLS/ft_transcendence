@@ -13,6 +13,7 @@ import { WsIsUserMemberOfRoomForMessageGuard } from '../guards/ws-is-user-member
 import { RoomsService } from '../rooms/rooms.service';
 import { SendDirectMessageDto } from './dto/send-direct-message.dto';
 import { ChatAuthGateway } from '../auth/chat_auth.gateway';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 
 @WebSocketGateway(+process.env.CHAT_PORT, { 
@@ -26,20 +27,90 @@ export class MessagesGateway {
   @WebSocketServer() server: any;
   constructor(
     private readonly messagesService: MessagesService,
-    private readonly roomsService: RoomsService
+    private readonly roomsService: RoomsService,
+    private readonly prisma: PrismaService
     ) {}
+
+  // @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
+  // @SubscribeMessage('sendMessageToRoom')
+  // async sendMessageToRoom(
+  //   @MessageBody() createMessageDto: CreateMessageDto,
+  //   @ConnectedSocket() client: Socket
+  //   ) {
+  //     const newMessage = await this.messagesService.create(createMessageDto, client);
+  //     this.server.to(`room-${createMessageDto.roomId}`).emit('newMessage', newMessage); // broadcast the new message to all clients in the room
+  //     // this.server.emit('newMessage', newMessage);
+  //     return newMessage;
+  // }
+
+  // @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
+  // @SubscribeMessage('sendMessageToRoom')
+  // async sendMessageToRoom(
+  //   @MessageBody() createMessageDto: CreateMessageDto,
+  //   @ConnectedSocket() client: Socket
+  // ) {
+  //   const newMessage = await this.messagesService.create(createMessageDto, client);
+  
+  //   // Get the list of users who have blocked the author
+  //   const blockedUsers = await this.prisma.block.findMany({
+  //     where: { blockedId: client.data.userId },
+  //   });
+  
+  //   // Get the list of user ids from the block relation
+  //   const blockedUserIds = blockedUsers.map(block => block.blockerId);
+  
+  //   // Get the list of users in the room who haven't blocked the author
+  //   const recipients = await this.prisma.userOnRooms.findMany({
+  //     where: { 
+  //       roomId: createMessageDto.roomId,
+  //       NOT: { userId: { in: blockedUserIds } },
+  //     },
+  //   });
+  
+  //   // Emit the new message to each recipient
+  //   for (const recipient of recipients) {
+  //     this.server.to(`user-${recipient.userId}`).emit('newMessage', newMessage);
+  //   }
+  
+  //   return newMessage;
+  // }
 
   @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
   @SubscribeMessage('sendMessageToRoom')
   async sendMessageToRoom(
     @MessageBody() createMessageDto: CreateMessageDto,
     @ConnectedSocket() client: Socket
-    ) {
-      const newMessage = await this.messagesService.create(createMessageDto, client);
-      this.server.to(`room-${createMessageDto.roomId}`).emit('newMessage', newMessage); // broadcast the new message to all clients in the room
-      // this.server.emit('newMessage', newMessage);
-      return newMessage;
+  ) {
+    const newMessage = await this.messagesService.create(createMessageDto, client);
+  
+    // Get the list of users who have blocked the author
+    const blockedUsers = await this.prisma.block.findMany({
+      where: { blockedId: client.data.userId },
+    });
+  
+    // Get the list of user ids from the block relation
+    const blockedUserIds = blockedUsers.map(block => block.blockerId);
+  
+    // Get the list of users in the room who haven't blocked the author
+    const recipients = await this.prisma.userOnRooms.findMany({
+      where: { 
+        roomId: createMessageDto.roomId,
+        NOT: { userId: { in: blockedUserIds } },
+      },
+    });
+  
+    // Emit the new message to each recipient
+    for (const recipient of recipients) {
+      const recipientSocketId = ChatAuthGateway.userToSocketIdMap[recipient.userId];
+      if (recipientSocketId && this.server.sockets.sockets.get(recipientSocketId)) {
+        this.server.to(recipientSocketId).emit('newMessage', newMessage);
+      }
+    }
+  
+    return newMessage;
   }
+  
+  
   
   @UseGuards(WsJwtAuthGuard, WsPermissionGuard)
   @SubscribeMessage('findAllMessages')
