@@ -119,26 +119,43 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
 
 
   async createDirectRoom(createRoomDto: CreateRoomDto) {
+    console.log("Create Direct Room");
+
     const user1Id = createRoomDto.members[0].id;
+    console.log(user1Id);
     const client_id = createRoomDto.members[createRoomDto.members.length - 1].id;
+    console.log(client_id);
     // Check if a direct room already exists between the two users
     const existingRoom = await this.prisma.room.findFirst({
       where: {
         roomType: 'DIRECT',
-        userOnRooms: {
-          every: {
-            userId: {
-              in: [user1Id, client_id]
-            }
-          }
-        }
+        AND: [
+          {
+            userOnRooms: {
+              some: {
+                userId: user1Id,
+              },
+            },
+          },
+          {
+            userOnRooms: {
+              some: {
+                userId: client_id,
+              },
+            },
+          },
+        ],
       },
       include: {
         userOnRooms: true,
       },
     });
+    
+    
 
+    console.log(existingRoom);
     if (existingRoom) {
+      console.log("Room already exists");
       return null;
     }
     const room = await this.prisma.room.create({

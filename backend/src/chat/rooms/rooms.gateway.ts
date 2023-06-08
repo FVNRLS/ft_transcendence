@@ -62,6 +62,7 @@ export class RoomsGateway {
     @MessageBody() createRoomDto: CreateRoomDto,
     @ConnectedSocket() client: Socket,
   ) {
+    
     const userId = client.data.userId;
     
     // Add the current user to the members array
