@@ -7,6 +7,8 @@ import Pic from './download.jpeg';
 import Cookies from 'js-cookie';
 import io from 'socket.io-client';
 import { Socket } from 'socket.io-client';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
 
 
 interface Message {
@@ -51,27 +53,20 @@ const Chat = () => {
   const [channels, setChannels] = useState<Room[]>([]);
   const [directRooms, setDirectRooms] = useState<Room[]>([]);
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [groupChatUsername, setGroupChatUsername] = useState("");
   const [directMessageUsername, setDirectMessageUsername] = useState("");
   const [messageInput, setMessageInput] = useState("");
+  const [newDirectOpened, setNewDirectOpened] = useState(false);
+  const [newChannelOpened, setNewChannelOpened] = useState(false);
   const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);
   const [blockedUsers, setBlockedUsers] = useState<number[]>([]);
-
-
+  const [isChatHeaderClicked, setIsChatHeaderClicked] = useState(false);
+  const [otherUsername, setOtherUsername] = useState<string>('');
 
 
   // Reference for the socket
   const socketRef = useRef<Socket | null>(null);
-
-  // Functions to open and close chat creation sidebar
-  const createChat = () => setIsSidebarOpen(true);
-  const closeChatCreation = () => {
-    setIsSidebarOpen(false);
-    setGroupChatUsername("");
-    setDirectMessageUsername("");
-  };
 
   // State variable for room type
   const [roomType, setRoomType] = useState<'PUBLIC' | 'PRIVATE' | 'PASSWORD'>('PUBLIC');
@@ -79,6 +74,7 @@ const Chat = () => {
 
   // Function to create a new chat
   const createNewChat = (type: 'DIRECT' | 'PUBLIC' | 'PRIVATE' | 'PASSWORD', usernames: string[]) => {
+
     // Chat details configuration
     let chatDetails = {
       roomType: type,
@@ -92,8 +88,6 @@ const Chat = () => {
     } else if (usernames) {
       // Handle group chat creation
       socketRef.current?.emit('getUsersIdsByUsernames', { usernames: usernames }, handleGroupChatCreation(chatDetails));
-    } else {
-      closeChatCreation();
     }
   };
 
@@ -101,7 +95,6 @@ const Chat = () => {
     if (response.userIds) {
       chatDetails.members.push(...response.userIds.map(id => ({id: id})));
       socketRef.current?.emit('createRoom', chatDetails);
-      closeChatCreation();
     } else {
       console.log('Users do not exist');
     }
@@ -111,7 +104,6 @@ const Chat = () => {
     if (response.userId) {
       chatDetails.members.push({id: response.userId});
       socketRef.current?.emit('createRoom', chatDetails);
-      closeChatCreation();
     } else {
       console.log('User does not exist');
     }
@@ -131,7 +123,7 @@ const Chat = () => {
       // Clear the input field
       setMessageInput("");
     }
-  };
+  };  
 
   const blockUser = () => {
     console.log("Block User");
@@ -173,7 +165,6 @@ const Chat = () => {
     }
   }
   
-  
   // UseEffect hook for initializing socket connection, fetching user and rooms data
   useEffect(() => {
     // Redirect to 'not-logged' page if there's no session
@@ -185,17 +176,127 @@ const Chat = () => {
     });
 
     // Socket events and handlers
+    const handleSocketEvents = () => {
+      socketRef.current?.on('connect', () => {
+        socketRef.current?.on('user_verified', () => {
+          socketRef.current?.emit('getCurrentUser');
+          socketRef.current?.emit('getUserRooms');
+          socketRef.current?.emit('getBlockedUsers');
+
+        });
+      });
+  
+      socketRef.current?.on('currentUser', (user: User) => {
+        setLoggedInUser(user);
+      });
+
+      socketRef.current?.on('getBlockedUsers', (data) => {
+        // data would be an array of blocked users' IDs
+        setBlockedUsers(data);
+    });
+  
+      socketRef.current?.on('getUserRooms', (rooms: Room[]) => {
+        const directRooms2 = rooms.filter((room: Room) => room.roomType === 'DIRECT');
+        setDirectRooms(directRooms2);
+  
+        const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
+        setChannels(nonDirectRooms);
+        console.log(directRooms2);
+      });
+  
+      socketRef.current?.on('joinedRoom', (newRoom: Room) => {
+        console.log("Joined Room");
+        console.log(newRoom);
+        if(newRoom.roomType === 'DIRECT' && newRoom.users) {
+          setDirectRooms((prevRooms) => [...prevRooms, newRoom]);
+        } else if (newRoom.users) {
+          setChannels((prevRooms) => [...prevRooms, newRoom]);
+        }
+      });
+      
+  
+      socketRef.current?.on('newMessage', (newMessage: Message) => {
+        console.log("New Message");
+        console.log(newMessage);
+      
+        // Define a helper function to find the room in an array of rooms
+        const findRoomIndex = (rooms: Room[]) => rooms.findIndex(room => room.id === newMessage.roomId);
+  
+      
+        // Update the channels state
+        setChannels(prev => {
+          let roomIndex = findRoomIndex(prev);
+          // If room is found in channels
+          if (roomIndex !== -1) {
+            const updatedRoom = { ...prev[roomIndex] };
+            updatedRoom.messages.push(newMessage);
+      
+            // Update the state and return
+            return [
+              ...prev.slice(0, roomIndex),
+              updatedRoom,
+              ...prev.slice(roomIndex + 1),
+            ];
+          }
+          // If room is not found, return the state as it is
+          return prev;
+        });
+      
+        // Update the directRooms state
+        setDirectRooms(prev => {
+          let roomIndex = findRoomIndex(prev);
+          // If room is found in directRooms
+          if (roomIndex !== -1) {
+            const updatedRoom = { ...prev[roomIndex] };
+            updatedRoom.messages.push(newMessage);
+      
+            // Update the state and return
+            return [
+              ...prev.slice(0, roomIndex),
+              updatedRoom,
+              ...prev.slice(roomIndex + 1),
+            ];
+          }
+          // If room is not found, return the state as it is
+          return prev;
+        });
+      
+          // If the room is currently selected, update selectedRoom as well
+          if (selectedRoom && selectedRoom.id === newMessage.roomId) {
+            setSelectedRoom(prev => {
+              // If this is the currently selected room, update it
+              if (prev && prev.id === newMessage.roomId) {
+                return { 
+                  ...prev, 
+                  messages: [...prev.messages, newMessage] 
+                };
+              }
+              // If not, return the state as it is
+              return prev;
+            });
+          }
+      });
+  
+      socketRef.current?.on('disconnect', () => {
+        console.log('Socket.IO connection closed');
+      });
+  
+      socketRef.current?.on('error', (error: any) => {
+        console.error('Socket.IO error', error);
+      });
+    };
+
     handleSocketEvents();
 
     // Clean up on unmount
     return () => {
       socketRef.current?.off('getUserRooms');
       socketRef.current?.off('newMessage');
-      socketRef.current?.off('unblockUser');
+      socketRef.current?.off('getBlockedUsers');
       socketRef.current?.disconnect();
     };
 
-  }, [navigate, session]);
+  }, [navigate, session, selectedRoom]);
 
   useEffect(() => {
     if (selectedRoom && loggedInUser) {
@@ -207,117 +308,27 @@ const Chat = () => {
       }
     }
   }, [selectedRoom, loggedInUser, blockedUsers]);
-
-
-  const handleSocketEvents = () => {
-    socketRef.current?.on('connect', () => {
-      socketRef.current?.on('user_verified', () => {
-        socketRef.current?.emit('getCurrentUser');
-        socketRef.current?.emit('getUserRooms');
-        socketRef.current?.emit('getBlockedUsers');
-      });
-    });
-
-    socketRef.current?.on('currentUser', (user: User) => {
-      setLoggedInUser(user);
-    });
-
-    socketRef.current?.on('getBlockedUsers', (data) => {
-      // data would be an array of blocked users' IDs
-      setBlockedUsers(data);
-  });
-
-    socketRef.current?.on('getUserRooms', (rooms: Room[]) => {
-      const directRooms2 = rooms.filter((room: Room) => room.roomType === 'DIRECT');
-      setDirectRooms(directRooms2);
-
-      const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
-      setChannels(nonDirectRooms);
-      console.log(directRooms2);
-    });
-
-    socketRef.current?.on('joinedRoom', (newRoom: Room) => {
-      console.log("Joined Room");
-      console.log(newRoom);
-      if(newRoom.roomType === 'DIRECT' && newRoom.users) {
-        setDirectRooms((prevRooms) => [...prevRooms, newRoom]);
-      } else if (newRoom.users) {
-        setChannels((prevRooms) => [...prevRooms, newRoom]);
-      }
-    });
-    
-
-    socketRef.current?.on('newMessage', (newMessage: Message) => {
-      console.log("New Message");
-      console.log(newMessage);
-    
-      // Define a helper function to find the room in an array of rooms
-      const findRoomIndex = (rooms: Room[]) => rooms.findIndex(room => room.id === newMessage.roomId);
-
-    
-      // Update the channels state
-      setChannels(prev => {
-        let roomIndex = findRoomIndex(prev);
-        // If room is found in channels
-        if (roomIndex !== -1) {
-          const updatedRoom = { ...prev[roomIndex] };
-          updatedRoom.messages.push(newMessage);
-    
-          // Update the state and return
-          return [
-            ...prev.slice(0, roomIndex),
-            updatedRoom,
-            ...prev.slice(roomIndex + 1),
-          ];
-        }
-        // If room is not found, return the state as it is
-        return prev;
-      });
-    
-      // Update the directRooms state
-      setDirectRooms(prev => {
-        let roomIndex = findRoomIndex(prev);
-        // If room is found in directRooms
-        if (roomIndex !== -1) {
-          const updatedRoom = { ...prev[roomIndex] };
-          updatedRoom.messages.push(newMessage);
-    
-          // Update the state and return
-          return [
-            ...prev.slice(0, roomIndex),
-            updatedRoom,
-            ...prev.slice(roomIndex + 1),
-          ];
-        }
-        // If room is not found, return the state as it is
-        return prev;
-      });
-    
-        // If the room is currently selected, update selectedRoom as well
-        if (selectedRoom && selectedRoom.id === newMessage.roomId) {
-          setSelectedRoom(prev => {
-            // If this is the currently selected room, update it
-            if (prev && prev.id === newMessage.roomId) {
-              return { 
-                ...prev, 
-                messages: [...prev.messages, newMessage] 
-              };
-            }
-            // If not, return the state as it is
-            return prev;
-          });
-        }
-    });
-    
-    socketRef.current?.on('disconnect', () => {
-      console.log('Socket.IO connection closed');
-    });
-
-    socketRef.current?.on('error', (error: any) => {
-      console.error('Socket.IO error', error);
-    });
-  };
   
+  const handleKeyPress = (event:any) => {
+    if (event.key === 'Enter') {
+      handleSendMessage();
+    }
+  };
+
+  const openNewDirect = () => {
+    setSelectedRoom(null);
+    setNewChannelOpened(false);
+    setNewDirectOpened(true);
+    setIsChatHeaderClicked(false)
+  }
+
+  const openNewChannel = () => {
+    setSelectedRoom(null);
+    setNewDirectOpened(false);
+    setNewChannelOpened(true);
+    setIsChatHeaderClicked(false)
+  }
+
   // Return JSX for the chat page
   return (
     <>
@@ -334,21 +345,20 @@ const Chat = () => {
             </div>
 
             {/* Check if sidebar is open or not */}
-            {!isSidebarOpen ? (
-              <>
-                {/* Button to create new chat */}
-                <button onClick={createChat}>Create new chat</button>
-                
+              <>            
                 {/* Chat Section */}
                 <div className="chat-section">
 
                   {/* Channel List */}
-                  <h3>Channels</h3>
+                  <div className='sec-name'>
+                    <h3>Channels</h3>
+                    <FontAwesomeIcon className='plus-icon' icon={faPlus} color='#333333' onClick={openNewChannel}/>
+                  </div>
                   <div className="channels" style={{ maxHeight: '10vh', overflowY: 'auto' }}>
                     <ul>
                       {channels.map((channel, index) => (
                         <li key={index}>
-                          <button onClick={() => setSelectedRoom(channel)}>{channel.roomName}</button>
+                          <button onClick={() => {setNewChannelOpened(false); setNewDirectOpened(false); setSelectedRoom(channel); setIsChatHeaderClicked(false)}}>{channel.roomName}</button>
                         </li>
                       ))}
                     </ul>
@@ -356,9 +366,12 @@ const Chat = () => {
                 </div>
                 
                 {/* Direct Messages Section */}
-                <div className="chat-section2">
-                  <h3>Direct Messages</h3>
-                    <div className="direct-messages" style={{ maxHeight: '10vh', overflowY: 'auto' }}>
+                <div className="chat-section">
+                  <div className='sec-name'>
+                    <h3>Direct Messages</h3>
+                    <FontAwesomeIcon className='plus-icon' icon={faPlus} color='#333333' onClick={openNewDirect}/>
+                  </div>
+                  <div className="direct-messages" style={{ maxHeight: '10vh', overflowY: 'auto' }}>
                     <ul>
                       {directRooms.map((dm, index) => {
                         let otherUser = dm.users.find(user => user.id !== loggedInUser?.id);
@@ -366,11 +379,15 @@ const Chat = () => {
 
                         return (
                           <li key={index}>
-                            <button onClick={() => setSelectedRoom(dm)}>{otherUsername}</button>
-                            {!isUserBlocked 
-                              ? <button onClick={blockUser}>Block</button> 
-                              : <button onClick={unblockUser}>Unblock</button>
-                            }
+                            <button onClick={() => {
+                              setNewChannelOpened(false); 
+                              setNewDirectOpened(false); 
+                              setSelectedRoom(dm); 
+                              setOtherUsername(otherUsername);
+                              setIsChatHeaderClicked(false)
+                            }}>
+                              {otherUsername}
+                            </button>
                           </li>
                         );
                       })}
@@ -378,59 +395,87 @@ const Chat = () => {
                   </div>
                 </div>
               </>
-            ) : (
-              // New Chat Sidebar
-              <div className="new-chat-sidebar">
-
-                {/* New Group Message Section */}
-                <div className="new-group-message">
-                  <h3>Create Group Chat</h3>
-                  <input type="text" placeholder="Usernames separated by comma" value={groupChatUsername} onChange={e => setGroupChatUsername(e.target.value)} />
-                  <input type="text" placeholder="Room Name" value={newRoomName} onChange={e => setNewRoomName(e.target.value)} />
-                  <select onChange={e => setRoomType(e.target.value as 'PUBLIC' | 'PRIVATE' | 'PASSWORD')}>
-                    <option value='PUBLIC'>Public</option>
-                    <option value='PRIVATE'>Private</option>
-                    <option value='PASSWORD'>Password Protected</option>
-                  </select>
-                  <button onClick={() => createNewChat(roomType, groupChatUsername.split(',').map(name => name.trim()))}>Create Group Chat</button>
-                </div>
-
-                {/* New Direct Message Section */}
-                <div className="new-direct-message">
-                  <h3>Create Direct Message</h3>
-                  <input type="text" placeholder="Username" value={directMessageUsername} onChange={e => setDirectMessageUsername(e.target.value)} />
-                  <button onClick={() => createNewChat('DIRECT', [directMessageUsername])}>Create Direct Message</button>
-                </div>
-
-                {/* Cancel Button */}
-                <button onClick={closeChatCreation}>Cancel</button>
-              </div>
-            )}
           </div>
+
 
           {/* Chat Section */}
           <div className="chat">
+            {/* Chat Header */}
+            {selectedRoom && 
+              <div 
+                className="chat-header" 
+                onClick={selectedRoom.roomType === 'DIRECT' ? () => setIsChatHeaderClicked(!isChatHeaderClicked) : undefined}>
+                <img src={Pic} alt="Profile" />
+                {selectedRoom.roomType === 'DIRECT' ? <h2>{otherUsername}</h2> : <h2>{selectedRoom.roomName}</h2>}
+              </div>
+            }
+            
+
+          {/* Block/Unblock Modal */}
+          {isChatHeaderClicked && (
+            <div className="new-chat-create">
+              <h3>Block/Unblock User</h3>
+
+              {!isUserBlocked 
+                ? <button onClick={blockUser}>Block</button> 
+                : <button onClick={unblockUser}>Unblock</button>
+              }
+                
+              <button onClick={() => setIsChatHeaderClicked(false)}>Cancel</button>
+            </div>
+          )}
+
             
             {/* Messages */}
-            <div className="messages">
+            <div className={newChannelOpened || newDirectOpened ? "messages creation-window" : "messages"}>
+            
+            { newChannelOpened && (
+              <div className="new-chat-create new-chat-create-group">
+                <h3>Create Group Chat</h3>
+                <input type="text" placeholder="Usernames separated by comma" value={groupChatUsername} onChange={e => setGroupChatUsername(e.target.value)} />
+                <input type="text" placeholder="Room Name" value={newRoomName} onChange={e => setNewRoomName(e.target.value)} />
+                <select onChange={e => setRoomType(e.target.value as 'PUBLIC' | 'PRIVATE' | 'PASSWORD')}>
+                  <option value='PUBLIC'>Public</option>
+                  <option value='PRIVATE'>Private</option>
+                  <option value='PASSWORD'>Password Protected</option>
+                </select>
+                <button onClick={() => createNewChat(roomType, groupChatUsername.split(',').map(name => name.trim()))}>Create Group Chat</button>
+
+                  <button onClick={() => {setNewChannelOpened(false)}}>Cancel</button>
+              </div>
+            )}
+
+            { newDirectOpened && (
+              <div className="new-chat-create">
+                <h3>Create Direct Message</h3>
+                <input type="text" placeholder="Username" value={directMessageUsername} onChange={e => setDirectMessageUsername(e.target.value)} />
+                <button onClick={() => createNewChat('DIRECT', [directMessageUsername])}>Create Direct Message</button>
+
+                <button onClick={() => {setNewDirectOpened(false)}}>Cancel</button>
+              </div>
+              )}
+
               {/* First message */}
               {selectedRoom && selectedRoom.messages.map((message, index) => (
                 <div 
                   className={`message ${loggedInUser && loggedInUser.id === message.userId ? "user-message" : "other-message"}`} 
                   key={index}
                 >
-                  <img src={Pic} alt="Profile" />
-                  <div className="message-content">
+                  {!(loggedInUser && loggedInUser.id === message.userId) && <img src={Pic} alt="Profile" />}
+                  <div className={(loggedInUser && loggedInUser.id === message.userId) ? "message-content user-message-content" : "message-content"}>
                     <p>{message.content}</p>
-                    <span className="message-time">{new Date(message.createdAt).toLocaleTimeString()}</span>
+                    <span className="message-time">{new Date(message.createdAt).toLocaleTimeString(undefined, {
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        })}</span>
                   </div>
                 </div>
               ))}
             </div>
             {/* Message Input */}
             <div className="message-input">
-            <input type="text" placeholder="Type a message..." value={messageInput} onChange={e => setMessageInput(e.target.value)} />
-            <button onClick={handleSendMessage}>Send</button>
+              <input type="text" placeholder="Type a message..." value={messageInput} onKeyDown={handleKeyPress} onChange={e => setMessageInput(e.target.value)} />
+              <button onClick={handleSendMessage}>Send</button>
             </div>
           </div>
         </div>
