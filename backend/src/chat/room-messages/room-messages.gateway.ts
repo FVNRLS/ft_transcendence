@@ -31,50 +31,6 @@ export class MessagesGateway {
     private readonly prisma: PrismaService
     ) {}
 
-  // @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
-  // @SubscribeMessage('sendMessageToRoom')
-  // async sendMessageToRoom(
-  //   @MessageBody() createMessageDto: CreateMessageDto,
-  //   @ConnectedSocket() client: Socket
-  //   ) {
-  //     const newMessage = await this.messagesService.create(createMessageDto, client);
-  //     this.server.to(`room-${createMessageDto.roomId}`).emit('newMessage', newMessage); // broadcast the new message to all clients in the room
-  //     // this.server.emit('newMessage', newMessage);
-  //     return newMessage;
-  // }
-
-  // @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
-  // @SubscribeMessage('sendMessageToRoom')
-  // async sendMessageToRoom(
-  //   @MessageBody() createMessageDto: CreateMessageDto,
-  //   @ConnectedSocket() client: Socket
-  // ) {
-  //   const newMessage = await this.messagesService.create(createMessageDto, client);
-  
-  //   // Get the list of users who have blocked the author
-  //   const blockedUsers = await this.prisma.block.findMany({
-  //     where: { blockedId: client.data.userId },
-  //   });
-  
-  //   // Get the list of user ids from the block relation
-  //   const blockedUserIds = blockedUsers.map(block => block.blockerId);
-  
-  //   // Get the list of users in the room who haven't blocked the author
-  //   const recipients = await this.prisma.userOnRooms.findMany({
-  //     where: { 
-  //       roomId: createMessageDto.roomId,
-  //       NOT: { userId: { in: blockedUserIds } },
-  //     },
-  //   });
-  
-  //   // Emit the new message to each recipient
-  //   for (const recipient of recipients) {
-  //     this.server.to(`user-${recipient.userId}`).emit('newMessage', newMessage);
-  //   }
-  
-  //   return newMessage;
-  // }
-
   @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
   @SubscribeMessage('sendMessageToRoom')
   async sendMessageToRoom(
@@ -149,25 +105,37 @@ export class MessagesGateway {
       const blockerId = client.data.userId; // Assuming the blocker's id is stored in the socket data
       
       const result = await this.messagesService.blockUser(blockerId, blockDto.blockedId);
-
-      return result;
+  
+      return { success: result.success, message: result.message };
     } catch (error) {
       console.log('Error:', error.message);
-      return { error: error.message };
+      return { success: false, error: error.message };
     }
   }
-
+  
   @SubscribeMessage('unblockUser')
   async unblockUser(@ConnectedSocket() client: Socket, @MessageBody() blockDto: { blockedId: number }) {
     try {
       const blockerId = client.data.userId; // Assuming the blocker's id is stored in the socket data
       
       const result = await this.messagesService.unblockUser(blockerId, blockDto.blockedId);
-
-      return result;
+  
+      return { success: result.success, message: result.message };
     } catch (error) {
       console.log('Error:', error.message);
-      return { error: error.message };
+      return { success: false, error: error.message };
     }
   }
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('getBlockedUsers')
+  async getBlockedUsers(@ConnectedSocket() client: Socket) {
+    const userId = client.data.userId;
+    const blockedUserIds = await this.messagesService.getBlockedUsers(userId);
+  
+    client.emit('getBlockedUsers', blockedUserIds);
+  }
+  
+  
+  
 }
