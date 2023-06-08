@@ -267,3 +267,37 @@ ul
 .new-chat-create-group {
 	height: 70%;
 }
+
+.chat-header {
+	height: 50px;
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	background-color: white; /* makes the header white */
+  }
+  
+  .chat-header img {
+	height: 30px;
+	margin-right: 10px;
+  }
+  
+  .chat-header h2 {
+	margin: 0;
+	color: #333; /* consider changing the text color if the background is white */
+  }
+  
+  .chat-header-modal {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background-color: white;
+	padding: 20px;
+	z-index: 1000;
+	width: 200px;
+	height: 200px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
+	align-items: center;
+}

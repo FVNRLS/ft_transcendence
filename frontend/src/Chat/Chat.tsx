@@ -59,6 +59,11 @@ const Chat = () => {
   const [messageInput, setMessageInput] = useState("");
   const [newDirectOpened, setNewDirectOpened] = useState(false);
   const [newChannelOpened, setNewChannelOpened] = useState(false);
+  const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);
+  const [blockedUsers, setBlockedUsers] = useState<number[]>([]);
+  const [isChatHeaderClicked, setIsChatHeaderClicked] = useState(false);
+  const [otherUsername, setOtherUsername] = useState<string>('');
+
 
   // Reference for the socket
   const socketRef = useRef<Socket | null>(null);
@@ -119,6 +124,46 @@ const Chat = () => {
       setMessageInput("");
     }
   };  
+
+  const blockUser = () => {
+    console.log("Block User");
+    if (selectedRoom && selectedRoom.users) {
+      const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser?.id);
+      console.log("LOL");
+      if (otherUser) {
+        console.log("YES");
+        // socketRef.current?.emit('blockUser', { blockedId: otherUser.id });
+        socketRef.current?.emit('blockUser', { blockedId: otherUser.id }, (response: any) => {
+          console.log(response);
+          if (response.success) {
+            setIsUserBlocked(true);
+            socketRef.current?.emit('getBlockedUsers');
+          } else {
+            console.error('Block user failed:', response.message);
+          }
+        });
+        
+      }
+    }
+  }
+  
+  const unblockUser = () => {
+    if (selectedRoom && selectedRoom.users) {
+      const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser?.id);
+      if (otherUser) {
+        // socketRef.current?.emit('unblockUser', { blockedId: otherUser.id });
+        socketRef.current?.emit('unblockUser', { blockedId: otherUser.id }, (response: any) => {
+          if (response.success) {
+            setIsUserBlocked(false);
+            socketRef.current?.emit('getBlockedUsers');
+          } else {
+            console.error('Unblock user failed:', response.message);
+          }
+        });
+        
+      }
+    }
+  }
   
   // UseEffect hook for initializing socket connection, fetching user and rooms data
   useEffect(() => {
@@ -136,12 +181,19 @@ const Chat = () => {
         socketRef.current?.on('user_verified', () => {
           socketRef.current?.emit('getCurrentUser');
           socketRef.current?.emit('getUserRooms');
+          socketRef.current?.emit('getBlockedUsers');
+
         });
       });
   
       socketRef.current?.on('currentUser', (user: User) => {
         setLoggedInUser(user);
       });
+
+      socketRef.current?.on('getBlockedUsers', (data) => {
+        // data would be an array of blocked users' IDs
+        setBlockedUsers(data);
+    });
   
       socketRef.current?.on('getUserRooms', (rooms: Room[]) => {
         const directRooms2 = rooms.filter((room: Room) => room.roomType === 'DIRECT');
@@ -151,18 +203,6 @@ const Chat = () => {
         setChannels(nonDirectRooms);
         console.log(directRooms2);
       });
-  
-      // // New handler for joinedRoom event
-      // socketRef.current?.on('joinedRoom', (newRoom: Room) => {
-      //   console.log("Joined Room");
-      //   console.log(newRoom);
-      //   if(newRoom.roomType === 'DIRECT') {
-      //     setDirectRooms((prevRooms) => [...prevRooms, newRoom]);
-      //   } else {
-      //     setChannels((prevRooms) => [...prevRooms, newRoom]);
-      //   }
-      //   // console.log(directRooms);
-      // });
   
       socketRef.current?.on('joinedRoom', (newRoom: Room) => {
         console.log("Joined Room");
@@ -252,10 +292,22 @@ const Chat = () => {
     return () => {
       socketRef.current?.off('getUserRooms');
       socketRef.current?.off('newMessage');
+      socketRef.current?.off('getBlockedUsers');
       socketRef.current?.disconnect();
     };
 
   }, [navigate, session, selectedRoom]);
+
+  useEffect(() => {
+    if (selectedRoom && loggedInUser) {
+      const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser.id);
+      if (otherUser) {
+        console.log("USE EFFECT 2");
+        console.log(blockedUsers);
+        setIsUserBlocked(blockedUsers.includes(otherUser.id));
+      }
+    }
+  }, [selectedRoom, loggedInUser, blockedUsers]);
   
   const handleKeyPress = (event:any) => {
     if (event.key === 'Enter') {
@@ -267,12 +319,14 @@ const Chat = () => {
     setSelectedRoom(null);
     setNewChannelOpened(false);
     setNewDirectOpened(true);
+    setIsChatHeaderClicked(false)
   }
 
   const openNewChannel = () => {
     setSelectedRoom(null);
     setNewDirectOpened(false);
     setNewChannelOpened(true);
+    setIsChatHeaderClicked(false)
   }
 
   // Return JSX for the chat page
@@ -304,7 +358,7 @@ const Chat = () => {
                     <ul>
                       {channels.map((channel, index) => (
                         <li key={index}>
-                          <button onClick={() => {setNewChannelOpened(false); setNewDirectOpened(false); setSelectedRoom(channel)}}>{channel.roomName}</button>
+                          <button onClick={() => {setNewChannelOpened(false); setNewDirectOpened(false); setSelectedRoom(channel); setIsChatHeaderClicked(false)}}>{channel.roomName}</button>
                         </li>
                       ))}
                     </ul>
@@ -325,7 +379,15 @@ const Chat = () => {
 
                         return (
                           <li key={index}>
-                            <button onClick={() => {setNewChannelOpened(false); setNewDirectOpened(false); setSelectedRoom(dm)}}>{otherUsername}</button>
+                            <button onClick={() => {
+                              setNewChannelOpened(false); 
+                              setNewDirectOpened(false); 
+                              setSelectedRoom(dm); 
+                              setOtherUsername(otherUsername);
+                              setIsChatHeaderClicked(false)
+                            }}>
+                              {otherUsername}
+                            </button>
                           </li>
                         );
                       })}
@@ -335,8 +397,34 @@ const Chat = () => {
               </>
           </div>
 
+
           {/* Chat Section */}
           <div className="chat">
+            {/* Chat Header */}
+            {selectedRoom && 
+              <div 
+                className="chat-header" 
+                onClick={selectedRoom.roomType === 'DIRECT' ? () => setIsChatHeaderClicked(!isChatHeaderClicked) : undefined}>
+                <img src={Pic} alt="Profile" />
+                {selectedRoom.roomType === 'DIRECT' ? <h2>{otherUsername}</h2> : <h2>{selectedRoom.roomName}</h2>}
+              </div>
+            }
+            
+
+          {/* Block/Unblock Modal */}
+          {isChatHeaderClicked && (
+            <div className="new-chat-create">
+              <h3>Block/Unblock User</h3>
+
+              {!isUserBlocked 
+                ? <button onClick={blockUser}>Block</button> 
+                : <button onClick={unblockUser}>Unblock</button>
+              }
+                
+              <button onClick={() => setIsChatHeaderClicked(false)}>Cancel</button>
+            </div>
+          )}
+
             
             {/* Messages */}
             <div className={newChannelOpened || newDirectOpened ? "messages creation-window" : "messages"}>

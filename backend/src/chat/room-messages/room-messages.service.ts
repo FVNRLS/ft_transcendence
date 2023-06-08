@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-room-message.dto';
 import { UpdateMessageDto } from './dto/update-room-message.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -73,14 +73,14 @@ export class MessagesService {
   async blockUser(blockerId: number, blockedId: number) {
     // Check if this block relation already exists
     const existingBlock = await this.prisma.block.findFirst({
-          where: {
-            blockerId: blockerId,
-            blockedId: blockedId,
-          },
+      where: {
+        blockerId: blockerId,
+        blockedId: blockedId,
+      },
     });
   
     if (existingBlock) {
-      return { message: 'User already blocked.' };
+      return { success: true, message: 'User already blocked.' };
     }
   
     // Check if blockedId is defined
@@ -96,11 +96,9 @@ export class MessagesService {
       },
     });
   
-    return { message: 'User successfully blocked.', block: newBlock };
+    return { success: true, message: 'User successfully blocked.', block: newBlock };
   }
   
-  
-
   async unblockUser(blockerId: number, blockedId: number) {
     // Check if this block relation exists
     const existingBlock = await this.prisma.block.findFirst({
@@ -109,19 +107,19 @@ export class MessagesService {
         blockedId: blockedId,
       },
     });
-
+  
     if (!existingBlock) {
-      return { message: 'Block relation does not exist.' };
+      return { success: true, message: 'Block relation does not exist.' };
     }
-
+  
     // Delete the block relation
     await this.prisma.block.delete({
       where: {
         id: existingBlock.id,
       },
     });
-
-    return { message: 'User successfully unblocked.' };
+  
+    return { success: true, message: 'User successfully unblocked.' };
   }
 
   async isBlocked(blockerId: number, blockedId: number): Promise<boolean> {
@@ -134,5 +132,27 @@ export class MessagesService {
   
     return block !== null;
   }
+
+  // async getBlockedUsers(userId: number) {
+  //   const blockedUsers = await this.prisma.block.findMany({
+  //     where: { blockerId: userId },
+  //     include: { blocked: true },  // This line includes the details of the blocked users
+  //   });
   
+  //   // We only need the details of the blocked users, so map to get those
+  //   const blockedUsersDetails = blockedUsers.map(block => block.blocked);
+  
+  //   return blockedUsersDetails;
+  // }
+
+  async getBlockedUsers(userId: number): Promise<number[]> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { blockedUsers: true },
+    });
+  
+    if (!user) throw new NotFoundException(`User with ID ${userId} not found`);
+  
+    return user.blockedUsers.map(block => block.blockedId);
+  }  
 }
