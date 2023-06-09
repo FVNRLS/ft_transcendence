@@ -115,7 +115,6 @@ ul
 	flex: 1;
 	padding: 20px;
 	overflow-y: scroll;
-	display: flex;
 	flex-direction: column;
 	justify-content: flex-end;
 }
@@ -272,32 +271,31 @@ ul
 	height: 50px;
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	cursor: pointer;
-	background-color: white; /* makes the header white */
+	background-color: #ffffffce;
   }
   
-  .chat-header img {
-	height: 30px;
-	margin-right: 10px;
-  }
-  
-  .chat-header h2 {
+.chat-header h2 {
 	margin: 0;
-	color: #333; /* consider changing the text color if the background is white */
-  }
-  
-  .chat-header-modal {
-	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	background-color: white;
-	padding: 20px;
-	z-index: 1000;
-	width: 200px;
-	height: 200px;
-	display: flex;
-	flex-direction: column;
-	justify-content: space-around;
-	align-items: center;
+	color: rgb(71, 71, 71);
+	font-family: "Montserrat", sans-serif;
+}
+
+.block-menu {
+	position: absolute;
+	transform: translateY(-40px);
+}
+
+.block-menu button {
+	border: 0;
+	width: 120px;
+	height: 30px;
+	background-color: rgb(71, 71, 71);
+	color: white;
+	font-family: "Montserrat", sans-serif;
+}
+
+.block-menu button:hover {
+	cursor: pointer;
 }

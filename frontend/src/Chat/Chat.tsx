@@ -44,6 +44,9 @@ interface ChatDetails {
 
 // Chat component
 const Chat = () => {
+
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
   // Fetching session data
   const session = Cookies.get('session');
   // Instantiate navigate for routing
@@ -299,6 +302,13 @@ const Chat = () => {
   }, [navigate, session, selectedRoom]);
 
   useEffect(() => {
+    // Scroll to the bottom when a new message appears
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [selectedRoom?.messages]);
+
+  useEffect(() => {
     if (selectedRoom && loggedInUser) {
       const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser.id);
       if (otherUser) {
@@ -404,30 +414,25 @@ const Chat = () => {
             {selectedRoom && 
               <div 
                 className="chat-header" 
-                onClick={selectedRoom.roomType === 'DIRECT' ? () => setIsChatHeaderClicked(!isChatHeaderClicked) : undefined}>
-                <img src={Pic} alt="Profile" />
+                onClick={selectedRoom.roomType === 'DIRECT' ? () => {
+                  setIsChatHeaderClicked(!isChatHeaderClicked);
+                  } : undefined}>
                 {selectedRoom.roomType === 'DIRECT' ? <h2>{otherUsername}</h2> : <h2>{selectedRoom.roomName}</h2>}
+                          {/* Block/Unblock Modal */}
+                {isChatHeaderClicked && (
+                  <div className="block-menu">
+                    {!isUserBlocked 
+                      ? <button onClick={blockUser}>Block User</button> 
+                      : <button onClick={unblockUser}>Unblock User</button>
+                    }
+                  </div>
+                )}
               </div>
             }
-            
-
-          {/* Block/Unblock Modal */}
-          {isChatHeaderClicked && (
-            <div className="new-chat-create">
-              <h3>Block/Unblock User</h3>
-
-              {!isUserBlocked 
-                ? <button onClick={blockUser}>Block</button> 
-                : <button onClick={unblockUser}>Unblock</button>
-              }
-                
-              <button onClick={() => setIsChatHeaderClicked(false)}>Cancel</button>
-            </div>
-          )}
 
             
             {/* Messages */}
-            <div className={newChannelOpened || newDirectOpened ? "messages creation-window" : "messages"}>
+            <div className={newChannelOpened || newDirectOpened ? "messages creation-window" : "messages"} ref={messagesContainerRef}>
             
             { newChannelOpened && (
               <div className="new-chat-create new-chat-create-group">
