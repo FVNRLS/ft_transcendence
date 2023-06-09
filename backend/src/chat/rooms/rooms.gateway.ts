@@ -114,20 +114,6 @@ export class RoomsGateway {
       messages: newRoom.messages,
     };
   }
-  
-  // notifyConnectedUsers(newRoom: RoomDetailsDto, createRoomDto: CreateRoomDto) {
-  //   if(createRoomDto.members) {
-  //     const userIds = createRoomDto.members.map(member => member.id);
-  //     userIds.forEach(userId => {
-  //       const socketId = ChatAuthGateway.userToSocketIdMap[userId];
-  //       if (socketId && this.server.sockets.sockets.get(socketId)) {
-  //         const roomName = `room-${newRoom.id}`;
-  //         this.server.sockets.sockets.get(socketId).join(roomName);
-  //         this.server.to(socketId).emit('joinedRoom', newRoom);
-  //       }
-  //     });
-  //   }
-  // }
 
   notifyConnectedUsers(newRoom: RoomDetailsDto) {
     if(newRoom.userOnRooms) {
@@ -180,11 +166,11 @@ export class RoomsGateway {
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('joinRoom')
   async joinRoom(
-    @MessageBody('roomId') roomId: number, 
+    @MessageBody() payload: {roomId: number, password: string}, 
     @ConnectedSocket() client: Socket,
     ) {
     try {
-      return await this.roomsService.joinRoom(roomId, client);
+      return await this.roomsService.joinRoom(payload.roomId, client, payload.password);
     } catch (error) {
       console.log('Error:', error.message);
       return {error: error.message};
@@ -205,59 +191,6 @@ export class RoomsGateway {
     }
   }
 
-  // @SubscribeMessage('getUserRooms')
-  // async getUserRooms(@ConnectedSocket() client: Socket) {
-  //   const userId = client.data.userId; // Get the userId from the client
-  
-  //   const userRooms = await this.prisma.userOnRooms.findMany({
-  //     where: { userId: userId },
-  //     include: {
-  //       room: {
-  //         select: {
-  //           id: true,
-  //           roomName: true,
-  //           roomType: true,
-  //           // Include users in each room
-  //           userOnRooms: {
-  //             select: {
-  //               user: {
-  //                 select: {
-  //                   id: true,
-  //                   username: true,
-  //                   // Include other fields as required
-  //                 }
-  //               }
-  //             }
-  //           },
-  //           // Include last 100 messages in each room
-  //           messages: {
-  //             select: {
-  //               id: true,
-  //               userId: true,
-  //               roomId: true,
-  //               createdAt: true,
-  //               content: true,
-  //             },
-  //             orderBy: {
-  //               createdAt: 'asc',
-  //             },
-  //             take: 100,
-  //           },
-  //           // Include other room data as required
-  //         }
-  //       },
-  //     },
-  //   });
-  
-  //   client.emit('getUserRooms', userRooms.map(userRoom => ({
-  //     ...userRoom.room,
-  //     users: userRoom.room.userOnRooms.map(ur => ur.user),
-  //     messages: userRoom.room.messages,
-  //   })));
-  
-  //   return "Success";
-  // }
-
   @SubscribeMessage('getUserRooms')
   async getUserRooms(@ConnectedSocket() client: Socket) {
     const userId = client.data.userId; // Get the userId from the client
@@ -275,6 +208,7 @@ export class RoomsGateway {
             id: true,
             roomName: true,
             roomType: true,
+            hashedPassword: true,
             // Include users in each room
             userOnRooms: {
               select: {
@@ -320,7 +254,10 @@ export class RoomsGateway {
     });
   
     client.emit('getUserRooms', userRooms.map(userRoom => ({
-      ...userRoom.room,
+      id: userRoom.room.id,
+      roomName: userRoom.room.roomName,
+      roomType: userRoom.room.roomType,
+      hasPassword: userRoom.room.hashedPassword !== null,
       users: userRoom.room.userOnRooms.map(ur => ur.user),
       messages: userRoom.room.messages,
     })));
@@ -340,6 +277,32 @@ export class RoomsGateway {
     } catch (error) {
       console.log('Error:', error.message);
       return {error: error.message};
+    }
+  }
+
+  @UseGuards(WsJwtAuthGuard, WsIsUserRoomCreatorGuard)
+  @SubscribeMessage('updateRoomPassword')
+  async handleUpdateRoomPassword(@ConnectedSocket() client: Socket, @MessageBody() payload: { roomId: number, newPassword: string }) {
+    try {
+      console.log("Hello");
+      console.log(payload);
+      const updatedRoom = await this.roomsService.updateRoomPassword(payload.roomId, payload.newPassword);
+      client.emit('roomPasswordUpdated', { roomId: payload.roomId });
+      return { success: true, message: 'Room password has been updated.' };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  @UseGuards(WsJwtAuthGuard, WsIsUserRoomCreatorGuard)
+  @SubscribeMessage('removeRoomPassword')
+  async handleRemoveRoomPassword(@ConnectedSocket() client: Socket, @MessageBody() payload: { roomId: number }) {
+    try {
+      const updatedRoom = await this.roomsService.removeRoomPassword(payload.roomId);
+      client.emit('roomPasswordRemoved', { roomId: payload.roomId });
+      return { success: true, message: 'Room password has been removed.' };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
   }
 }

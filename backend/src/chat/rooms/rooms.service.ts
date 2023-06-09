@@ -4,7 +4,9 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Socket } from 'socket.io';
 import { SecurityService } from 'src/security/security.service';
-import { Prisma, UserRole } from '@prisma/client';
+import { Prisma, RoomType, UserRole } from '@prisma/client';
+import * as argon2 from "argon2";
+
 
 
 @Injectable()
@@ -16,11 +18,21 @@ export class RoomsService {
 
   async createGroupRoom(createRoomDto: CreateRoomDto) {
     const client_id = createRoomDto.members[createRoomDto.members.length - 1].id;
+    let salt = null;
+    let hashedPassword = null;
+
+    if (createRoomDto.password)
+    {
+      const hashedResults = await this.securityService.hashPassword(createRoomDto.password);
+      salt = hashedResults.salt;
+      hashedPassword = hashedResults.hashedPassword;
+    }
     const room = await this.prisma.room.create({
       data: {
-        roomName: createRoomDto.roomName,
-        roomType: createRoomDto.roomType,
-        password: createRoomDto.password,
+        roomName:       createRoomDto.roomName,
+        roomType:       createRoomDto.roomType,
+        hashedPassword: hashedPassword,
+        salt:           salt,
         userId: client_id,
       },
     });
@@ -158,11 +170,11 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       console.log("Room already exists");
       return null;
     }
+ 
     const room = await this.prisma.room.create({
       data: {
         roomName: createRoomDto.roomName,
         roomType: createRoomDto.roomType,
-        password: createRoomDto.password,
         userId: client_id,
       },
     });
@@ -237,14 +249,24 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
     if (room.userId !== client.data.userId) {
       throw new Error('You are not authorized to update this room');
     }
+    let salt = null;
+    let hashedPassword = null;
+
+    if (updateRoomDto.password)
+    {
+      const hashedResults = await this.securityService.hashPassword(updateRoomDto.password);
+      salt = hashedResults.salt;
+      hashedPassword = hashedResults.hashedPassword;
+    }
     return this.prisma.room.update({
       where: { id: roomId },
       data: {
-        id: updateRoomDto.roomId,
-        roomName: updateRoomDto.roomName,
-        roomType: updateRoomDto.roomType,
-        password: updateRoomDto.password,
-        userId: updateRoomDto.userId,
+        id:             updateRoomDto.roomId,
+        roomName:       updateRoomDto.roomName,
+        roomType:       updateRoomDto.roomType,
+        hashedPassword: hashedPassword,
+        salt:           salt,
+        userId:         updateRoomDto.userId,
       },
     });
   }
@@ -264,17 +286,29 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
     });
   }
 
-  async joinRoom(roomId: number, client: Socket) {
+  async joinRoom(roomId: number, client: Socket, password?: string) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
   
     if (!room) {
       throw new Error('Room not found');
     }
   
-    // Assuming the client has userId stored in it
-    const userId = client.data.userId;
+    // If the room has a password and the room type is 'PASSWORD', check that the entered password is correct
+    if (room.hashedPassword && room.salt && room.roomType === RoomType.PASSWORD) {
+      if (!password) {
+        throw new Error('This room requires a password to join.');
+      }
   
-    // First, check if the user is already in the room
+      // const hashedPassword = await this.securityService.hashPassword(password, room.salt);
+			const passwordValid = await argon2.verify(room.hashedPassword, password);
+
+  
+      if (!passwordValid) {
+        throw new Error('Incorrect password.');
+      }
+    }
+  
+    const userId = client.data.userId;
     const userInRoom = await this.prisma.userOnRooms.findFirst({
       where: {
         userId: userId,
@@ -282,7 +316,6 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       },
     });
   
-    // If the user is not in the room, add them
     if (!userInRoom) {
       await this.prisma.userOnRooms.create({
         data: {
@@ -291,7 +324,10 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
         },
       });
     }
+   return { success: true, message: "Sucessfully joined room." };
+
   }
+  
 
   async leaveRoom(roomId: number, client: Socket) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
@@ -379,5 +415,50 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       },
     });
   }
+
+  async updateRoomPassword(roomId: number, newPassword: string) {
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+    });
+    if (!room) {
+      throw new Error(`No room found for id ${roomId}`);
+    }
+    let salt = null;
+    let hashedPassword = null;
+
+    if (newPassword)
+    {
+      const hashedResults = await this.securityService.hashPassword(newPassword);
+      salt = hashedResults.salt;
+      hashedPassword = hashedResults.hashedPassword;
+    }
+  
+    return this.prisma.room.update({
+      where: { id: roomId },
+      data: {
+        hashedPassword,
+        salt,
+      },
+    });
+  }
+  
+  async removeRoomPassword(roomId: number) {
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+    });
+    if (!room) {
+      throw new Error(`No room found for id ${roomId}`);
+    }
+
+    return this.prisma.room.update({
+      where: { id: roomId },
+      data: {
+        hashedPassword: null,
+        salt: null,
+      },
+    });
+  }
+  
+
    
 }

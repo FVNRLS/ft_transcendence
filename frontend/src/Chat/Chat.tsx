@@ -129,15 +129,11 @@ const Chat = () => {
   };  
 
   const blockUser = () => {
-    console.log("Block User");
     if (selectedRoom && selectedRoom.users) {
       const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser?.id);
-      console.log("LOL");
       if (otherUser) {
-        console.log("YES");
         // socketRef.current?.emit('blockUser', { blockedId: otherUser.id });
         socketRef.current?.emit('blockUser', { blockedId: otherUser.id }, (response: any) => {
-          console.log(response);
           if (response.success) {
             setIsUserBlocked(true);
             socketRef.current?.emit('getBlockedUsers');
@@ -204,12 +200,13 @@ const Chat = () => {
   
         const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
         setChannels(nonDirectRooms);
+        console.log("Direct Rooms");
         console.log(directRooms2);
+        console.log("Non Direct Rooms");
+        console.log(nonDirectRooms);
       });
   
       socketRef.current?.on('joinedRoom', (newRoom: Room) => {
-        console.log("Joined Room");
-        console.log(newRoom);
         if(newRoom.roomType === 'DIRECT' && newRoom.users) {
           setDirectRooms((prevRooms) => [...prevRooms, newRoom]);
         } else if (newRoom.users) {
@@ -219,8 +216,6 @@ const Chat = () => {
       
   
       socketRef.current?.on('newMessage', (newMessage: Message) => {
-        console.log("New Message");
-        console.log(newMessage);
       
         // Define a helper function to find the room in an array of rooms
         const findRoomIndex = (rooms: Room[]) => rooms.findIndex(room => room.id === newMessage.roomId);
@@ -312,8 +307,6 @@ const Chat = () => {
     if (selectedRoom && loggedInUser) {
       const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser.id);
       if (otherUser) {
-        console.log("USE EFFECT 2");
-        console.log(blockedUsers);
         setIsUserBlocked(blockedUsers.includes(otherUser.id));
       }
     }

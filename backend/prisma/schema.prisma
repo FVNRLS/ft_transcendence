@@ -105,13 +105,15 @@ model Room {
   id                    Int       @id @default(autoincrement())
   roomName              String
   roomType              RoomType     @default(PUBLIC)
-  password              String? 
+  hashedPassword        String?  // This was originally 'password' field
+  salt                  String?  // This is the new 'salt' field
   userId                Int
-  messages              Message[]
   userOnRooms           UserOnRooms[]
+  messages              Message[]
 
   @@map("rooms")
 }
+
 
 model UserOnRooms {
   id           Int      @id @default(autoincrement())
