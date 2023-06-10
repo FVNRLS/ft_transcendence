@@ -9,6 +9,8 @@ import io from 'socket.io-client';
 import { Socket } from 'socket.io-client';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import NewChannelCreation from './NewChannelCreation';
+import NewDirectMessageCreation from './NewDirectMessageCreation';
 
 
 interface Message {
@@ -35,13 +37,6 @@ interface Room {
   messages: Message[]; // Adding the messages array to the Room interface
 }
 
-
-interface ChatDetails {
-  roomType: 'DIRECT' | 'PUBLIC' | 'PRIVATE' | 'PASSWORD';
-  roomName: string;
-  members: { id: number }[];
-}
-
 // Chat component
 const Chat = () => {
 
@@ -57,8 +52,6 @@ const Chat = () => {
   const [directRooms, setDirectRooms] = useState<Room[]>([]);
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [groupChatUsername, setGroupChatUsername] = useState("");
-  const [directMessageUsername, setDirectMessageUsername] = useState("");
   const [messageInput, setMessageInput] = useState("");
   const [newDirectOpened, setNewDirectOpened] = useState(false);
   const [newChannelOpened, setNewChannelOpened] = useState(false);
@@ -70,47 +63,6 @@ const Chat = () => {
 
   // Reference for the socket
   const socketRef = useRef<Socket | null>(null);
-
-  // State variable for room type
-  const [roomType, setRoomType] = useState<'PUBLIC' | 'PRIVATE' | 'PASSWORD'>('PUBLIC');
-  const [newRoomName, setNewRoomName] = useState("");
-
-  // Function to create a new chat
-  const createNewChat = (type: 'DIRECT' | 'PUBLIC' | 'PRIVATE' | 'PASSWORD', usernames: string[]) => {
-
-    // Chat details configuration
-    let chatDetails = {
-      roomType: type,
-      roomName: newRoomName,
-      members: [] as { id: number }[]
-    };
-  
-    if (type === 'DIRECT' && usernames && usernames.length === 1) {
-      // Handle direct chat creation
-      socketRef.current?.emit('getUserIdByUsername', { username: usernames[0] }, handleDirectChatCreation(chatDetails));
-    } else if (usernames) {
-      // Handle group chat creation
-      socketRef.current?.emit('getUsersIdsByUsernames', { usernames: usernames }, handleGroupChatCreation(chatDetails));
-    }
-  };
-
-  const handleGroupChatCreation = (chatDetails: ChatDetails) => (response: { userIds: number[] | null }) => {
-    if (response.userIds) {
-      chatDetails.members.push(...response.userIds.map(id => ({id: id})));
-      socketRef.current?.emit('createRoom', chatDetails);
-    } else {
-      console.log('Users do not exist');
-    }
-  };
-  
-  const handleDirectChatCreation = (chatDetails: ChatDetails) => (response: { userId: number | null }) => {
-    if (response.userId) {
-      chatDetails.members.push({id: response.userId});
-      socketRef.current?.emit('createRoom', chatDetails);
-    } else {
-      console.log('User does not exist');
-    }
-  };
 
   const handleSendMessage = () => {
     if (selectedRoom && messageInput.trim().length > 0) {
@@ -428,29 +380,17 @@ const Chat = () => {
             <div className={newChannelOpened || newDirectOpened ? "messages creation-window" : "messages"} ref={messagesContainerRef}>
             
             { newChannelOpened && (
-              <div className="new-chat-create new-chat-create-group">
-                <h3>Create Group Chat</h3>
-                <input type="text" placeholder="Usernames separated by comma" value={groupChatUsername} onChange={e => setGroupChatUsername(e.target.value)} />
-                <input type="text" placeholder="Room Name" value={newRoomName} onChange={e => setNewRoomName(e.target.value)} />
-                <select onChange={e => setRoomType(e.target.value as 'PUBLIC' | 'PRIVATE' | 'PASSWORD')}>
-                  <option value='PUBLIC'>Public</option>
-                  <option value='PRIVATE'>Private</option>
-                  <option value='PASSWORD'>Password Protected</option>
-                </select>
-                <button onClick={() => createNewChat(roomType, groupChatUsername.split(',').map(name => name.trim()))}>Create Group Chat</button>
-
-                  <button onClick={() => {setNewChannelOpened(false)}}>Cancel</button>
-              </div>
+              <NewChannelCreation 
+              setNewChannelOpened={setNewChannelOpened}
+              socketRef={socketRef}
+            />
             )}
 
             { newDirectOpened && (
-              <div className="new-chat-create">
-                <h3>Create Direct Message</h3>
-                <input type="text" placeholder="Username" value={directMessageUsername} onChange={e => setDirectMessageUsername(e.target.value)} />
-                <button onClick={() => createNewChat('DIRECT', [directMessageUsername])}>Create Direct Message</button>
-
-                <button onClick={() => {setNewDirectOpened(false)}}>Cancel</button>
-              </div>
+              <NewDirectMessageCreation 
+              setNewDirectOpened={setNewDirectOpened}
+              socketRef={socketRef}
+            />
               )}
 
               {/* First message */}
