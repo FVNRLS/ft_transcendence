@@ -11,6 +11,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import NewChannelCreation from './NewChannelCreation';
 import NewDirectMessageCreation from './NewDirectMessageCreation';
+import DirectMessagesHeader from './DirectMessagesHeader';
+import GroupHeader from './GroupHeader';
 
 
 interface Message {
@@ -22,18 +24,20 @@ interface Message {
 }
 
 // Defining interface for User and Room
-interface User {
+export interface User {
   id: number;
   username: string;
 }
 
-interface Room {
+export interface Room {
   id: number;
   roomName: string;
   roomType: 'PUBLIC' | 'PRIVATE' | 'PASSWORD' | 'DIRECT';
   password?: string;
   userId: number;
   users: User[];
+  clientUser: User;
+  receivingUser: User;
   messages: Message[]; // Adding the messages array to the Room interface
 }
 
@@ -58,7 +62,6 @@ const Chat = () => {
   const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);
   const [blockedUsers, setBlockedUsers] = useState<number[]>([]);
   const [isChatHeaderClicked, setIsChatHeaderClicked] = useState(false);
-  const [otherUsername, setOtherUsername] = useState<string>('');
 
 
   // Reference for the socket
@@ -80,12 +83,9 @@ const Chat = () => {
     }
   };  
 
-  const blockUser = () => {
-    if (selectedRoom && selectedRoom.users) {
-      const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser?.id);
-      if (otherUser) {
-        // socketRef.current?.emit('blockUser', { blockedId: otherUser.id });
-        socketRef.current?.emit('blockUser', { blockedId: otherUser.id }, (response: any) => {
+  const blockUser = (user_id: number) => {
+    console.log("Block User");
+        socketRef.current?.emit('blockUser', { blockedId: user_id }, (response: any) => {
           if (response.success) {
             setIsUserBlocked(true);
             socketRef.current?.emit('getBlockedUsers');
@@ -94,16 +94,18 @@ const Chat = () => {
           }
         });
         
-      }
-    }
+    //   }
+    // }
   }
   
-  const unblockUser = () => {
-    if (selectedRoom && selectedRoom.users) {
-      const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser?.id);
-      if (otherUser) {
+  const unblockUser = (user_id: number) => {
+    // if (selectedRoom && selectedRoom.receivingUser) {
+      // const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser?.id);
+      // const otherUser = selectedRoom.receivingUser;
+
+      // if (otherUser) {
         // socketRef.current?.emit('unblockUser', { blockedId: otherUser.id });
-        socketRef.current?.emit('unblockUser', { blockedId: otherUser.id }, (response: any) => {
+        socketRef.current?.emit('unblockUser', { blockedId: user_id }, (response: any) => {
           if (response.success) {
             setIsUserBlocked(false);
             socketRef.current?.emit('getBlockedUsers');
@@ -112,10 +114,10 @@ const Chat = () => {
           }
         });
         
-      }
-    }
+      // }
+    // }
   }
-  
+
   // UseEffect hook for initializing socket connection, fetching user and rooms data
   useEffect(() => {
     // Redirect to 'not-logged' page if there's no session
@@ -257,7 +259,9 @@ const Chat = () => {
 
   useEffect(() => {
     if (selectedRoom && loggedInUser) {
-      const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser.id);
+      // const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser.id);
+      const otherUser = selectedRoom.receivingUser;
+
       if (otherUser) {
         setIsUserBlocked(blockedUsers.includes(otherUser.id));
       }
@@ -329,8 +333,8 @@ const Chat = () => {
                   <div className="direct-messages" style={{ maxHeight: '10vh', overflowY: 'auto' }}>
                     <ul>
                       {directRooms.map((dm, index) => {
-                        let otherUser = dm.users.find(user => user.id !== loggedInUser?.id);
-                        let otherUsername = otherUser ? otherUser.username : 'Unknown user';
+                        let otherUsername = dm.receivingUser.username;
+
 
                         return (
                           <li key={index}>
@@ -338,7 +342,6 @@ const Chat = () => {
                               setNewChannelOpened(false); 
                               setNewDirectOpened(false); 
                               setSelectedRoom(dm); 
-                              setOtherUsername(otherUsername);
                               setIsChatHeaderClicked(false)
                             }}>
                               {otherUsername}
@@ -356,23 +359,30 @@ const Chat = () => {
           {/* Chat Section */}
           <div className="chat">
             {/* Chat Header */}
-            {selectedRoom && 
-              <div 
-                className="chat-header" 
-                onClick={selectedRoom.roomType === 'DIRECT' ? () => {
-                  setIsChatHeaderClicked(!isChatHeaderClicked);
-                  } : undefined}>
-                {selectedRoom.roomType === 'DIRECT' ? <h2>{otherUsername}</h2> : <h2>{selectedRoom.roomName}</h2>}
-                          {/* Block/Unblock Modal */}
-                {isChatHeaderClicked && (
-                  <div className="block-menu">
-                    {!isUserBlocked 
-                      ? <button onClick={blockUser}>Block User</button> 
-                      : <button onClick={unblockUser}>Unblock User</button>
-                    }
-                  </div>
-                )}
-              </div>
+            {selectedRoom && selectedRoom.roomType === 'DIRECT' &&
+              // Inside the Chat component's return statement
+              <DirectMessagesHeader
+                selectedRoom={selectedRoom}
+                isChatHeaderClicked={isChatHeaderClicked}
+                isUserBlocked={isUserBlocked}
+                loggedInUser={loggedInUser}
+                blockUser={blockUser}
+                unblockUser={unblockUser}
+                setIsChatHeaderClicked={setIsChatHeaderClicked}
+              />
+            }
+
+            {selectedRoom && selectedRoom.roomType !== 'DIRECT' &&
+              // Inside the Chat component's return statement
+              <GroupHeader
+                selectedRoom={selectedRoom}
+                isChatHeaderClicked={isChatHeaderClicked}
+                blockedUsers={blockedUsers}
+                blockUser={blockUser}
+                unblockUser={unblockUser}
+                setIsChatHeaderClicked={setIsChatHeaderClicked}
+
+              />
             }
 
             

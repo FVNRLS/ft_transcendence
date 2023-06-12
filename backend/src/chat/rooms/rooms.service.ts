@@ -4,7 +4,7 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Socket } from 'socket.io';
 import { SecurityService } from 'src/security/security.service';
-import { Prisma, RoomType, UserRole } from '@prisma/client';
+import { Prisma, RoomType, User, UserRole } from '@prisma/client';
 import * as argon2 from "argon2";
 
 
@@ -459,6 +459,229 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
     });
   }
   
+
+  // async getUserRooms(userId: number) {
+  //   // Fetch blocked users by the logged-in user
+  //   const blockedUsers = await this.prisma.block.findMany({
+  //     where: { blockerId: userId },
+  //   });
+
+  //   const userRooms = await this.prisma.userOnRooms.findMany({
+  //     where: { userId: userId },
+  //     include: {
+  //       room: {
+  //         select: {
+  //           id: true,
+  //           roomName: true,
+  //           roomType: true,
+  //           hashedPassword: true,
+  //           // Include users in each room
+  //           userOnRooms: {
+  //             select: {
+  //               user: {
+  //                 select: {
+  //                   id: true,
+  //                   username: true,
+  //                   // Include other fields as required
+  //                 }
+  //               }
+  //             }
+  //           },
+  //           // Include last 100 messages in each room
+  //           messages: {
+  //             select: {
+  //               id: true,
+  //               userId: true,
+  //               roomId: true,
+  //               createdAt: true,
+  //               content: true,
+  //             },
+  //             orderBy: {
+  //               createdAt: 'asc',
+  //             },
+  //             take: 100,
+  //              // Exclude messages from blocked users
+  //              where: {
+  //               NOT: blockedUsers.map(blockedUser => {
+  //                 return {
+  //                   userId: blockedUser.blockedId,
+  //                   createdAt: {
+  //                     gte: blockedUser.createdAt,
+  //                   },
+  //                 };
+  //               }),
+  //             },
+  //           },
+  //           // Include other room data as required
+  //         }
+  //       },
+  //     },
+  //   });
+
+  //   return userRooms.map(userRoom => ({
+  //     id: userRoom.room.id,
+  //     roomName: userRoom.room.roomName,
+  //     roomType: userRoom.room.roomType,
+  //     hasPassword: userRoom.room.hashedPassword !== null,
+  //     users: userRoom.room.userOnRooms.map(ur => ur.user),
+  //     messages: userRoom.room.messages,
+  //   }));
+  // }
+
+
+  
+  
+  async getBlockedUsers(userId: number) {
+    return this.prisma.block.findMany({
+      where: { blockerId: userId },
+    });
+  }
+
+  async getUserDirectRooms(userId: number, blockedUsers) {
+    const userRooms = await this.prisma.userOnRooms.findMany({
+      where: { userId: userId, room: { roomType: 'DIRECT' } },
+      include: {
+        room: {
+          select: {
+            id: true,
+            roomName: true,
+            roomType: true,
+            // Include users in each room
+            userOnRooms: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                  },
+                },
+              },
+            },
+            // Include last 100 messages in each room
+            messages: {
+              select: {
+                id: true,
+                userId: true,
+                roomId: true,
+                createdAt: true,
+                content: true,
+              },
+              orderBy: {
+                createdAt: 'asc',
+              },
+              take: 100,
+              where: {
+                NOT: blockedUsers.map(blockedUser => {
+                  return {
+                    userId: blockedUser.blockedId,
+                    createdAt: {
+                      gte: blockedUser.createdAt,
+                    },
+                  };
+                }),
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Format the returned data for Direct rooms
+    return userRooms.map(userRoom => {
+      const users = userRoom.room.userOnRooms.map(ur => ur.user);
+      let clientUser: any | undefined;
+      let receivingUser: any | undefined;
+      
+      // Split the users into clientUser and receivingUser
+      if (users.length === 2) {
+        [clientUser, receivingUser] = users[0].id === userId ? users : users.reverse();
+      }
+
+      return {
+        id: userRoom.room.id,
+        roomName: userRoom.room.roomName,
+        roomType: userRoom.room.roomType,
+        messages: userRoom.room.messages,
+        clientUser,
+        receivingUser,
+      };
+    });
+  }
+
+  async getUserGroupRooms(userId: number, blockedUsers) {
+    const userRooms = await this.prisma.userOnRooms.findMany({
+      where: { userId: userId, room: { roomType: { not: 'DIRECT' } } },
+      include: {
+        room: {
+          select: {
+            id: true,
+            roomName: true,
+            roomType: true,
+            hashedPassword: true,
+            // Include users in each room
+            userOnRooms: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                  },
+                },
+              },
+            },
+            // Include last 100 messages in each room
+            messages: {
+              select: {
+                id: true,
+                userId: true,
+                roomId: true,
+                createdAt: true,
+                content: true,
+              },
+              orderBy: {
+                createdAt: 'asc',
+              },
+              take: 100,
+              where: {
+                NOT: blockedUsers.map(blockedUser => {
+                  return {
+                    userId: blockedUser.blockedId,
+                    createdAt: {
+                      gte: blockedUser.createdAt,
+                    },
+                  };
+                }),
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Format the returned data for Group rooms
+    return userRooms.map(userRoom => ({
+      id: userRoom.room.id,
+      roomName: userRoom.room.roomName,
+      roomType: userRoom.room.roomType,
+      hasPassword: userRoom.room.hashedPassword !== null,
+      users: userRoom.room.userOnRooms.map(ur => ur.user),
+      messages: userRoom.room.messages,
+    }));
+  }
+
+  async getUserRooms(userId: number) {
+    // Fetch blocked users by the logged-in user
+    const blockedUsers = await this.getBlockedUsers(userId);
+
+    // Fetch Direct Rooms
+    const directRooms = await this.getUserDirectRooms(userId, blockedUsers);
+
+    // Fetch Group Rooms
+    const groupRooms = await this.getUserGroupRooms(userId, blockedUsers);
+
+    // Combine and return the results
+    return [...directRooms, ...groupRooms];
+  }
 
    
 }

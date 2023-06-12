@@ -195,73 +195,10 @@ export class RoomsGateway {
   async getUserRooms(@ConnectedSocket() client: Socket) {
     const userId = client.data.userId; // Get the userId from the client
 
-    // Fetch blocked users by the logged-in user
-    const blockedUsers = await this.prisma.block.findMany({
-      where: { blockerId: userId },
-    });
-  
-    const userRooms = await this.prisma.userOnRooms.findMany({
-      where: { userId: userId },
-      include: {
-        room: {
-          select: {
-            id: true,
-            roomName: true,
-            roomType: true,
-            hashedPassword: true,
-            // Include users in each room
-            userOnRooms: {
-              select: {
-                user: {
-                  select: {
-                    id: true,
-                    username: true,
-                    // Include other fields as required
-                  }
-                }
-              }
-            },
-            // Include last 100 messages in each room
-            messages: {
-              select: {
-                id: true,
-                userId: true,
-                roomId: true,
-                createdAt: true,
-                content: true,
-              },
-              orderBy: {
-                createdAt: 'asc',
-              },
-              take: 100,
-               // Exclude messages from blocked users
-               where: {
-                NOT: blockedUsers.map(blockedUser => {
-                  return {
-                    userId: blockedUser.blockedId,
-                    createdAt: {
-                      gte: blockedUser.createdAt,
-                    },
-                  };
-                }),
-              },
-              
-            },
-            // Include other room data as required
-          }
-        },
-      },
-    });
-  
-    client.emit('getUserRooms', userRooms.map(userRoom => ({
-      id: userRoom.room.id,
-      roomName: userRoom.room.roomName,
-      roomType: userRoom.room.roomType,
-      hasPassword: userRoom.room.hashedPassword !== null,
-      users: userRoom.room.userOnRooms.map(ur => ur.user),
-      messages: userRoom.room.messages,
-    })));
-  
+    const userRooms = await this.roomsService.getUserRooms(userId);
+
+    client.emit('getUserRooms', userRooms);
+
     return "Success";
   }
   

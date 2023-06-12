@@ -299,3 +299,45 @@ ul
 .block-menu button:hover {
 	cursor: pointer;
 }
+
+.members-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(255,255,255,0.9);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+  }
+  
+  .members-menu {
+	background: white;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	max-width: 80%;
+	padding: 1em;
+  }
+  
+  .members-menu ul {
+	list-style-type: none;
+	padding: 0;
+  }
+  
+  .members-menu li {
+	padding: 1em;
+	border-bottom: 1px solid #eee;
+	cursor: pointer;
+  }
+  
+  .members-menu li.selected {
+	background: #f5f5f5;
+  }
+  
+  .user-actions {
+	display: flex;
+	gap: 1em;
+	margin-top: 1em;
+  }
+  
