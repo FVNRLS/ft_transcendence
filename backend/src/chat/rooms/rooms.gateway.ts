@@ -224,7 +224,7 @@ export class RoomsGateway {
       console.log("Hello");
       console.log(payload);
       const updatedRoom = await this.roomsService.updateRoomPassword(payload.roomId, payload.newPassword);
-      client.emit('roomPasswordUpdated', { roomId: payload.roomId });
+      client.emit('roomUpdated', { id: updatedRoom.id, roomType: updatedRoom.roomType });
       return { success: true, message: 'Room password has been updated.' };
     } catch (error) {
       return { success: false, message: error.message };
@@ -236,7 +236,7 @@ export class RoomsGateway {
   async handleRemoveRoomPassword(@ConnectedSocket() client: Socket, @MessageBody() payload: { roomId: number }) {
     try {
       const updatedRoom = await this.roomsService.removeRoomPassword(payload.roomId);
-      client.emit('roomPasswordRemoved', { roomId: payload.roomId });
+      client.emit('roomUpdated', { id: updatedRoom.id, roomType: updatedRoom.roomType });
       return { success: true, message: 'Room password has been removed.' };
     } catch (error) {
       return { success: false, message: error.message };

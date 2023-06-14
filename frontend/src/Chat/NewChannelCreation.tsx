@@ -30,6 +30,11 @@ const NewChannelCreation: React.FC<NewChannelCreationProps> = ({ setNewChannelOp
 
   const createNewGroupChat = (newChannelState: NewChannelState) => {
 
+    if (newChannelState.roomType === 'PASSWORD' && (!newChannelState.password || newChannelState.password.trim() === '')) {
+      alert('Please provide a password');
+      return;
+    }
+
     let chatDetails = {
       roomType: newChannelState.roomType,
       roomName: newChannelState.roomName,

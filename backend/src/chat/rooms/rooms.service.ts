@@ -21,6 +21,11 @@ export class RoomsService {
     let salt = null;
     let hashedPassword = null;
 
+    if (createRoomDto.roomType == RoomType.PASSWORD && !createRoomDto.password)
+    {
+      return null;
+    }
+
     if (createRoomDto.password)
     {
       const hashedResults = await this.securityService.hashPassword(createRoomDto.password);
@@ -420,28 +425,46 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
     });
-    if (!room) {
+    if (!room || !newPassword) {
       throw new Error(`No room found for id ${roomId}`);
     }
     let salt = null;
     let hashedPassword = null;
+    let roomType = RoomType.PASSWORD; // default to public
 
-    if (newPassword)
-    {
-      const hashedResults = await this.securityService.hashPassword(newPassword);
-      salt = hashedResults.salt;
-      hashedPassword = hashedResults.hashedPassword;
-    }
+
+    const hashedResults = await this.securityService.hashPassword(newPassword);
+    salt = hashedResults.salt;
+    hashedPassword = hashedResults.hashedPassword;
+
   
     return this.prisma.room.update({
       where: { id: roomId },
       data: {
         hashedPassword,
         salt,
+        roomType
       },
     });
   }
   
+  // async removeRoomPassword(roomId: number) {
+  //   const room = await this.prisma.room.findUnique({
+  //     where: { id: roomId },
+  //   });
+  //   if (!room) {
+  //     throw new Error(`No room found for id ${roomId}`);
+  //   }
+
+  //   return this.prisma.room.update({
+  //     where: { id: roomId },
+  //     data: {
+  //       hashedPassword: null,
+  //       salt: null,
+  //     },
+  //   });
+  // }
+
   async removeRoomPassword(roomId: number) {
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
@@ -455,9 +478,11 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       data: {
         hashedPassword: null,
         salt: null,
+        roomType: 'PUBLIC',
       },
     });
-  }
+}
+
   
 
   // async getUserRooms(userId: number) {
@@ -608,6 +633,67 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
     });
   }
 
+  // async getUserGroupRooms(userId: number, blockedUsers) {
+  //   const userRooms = await this.prisma.userOnRooms.findMany({
+  //     where: { userId: userId, room: { roomType: { not: 'DIRECT' } } },
+  //     include: {
+  //       room: {
+  //         select: {
+  //           id: true,
+  //           roomName: true,
+  //           roomType: true,
+  //           hashedPassword: true,
+  //           // Include users in each room
+  //           userOnRooms: {
+  //             select: {
+  //               user: {
+  //                 select: {
+  //                   id: true,
+  //                   username: true,
+  //                 },
+  //               },
+  //             },
+  //           },
+  //           // Include last 100 messages in each room
+  //           messages: {
+  //             select: {
+  //               id: true,
+  //               userId: true,
+  //               roomId: true,
+  //               createdAt: true,
+  //               content: true,
+  //             },
+  //             orderBy: {
+  //               createdAt: 'asc',
+  //             },
+  //             take: 100,
+  //             where: {
+  //               NOT: blockedUsers.map(blockedUser => {
+  //                 return {
+  //                   userId: blockedUser.blockedId,
+  //                   createdAt: {
+  //                     gte: blockedUser.createdAt,
+  //                   },
+  //                 };
+  //               }),
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   // Format the returned data for Group rooms
+  //   return userRooms.map(userRoom => ({
+  //     id: userRoom.room.id,
+  //     roomName: userRoom.room.roomName,
+  //     roomType: userRoom.room.roomType,
+  //     hasPassword: userRoom.room.hashedPassword !== null,
+  //     users: userRoom.room.userOnRooms.map(ur => ur.user),
+  //     messages: userRoom.room.messages,
+  //   }));
+  // }
+
   async getUserGroupRooms(userId: number, blockedUsers) {
     const userRooms = await this.prisma.userOnRooms.findMany({
       where: { userId: userId, room: { roomType: { not: 'DIRECT' } } },
@@ -627,6 +713,7 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
                     username: true,
                   },
                 },
+                role: true,  // Include user role
               },
             },
             // Include last 100 messages in each room
@@ -664,10 +751,11 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       roomName: userRoom.room.roomName,
       roomType: userRoom.room.roomType,
       hasPassword: userRoom.room.hashedPassword !== null,
-      users: userRoom.room.userOnRooms.map(ur => ur.user),
+      users: userRoom.room.userOnRooms.map(ur => ({...ur.user, role: ur.role})), // Return user with role
       messages: userRoom.room.messages,
     }));
   }
+
 
   async getUserRooms(userId: number) {
     // Fetch blocked users by the logged-in user

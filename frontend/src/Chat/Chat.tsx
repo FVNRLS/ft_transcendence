@@ -27,6 +27,7 @@ interface Message {
 export interface User {
   id: number;
   username: string;
+  role: string;
 }
 
 export interface Room {
@@ -167,6 +168,57 @@ const Chat = () => {
           setChannels((prevRooms) => [...prevRooms, newRoom]);
         }
       });
+
+      socketRef.current?.on('roomUpdated', (updatedRoom: Room) => {
+        console.log("updatedRoom");
+        console.log(updatedRoom);
+        console.log("Old channels");
+        console.log(channels);
+        const updateRooms = (prevRooms: Room[]) => {
+          const roomIndex = prevRooms.findIndex(room => room.id === updatedRoom.id);
+          if (roomIndex !== -1) {
+            // This will update only the fields that are in the updatedRoom object
+            const newRoom = { ...prevRooms[roomIndex], ...updatedRoom };
+            return [
+              ...prevRooms.slice(0, roomIndex),
+              newRoom,
+              ...prevRooms.slice(roomIndex + 1),
+            ];
+          }
+          return prevRooms;
+        };
+        setChannels(prev => updateRooms(prev));
+        setDirectRooms(prev => updateRooms(prev));
+
+      });
+      
+      // socketRef.current?.on('roomUpdated', (updatedRoom: Room) => {
+      //   console.log("roomUpdated");
+      //   console.log(updatedRoom);
+        
+      //   const updateRooms = (prevRooms: Room[]) => {
+      //     const roomIndex = prevRooms.findIndex(room => room.id === updatedRoom.id);
+          
+      //     if (roomIndex !== -1) {
+      //       // Use merge() instead of spreading properties
+      //       const newRoom = merg({}, prevRooms[roomIndex], updatedRoom);
+            
+      //       return [
+      //         ...prevRooms.slice(0, roomIndex),
+      //         newRoom,
+      //         ...prevRooms.slice(roomIndex + 1),
+      //       ];
+      //     }
+          
+      //     return prevRooms;
+      //   };
+        
+      //   console.log("setChannels");
+      //   setChannels(prev => updateRooms(prev));
+      //   setDirectRooms(prev => updateRooms(prev));
+      //   console.log(channels);
+      // });
+      
       
   
       socketRef.current?.on('newMessage', (newMessage: Message) => {
@@ -267,6 +319,27 @@ const Chat = () => {
       }
     }
   }, [selectedRoom, loggedInUser, blockedUsers]);
+
+  useEffect(() => {
+    const currentRoomType = selectedRoom?.roomType; // or whatever the key for the room type is
+    const currentRoomId = selectedRoom?.id;
+    if (currentRoomType && currentRoomId) {
+      if (currentRoomType !== "DIRECT") {
+        const updatedRoom = channels.find((room) => room.id === currentRoomId);
+        if (updatedRoom && JSON.stringify(updatedRoom) !== JSON.stringify(selectedRoom)) {
+          setSelectedRoom(updatedRoom);
+        }
+      } else {
+        // assuming "PRIVATE" and "DIRECT" are the other possible room types
+        const updatedRoom = directRooms.find((room) => room.id === currentRoomId);
+        if (updatedRoom && JSON.stringify(updatedRoom) !== JSON.stringify(selectedRoom)) {
+          setSelectedRoom(updatedRoom);
+        }
+      }
+    }
+  }, [channels, directRooms]);
+  
+  
   
   const handleKeyPress = (event:any) => {
     if (event.key === 'Enter') {
@@ -375,9 +448,11 @@ const Chat = () => {
             {selectedRoom && selectedRoom.roomType !== 'DIRECT' &&
               // Inside the Chat component's return statement
               <GroupHeader
+                loggedInUser={loggedInUser}
                 selectedRoom={selectedRoom}
                 isChatHeaderClicked={isChatHeaderClicked}
                 blockedUsers={blockedUsers}
+                socketRef={socketRef}
                 blockUser={blockUser}
                 unblockUser={unblockUser}
                 setIsChatHeaderClicked={setIsChatHeaderClicked}

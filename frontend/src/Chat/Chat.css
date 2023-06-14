@@ -341,3 +341,10 @@ ul
 	margin-top: 1em;
   }
   
+  .role-display {
+	color: #999999;
+	font-size: 0.8rem;
+	margin-left: 10px;
+	font-style: italic;
+  }
+  
