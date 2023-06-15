@@ -17,7 +17,7 @@ export class GameGateway {
 	server: Server;
 
 	private player1: Player;
-  private player2: Player;
+  	private player2: Player;
 	
 	private gameState = {
 		ball: { x:(1280 / 2 - 15), y: (720 / 2) - 15},
