@@ -143,13 +143,13 @@ export class SecurityService {
 		const COOKIE_NAME = "session";
 
 		const cookieOptions = {
-		maxAge: 2 * 60 * 60, // 2 hours
+		maxAge: 1 * 30, //2 * 60 * 60, // 2 hours
 		httpOnly: true,
 		secure: true,
 		sameSite: "strict" as const, // "strict" is one of the allowed values for sameSite
 		};
 
-		const sessionDuration = 2 * 60 * 60; // 2 hours in seconds
+		const sessionDuration = 1 * 30 //2 * 60 * 60; // 2 hours in seconds
 		try {
 			const cookieValue = JSON.stringify({
 			jwt_token: token,

@@ -20,28 +20,62 @@ export class MailService {
   private readonly apiUrl: string = process.env.SENDINBLUE_API_URL;
 
   async sendVerificationCode(email: string, code: string): Promise<void> {
-		try {
-			const data = {
-				templateId: 9,
-				sender: {
-					name: "Estonian Hedgehogs",
-					email: this.senderEmail,
-				},
-				to: [ { email: email } ],
-				params: { verification_code: code },
-			};
-	
-			const headers = {
-				"Accept": "application/json",
-				"api-key": this.apiKey,
-				"Content-Type": "application/json",
-			};
-	
-			const params = { "verification_code": code };
-	
-			await axios.post(this.apiUrl, data, { headers });
-		} catch (error) {
-				throw error;
-		}
+	try {
+		var SibApiV3Sdk = require('sib-api-v3-typescript');
+		
+		var apiInstance = new SibApiV3Sdk.SMTPApi()
+		console.log("inside");
+
+		// Configure API key authorization: api-key
+		var apiKey = apiInstance.authentications['apiKey'];
+		apiKey.apiKey = this.apiKey
+
+		// Configure API key authorization: partner-key
+		var partnerKey = apiInstance.authentications['partnerKey'];
+		partnerKey.apiKey = this.apiKey
+
+		var sendSmtpEmail = {
+			to: [{
+				email: email,
+			}],
+			templateId: 9,
+			params: { verification_code: code },
+			headers: {
+				'X-Mailin-custom': 'custom_header_1:custom_value_1|custom_header_2:custom_value_2' //look here closer
+			}
+		};
+
+		apiInstance.sendTransacEmail(sendSmtpEmail);
+		console.log("ZAEBIS!!!");
+	} catch (error) {
+		throw (error);
 	}
+  }
 }
+
+
+
+//   async sendVerificationCode(email: string, code: string): Promise<void> {
+// 		try {
+// 			const data = {
+// 				templateId: 9,
+// 				sender: {
+// 					name: "Estonian Hedgehogs",
+// 					email: this.senderEmail,
+// 				},
+// 				to: [ { email: email } ],
+// 				params: { verification_code: code },
+// 			};
+	
+// 			const headers = {
+// 				"accept": "application/json",
+// 				"api-key": this.apiKey,
+// 				"content-Type": "application/json",
+// 			};
+	
+// 			await axios.post(this.apiUrl, data, { headers });
+// 		} catch (error) {
+// 			throw error;
+// 		}
+// 	}
+// }

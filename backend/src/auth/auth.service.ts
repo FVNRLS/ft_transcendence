@@ -68,9 +68,9 @@ export class AuthService {
 
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<AuthResponse> {
     try {
-
-      if (!dto.token_42)
+      if (!dto.token_42) {
         return { status: HttpStatus.UNAUTHORIZED, message: "Need to authorize via 42 API"};
+      }
 
       this.securityService.validateCredentials(dto);
       const email42 = await this.get42email(dto.token_42);
@@ -120,9 +120,9 @@ export class AuthService {
 
   async signin(dto: AuthDto): Promise<AuthResponse> {
     try {
-
-      if (!dto.token_42)
+      if (!dto.token_42) {
         return { status: HttpStatus.UNAUTHORIZED, message: "Need to authorize via 42 API"};
+      }
 
       this.securityService.validateCredentials(dto);
       const user: User = await this.securityService.getVerifiedUserData(dto);
