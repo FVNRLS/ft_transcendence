@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   init.params.ts                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.de> +#+  +:+       +#+        */
+/*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/11 18:14:48 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/11 18:15:19 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/06/15 16:22:13 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,8 +22,7 @@ export interface InitialState {
 	ballAngle: number,
 	ballSpeed: number,
 	cursorY: number,
-	scoreLeft: number,
-	scoreRight: number,
+	scores: number[],
 	bgColor: string,
 	invisibility: boolean,
 	ready: boolean

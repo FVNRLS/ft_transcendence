@@ -11,10 +11,8 @@ interface serverState {
 	ball: { x: number, y: number },
 	ballAngle: number,
 	ballSpeed: number,
-	leftPaddleY: number,
-	rightPaddleY: number,
-	scoreLeft: number,
-	scoreRight: number,
+	paddles: number[];
+	scores: number[];
 	invisibility: boolean,
 	bgColor: string,
 	ready: boolean
@@ -51,10 +49,8 @@ const Game = () => {
 		ball: { x:(1280 / 2 - 15), y: (720 / 2) - 15},
 		ballAngle: Math.random() * Math.PI * 2,
 		ballSpeed: 3,
-		leftPaddleY: 720 / 2 - 125,
-		rightPaddleY: 720 / 2 - 125,
-		scoreLeft: 0,
-		scoreRight: 0,
+		paddles: [720 / 2 - 125, 720 / 2 - 125],
+		scores: [0, 0],
 		invisibility: false,
 		bgColor: bgColor,
 		ready: false
@@ -64,8 +60,7 @@ const Game = () => {
 		ballAngle: Math.random() * Math.PI * 2,
 		ballSpeed: 3,
 		cursorY: 0,
-		scoreLeft: 0,
-		scoreRight: 0,
+		scores: [0, 0],
 		ready: false,
 		invisibility: false,
 		bgColor: bgColor
@@ -109,8 +104,7 @@ const Game = () => {
 			ball: ballPos,
 			ballAngle: ballAngle,
 			cursorY: cursorY,
-			scoreLeft: scoreLeft,
-			scoreRight: scoreRight,
+			scores: [scoreLeft, scoreRight],
 			bgColor: bgColor,
 			invisibility: invisibility,
 			ballSpeed: ballSpeed}));
@@ -118,7 +112,7 @@ const Game = () => {
 	}, [ballPos, ballAngle, scoreLeft, scoreRight, cursorY, ballSpeed, bgColor, invisibility])
 	
 	useEffect(() => {
-		if (gameState.scoreLeft < 10 && gameState.scoreRight < 10)
+		if (gameState.scores[0] < 10 && gameState.scores[1] < 10)
 		{
 			setEnded(false);
 				const newBallX = gameState.ball.x + Math.cos(gameState.ballAngle) * gameState.ballSpeed;
@@ -142,7 +136,7 @@ const Game = () => {
 						newBallX > (0)
 						)
 					) {
-						const ballAngle = Math.PI - Math.atan2(gameState.leftPaddleY - gameState.ball.y, gameState.ball.x - leftPlayerBar.right);
+						const ballAngle = Math.PI - Math.atan2(gameState.paddles[0] - gameState.ball.y, gameState.ball.x - leftPlayerBar.right);
         				setBallAngle(ballAngle);
 					}
 		
@@ -152,7 +146,7 @@ const Game = () => {
 						newBallY <= (rightPlayerBar.bottom - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2)) &&
 						newBallX < (1280 - 30)
 					  ) {
-						const ballAngle = Math.PI - Math.atan2(gameState.rightPaddleY - gameState.ball.y, rightPlayerBar.left - gameState.ball.x);
+						const ballAngle = Math.PI - Math.atan2(gameState.paddles[1] - gameState.ball.y, rightPlayerBar.left - gameState.ball.x);
         				setBallAngle(ballAngle);
 					}
 				}
@@ -161,13 +155,13 @@ const Game = () => {
 					if (newBallX < 0) {
 						setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
 						setBallAngle(Math.random() * Math.PI * 2);
-						setScoreRight(gameState.scoreRight + 1);
+						setScoreRight(gameState.scores[1] + 1);
 					}
 					else
 					{
 						setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
 						setBallAngle(Math.random() * Math.PI * 2);
-						setScoreLeft(gameState.scoreLeft + 1);
+						setScoreLeft(gameState.scores[0] + 1);
 					}
 				}
 			
@@ -229,13 +223,13 @@ const Game = () => {
 				{!socket && <button className='connect-btn' onClick={connectToSocket}>Connect</button>}
 				{!ready && socket && <button className='connect-btn' onClick={() => {setReady(true); setLocalState(state => ({...state, ready: true}));}}>READY</button>}
 				<div className='game-bg' style={{opacity: bgStyle.opacity, background: gameState.bgColor}}>
-					{ended && <div className='end'>Match ended<br />{gameState.scoreLeft} | {gameState.scoreRight}</div>}
-					{!ended && <div className='score-left'>{gameState.scoreLeft}</div>}
-					{!ended && <div className='score-right'>{gameState.scoreRight}</div>}
+					{ended && <div className='end'>Match ended<br />{gameState.scores[0]} | {gameState.scores[1]}</div>}
+					{!ended && <div className='score-left'>{gameState.scores[0]}</div>}
+					{!ended && <div className='score-right'>{gameState.scores[1]}</div>}
 					{!ended && <div className='markup'/>}
 					{!ended && <div className='markup-top'/>}
-					{!ended && <div className='left-player' ref={leftPlayerRef} style={{ top: gameState.leftPaddleY }} />}
-					{!ended && <div className='right-player' ref={rightPlayerRef} style={{ top: gameState.rightPaddleY }} />}
+					{!ended && <div className='left-player' ref={leftPlayerRef} style={{ top: gameState.paddles[0] }} />}
+					{!ended && <div className='right-player' ref={rightPlayerRef} style={{ top: gameState.paddles[1] }} />}
 					{ready && !ended && <div className={ballClasses} style={{ left: gameState.ball.x, top: gameState.ball.y }}/>}
 				</div>
 				<div className='powerup-cont'>

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   game.service.ts                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rmazurit <rmazurit@student.42heilbronn.    +#+  +:+       +#+        */
+/*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/05/11 18:15:45 by rmazurit         ###   ########.fr       */
+/*   Updated: 2023/06/15 14:36:16 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -206,4 +206,5 @@ export class GameService {
 			throw error;
 		}
 	}
+	
 }
