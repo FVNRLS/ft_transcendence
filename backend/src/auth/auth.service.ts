@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Body, HttpException, HttpStatus, Injectable, Res } from '@nestjs/common';
 import { PrismaService } from "../prisma/prisma.service";
 import { SessionService } from "./session.service";
 import { SecurityService } from "../security/security.service";
@@ -21,6 +21,7 @@ import { AuthResponse, UserDataResponse } from "./dto/response.dto"
 import { Session, User } from "@prisma/client";
 import { MailService } from "./mail.service";
 import axios from "axios";
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -48,8 +49,8 @@ export class AuthService {
 
       const accessToken: string = response.data.access_token;
       await this.securityService.validateToken(accessToken);
-      const encrypted = await this.securityService.encryptToken(accessToken);
-      return (encrypted);
+      const encryptedToken = await this.securityService.encryptToken(accessToken);
+      return (encryptedToken);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) {
@@ -68,9 +69,9 @@ export class AuthService {
 
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<AuthResponse> {
     try {
-
-      if (!dto.token_42)
-        return { status: HttpStatus.UNAUTHORIZED, message: "Need to authorize via 42 API"};
+      if (!dto.token_42) {
+        return { status: HttpStatus.UNAUTHORIZED, message: "Please authorize via 42 API again!"};
+      }
 
       this.securityService.validateCredentials(dto);
       const email42 = await this.get42email(dto.token_42);
@@ -120,9 +121,9 @@ export class AuthService {
 
   async signin(dto: AuthDto): Promise<AuthResponse> {
     try {
-
-      if (!dto.token_42)
-        return { status: HttpStatus.UNAUTHORIZED, message: "Need to authorize via 42 API"};
+      if (!dto.token_42) {
+        return { status: HttpStatus.UNAUTHORIZED, message: "Please authorize via 42 API again!"};
+      }
 
       this.securityService.validateCredentials(dto);
       const user: User = await this.securityService.getVerifiedUserData(dto);
@@ -164,7 +165,6 @@ export class AuthService {
     try {
         const user: User = await this.securityService.getVerifiedUserData(dto);
         await this.securityService.validateTFACode(user, dto);        
-
         const session = await this.sessionService.createSession(user, dto.token_42);
         
         return { status: HttpStatus.CREATED, message: "You signed in successfully", cookie: session.cookie };
