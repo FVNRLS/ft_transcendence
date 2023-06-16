@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Body, HttpException, HttpStatus, Injectable, Res } from '@nestjs/common';
 import { PrismaService } from "../prisma/prisma.service";
 import { SessionService } from "./session.service";
 import { SecurityService } from "../security/security.service";
@@ -21,6 +21,7 @@ import { AuthResponse, UserDataResponse } from "./dto/response.dto"
 import { Session, User } from "@prisma/client";
 import { MailService } from "./mail.service";
 import axios from "axios";
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -48,8 +49,8 @@ export class AuthService {
 
       const accessToken: string = response.data.access_token;
       await this.securityService.validateToken(accessToken);
-      const encrypted = await this.securityService.encryptToken(accessToken);
-      return (encrypted);
+      const encryptedToken = await this.securityService.encryptToken(accessToken);
+      return (encryptedToken);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) {

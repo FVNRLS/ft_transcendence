@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Body, Query, Controller, Get, Res, Headers, Post, UploadedFile, UseInterceptors} from "@nestjs/common";
+import { Body, Query, Controller, Get, Res, Post, UploadedFile, UseInterceptors} from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AuthService } from "./auth.service"
 import { AuthDto } from "./dto";
@@ -25,15 +25,16 @@ export class AuthController {
 	@Get("/authorize_callback")
 	async authorizeCallback(@Query('code') code: string, @Res() res: Response, ): Promise<void> {
     try {
-		const token = await this.authService.authorizeCallback(code);
-		res.redirect(`http://localhost:3000/form?token=${token}`);
+			const token = await this.authService.authorizeCallback(code);
+			
+			res.redirect(`http://localhost:3000/form?token=${token}`);
     } catch (error) {
     	throw error;
     }
   }
 
 	@Post("/signup")
-	@UseInterceptors(FileInterceptor("file", { dest: "uploads" }))
+	@UseInterceptors(FileInterceptor(""))
 	async signup(@Body() dto: AuthDto, @UploadedFile() file?: Express.Multer.File): Promise<AuthResponse> {
 		try {
 			return await this.authService.signup(dto, file);
@@ -43,7 +44,7 @@ export class AuthController {
 	}
 
 	@Post("/login")
-	async signin(@Body() dto: AuthDto): Promise<AuthResponse> {
+	async signin(@Body() dto: AuthDto, @Res() res: Response): Promise<AuthResponse> {
 		try {
 			return await this.authService.signin(dto);
 		} catch(error) {
@@ -61,7 +62,7 @@ export class AuthController {
 	}
 
 	@Post("/update_profile")
-	@UseInterceptors(FileInterceptor("file", { dest: "uploads" }))
+	@UseInterceptors(FileInterceptor(""))
 	async updateProfile(@Body("cookie") cookie: string, @UploadedFile() file?: Express.Multer.File, @Body("username") username?: string, @Body("email") email?: string): Promise<AuthResponse> {
 		try {
 			return await this.authService.updateProfile(cookie, file, username, email);
