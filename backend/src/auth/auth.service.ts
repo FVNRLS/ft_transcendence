@@ -153,7 +153,6 @@ export class AuthService {
         return { status: HttpStatus.CREATED, message: "You signed in successfully", cookie: session.cookie };
       }
     } catch (error) {
-      console.log(error);
       if (error instanceof HttpException) {
         return { status: HttpStatus.UNAUTHORIZED, message: error.message};
       } else {
