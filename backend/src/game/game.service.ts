@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/06/15 14:36:16 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/16 13:48:45 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,23 +27,32 @@ export class GameService {
 	//here no route/endpoint required - the public function is only to apply after the match end in GameGateway
 	async updateGameData(dto: GameDto): Promise<void> {
 		try {
+
+			const userSession: Session = await this.securityService.verifyCookie(dto.userCookie);
+			const enemySession: Session = await this.securityService.verifyCookie(dto.enemyCookie);
+
+			const score = `${dto.userScore}:${dto.enemyScore}`;
+
+			const user = await this.prisma.user.findFirst({where: {id: userSession.userId}});
+			const enemy = await this.prisma.user.findFirst({where: {id: enemySession.userId}});
+
 			await this.prisma.score.create({
 				data: {
-					userId: dto.userId,
-					enemyName: dto.enemyName,
-					score: dto.score,
+					userId: user.id,
+					enemyName: enemy.username,
+					score: score,
 					win: dto.win,
 				},
 			});
 
 			const currentRating = await this.prisma.rating.update({
-				where: { userId: dto.userId },
+				where: { userId: user.id },
 				data: {
 					totalMatches: { increment: 1 },
-					wins: dto.win ? {
+					wins: dto.win === 'true' ? {
 						increment: 1,
 					} : undefined,
-					losses: dto.win ? undefined : {
+					losses: dto.win === 'true' ? undefined : {
 						increment: 1,
 					},
 				},

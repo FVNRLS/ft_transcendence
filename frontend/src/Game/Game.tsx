@@ -67,7 +67,10 @@ const Game = () => {
 	});
 
 	const connectToSocket = () => {
-		const newSocket = io("http://localhost:5005");
+		const newSocket = io("http://localhost:5005", { transports: ['websocket'],
+		extraHeaders: {
+		  'Cookie': `session=${session}`
+		}});
 		setSocket(newSocket);
 	};
 
@@ -172,7 +175,6 @@ const Game = () => {
 		}
 		else
 			setEnded(true);
-	
 	}, [gameState, screenHeight,
 		screenWidth, ready]);
 

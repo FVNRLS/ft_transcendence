@@ -71,7 +71,7 @@ model Score {
   user               User        @relation(fields: [userId], references: [id])
   enemyName          String
   score              String
-  win                Boolean
+  win                String
   gameTime           DateTime    @default(now())
    
  @@map("scores")
