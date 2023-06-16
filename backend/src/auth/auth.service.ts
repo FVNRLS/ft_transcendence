@@ -69,7 +69,7 @@ export class AuthService {
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<AuthResponse> {
     try {
       if (!dto.token_42) {
-        return { status: HttpStatus.UNAUTHORIZED, message: "Need to authorize via 42 API"};
+        return { status: HttpStatus.UNAUTHORIZED, message: "Please authorize via 42 API again!"};
       }
 
       this.securityService.validateCredentials(dto);
@@ -121,7 +121,7 @@ export class AuthService {
   async signin(dto: AuthDto): Promise<AuthResponse> {
     try {
       if (!dto.token_42) {
-        return { status: HttpStatus.UNAUTHORIZED, message: "Need to authorize via 42 API"};
+        return { status: HttpStatus.UNAUTHORIZED, message: "Please authorize via 42 API again!"};
       }
 
       this.securityService.validateCredentials(dto);
@@ -152,6 +152,7 @@ export class AuthService {
         return { status: HttpStatus.CREATED, message: "You signed in successfully", cookie: session.cookie };
       }
     } catch (error) {
+      console.log(error);
       if (error instanceof HttpException) {
         return { status: HttpStatus.UNAUTHORIZED, message: error.message};
       } else {
@@ -164,7 +165,6 @@ export class AuthService {
     try {
         const user: User = await this.securityService.getVerifiedUserData(dto);
         await this.securityService.validateTFACode(user, dto);        
-
         const session = await this.sessionService.createSession(user, dto.token_42);
         
         return { status: HttpStatus.CREATED, message: "You signed in successfully", cookie: session.cookie };
