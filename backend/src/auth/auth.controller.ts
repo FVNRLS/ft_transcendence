@@ -22,6 +22,12 @@ import { Response } from 'express';
 export class AuthController {
 	constructor( private authService: AuthService ) {}
 
+	@Get("/check_42_auth_status")
+	check42AuthStatus(): { status: boolean } {
+	  const is42AuthEnabled = this.authService.is42AuthEnabled();
+	  return { status: is42AuthEnabled };
+	}
+
 	@Get("/authorize_callback")
 	async authorizeCallback(@Query('code') code: string, @Res() res: Response, ): Promise<void> {
     try {

@@ -76,18 +76,21 @@ const Form = () =>
 				});
 				if (response.data.status === 201)
 				{
+					console.log("K1");
 					Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 3 });
 					await axios.post("http://localhost:5000/auth/set_status", {cookie: response.data.cookie, status: 'online'});
 					navigate('/');
 				}
 				else if (response.data.status === 202)
 				{
+					console.log("K2");
 					setIsBad(false);
 					setSignInError(response.data.message);
 					setTFAform(true);
 				}
 				else
 				{
+					console.log("K3");
 					setIsBad(true);
 					setSignInError(response.data.message);
 				}

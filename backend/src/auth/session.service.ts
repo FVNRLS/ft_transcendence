@@ -32,7 +32,14 @@ export class SessionService {
 			const serializedCookie = await this.securityService.serializeCookie(user, jwt_token);
 			const hashedCookie = await argon2.hash(serializedCookie);
 			const encryptedCookie = await this.securityService.encryptCookie(hashedCookie);
-			const decryptedToken = await this.securityService.decryptToken(token42);
+			const is42AuthEnabled = process.env.AUTH_ENABLED_42 === 'true';
+			let decryptedToken;
+
+			if (is42AuthEnabled) {
+				decryptedToken = await this.securityService.decryptToken(token42);
+			} else {
+				decryptedToken = '';
+			}
 			await this.pushSessionToDatabase(user, jwt_token, hashedCookie, serializedCookie, decryptedToken);
 			
 			return { status: HttpStatus.CREATED, message: "Login successful", cookie: encryptedCookie };

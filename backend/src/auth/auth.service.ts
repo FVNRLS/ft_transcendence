@@ -32,8 +32,20 @@ export class AuthService {
     private googleDriveService: GoogleDriveService,
   ) {}
 
+
+
+  is42AuthEnabled(): boolean {
+    const isEnabled = process.env.ENABLED_AUTH_42 === 'true';
+    return isEnabled;
+  }
+
   //CONTROLLER FUNCTIONS
   async authorizeCallback(code: string): Promise<string> {
+    const is42AuthEnabled = process.env.AUTH_ENABLED_42 === 'true';
+
+    if (!is42AuthEnabled) {
+      throw new HttpException("42 Authentication is disabled.", HttpStatus.BAD_REQUEST);
+    }
     try {
       const CLIENT_ID = process.env.REACT_APP_ID;
       const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
@@ -62,6 +74,7 @@ export class AuthService {
   }
 
   async get42email(token: string): Promise<string> {
+    
     const decrypted = await this.securityService.decryptToken(token);
     const response = await axios.get("https://api.intra.42.fr/v2/me", { headers: { Authorization: `Bearer ${decrypted}` }});
     return (response.data.email);
@@ -69,12 +82,20 @@ export class AuthService {
 
   async signup(dto: AuthDto, file?: Express.Multer.File): Promise<AuthResponse> {
     try {
-      if (!dto.token_42) {
+      let email42;
+      const is42AuthEnabled = process.env.AUTH_ENABLED_42 === 'true';
+
+      if (!dto.token_42 && is42AuthEnabled) {
         return { status: HttpStatus.UNAUTHORIZED, message: "Please authorize via 42 API again!"};
       }
 
       this.securityService.validateCredentials(dto);
-      const email42 = await this.get42email(dto.token_42);
+      if (is42AuthEnabled) {
+
+        email42 = await this.get42email(dto.token_42);
+      } else {
+        email42 = "N/A"
+      }
       const { salt, hashedPassword } = await this.securityService.hashPassword(dto.password);
       await this.prisma.user.create({
         data: {
@@ -120,8 +141,9 @@ export class AuthService {
   }
 
   async signin(dto: AuthDto): Promise<AuthResponse> {
+    const is42AuthEnabled = process.env.AUTH_ENABLED_42 === 'true';
     try {
-      if (!dto.token_42) {
+      if (!dto.token_42 && is42AuthEnabled) {
         return { status: HttpStatus.UNAUTHORIZED, message: "Please authorize via 42 API again!"};
       }
 
