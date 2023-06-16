@@ -100,6 +100,7 @@ export class AuthService {
           totalMatches: 0,
           wins: 0,
           losses: 0,
+          xp: 0,
           rank: maxRank._max.rank + 1,
         },
       })

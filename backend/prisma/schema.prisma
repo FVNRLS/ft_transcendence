@@ -85,6 +85,7 @@ model Rating {
   totalMatches       Int
   wins               Int
   losses             Int
+  xp                 Int
   rank               Int
 
   @@map("ratings")

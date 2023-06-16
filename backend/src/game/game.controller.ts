@@ -33,8 +33,6 @@ export class GameController {
 		}
 	}
 
-
-	//TODO: ONLY FOR TESTING PURPOSES! DELETE AFTERWARDS!
 	@Post("/update_score")
 	async updateScore(@Body() dto: GameDto): Promise<void> {
 		try {
