@@ -27,6 +27,10 @@
 	justify-content: center;
 }
 
+.stats:hover {
+	cursor: pointer;
+}
+
 .header .link-btn {
 	text-decoration: none;
 	background-color: #476cd2c9;

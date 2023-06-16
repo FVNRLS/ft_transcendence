@@ -5,14 +5,33 @@ import "./Header.css";
 import axios from 'axios';
 
 function Header() {
-	const scoreLeft = 0;
-	const scoreRight = 0;
-
 	const cookie = Cookies.get('session');
 	const navigate = useNavigate();
 
 	const [btnColor, setBtnColor] = useState('rgba(128, 128, 128, 0.5)');
+	const [lastScore, setLastScore] = useState('');
+	const [gotScore, setGotScore] = useState(false);
 	const TFAcookie = Cookies.get('TFA');
+
+	useEffect(() => {
+		
+		const getLastScore = async () => {
+			try
+			{
+				const response = await axios.post("http://localhost:5000/game/get_personal_scores", {cookie});
+				const array = response.data;
+				setLastScore(array[array.length - 1].score);
+				setGotScore(true);
+			}
+			catch (error)
+			{
+				console.log(error);
+			}
+		}
+
+		if (cookie && !gotScore)
+			getLastScore();
+	})
 
 	useEffect(() => {
 		if (TFAcookie)
@@ -63,7 +82,7 @@ function Header() {
 				<li className='list-item'>
 					<Link className="dashboard-btn" to='/dashboard'>Dashboard</Link>
 				</li>
-				<li className='list-item' >Last Match: {scoreLeft} | {scoreRight}</li>
+				<li className='list-item stats' onClick={() => {navigate('/stats')}} >Last Match: {lastScore}</li>
 				<li className='list-item' >No messages</li>
 				<li className='list-item' >
 					<button style={btnStyle} className='tfa-btn' onClick={handleSwitch}>TFA</button>

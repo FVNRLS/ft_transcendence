@@ -1,9 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserGroup, faUser, faComments, faMagnifyingGlass, faTableTennisPaddleBall } from '@fortawesome/free-solid-svg-icons'
 import Header from "../Header/Header";
-import axios from 'axios';
 import './Dashboard.css'
 import Cookies from 'js-cookie';
 
@@ -12,23 +11,23 @@ const Dashboard = () => {
 	const cookie = Cookies.get('session');
 	const navigate = useNavigate();
 
-	const [username, setUsername] = useState('');
+	// const [username, setUsername] = useState('');
 
 	useEffect(() => {
 
-		const getUsername = async () => {
-			try {
-				const response = await axios.post('http://localhost:5000/auth/get_data', { cookie });
-				setUsername(response.data.username);
-			} catch (error) {
-				console.log(error);
-			}
-		}
+		// const getUsername = async () => {
+		// 	try {
+		// 		const response = await axios.post('http://localhost:5000/auth/get_data', { cookie });
+		// 		setUsername(response.data.username);
+		// 	} catch (error) {
+		// 		console.log(error);
+		// 	}
+		// }
 
 		if (!cookie)
 			navigate('/not-logged');
-		else
-			getUsername();
+		// else
+		// 	getUsername();
 	}, [navigate, cookie]);
 
 	return (

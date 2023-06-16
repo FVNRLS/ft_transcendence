@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/06/16 13:48:45 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/16 14:20:57 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,7 @@ export class GameService {
 	
 	async getPersonalScores(cookie: string): Promise<GameScoreResponse[]> {
 		try {
-			await this.securityService.verifyCookie(cookie);
+			const user = await this.securityService.verifyCookie(cookie);
 		
 			let scoreTable: GameScoreResponse[] = [];
 			const scoreList: Score[] = await this.prisma.score.findMany();
@@ -82,8 +82,10 @@ export class GameService {
 			
 			for (let i: number = 0; i < scoreList.length; i++) {
 				const score = scoreList[i];
-				const scoreResponse = await this.getScore(score);
-				scoreTable.push(scoreResponse);
+				if (score.userId == user.id) {
+					const scoreResponse = await this.getScore(score);
+					scoreTable.push(scoreResponse);
+				}
 			};
 			
 			return scoreTable;
