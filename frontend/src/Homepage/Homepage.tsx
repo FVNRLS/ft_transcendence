@@ -58,7 +58,7 @@ function Homepage() {
       navigate('/dashboard');
     }
 
-    axios.get('/auth/check_42_auth_status')
+    axios.get('http://localhost:5000/auth/check_42_auth_status')
       .then(response => setIs42AuthEnabled(response.data.status))
       .catch(error => console.error(error));
   }, [navigate, session])

@@ -35,7 +35,7 @@ export class AuthService {
 
 
   is42AuthEnabled(): boolean {
-    const isEnabled = process.env.ENABLED_AUTH_42 === 'true';
+    const isEnabled = process.env.AUTH_ENABLED_42 === 'true';
     return isEnabled;
   }
 
