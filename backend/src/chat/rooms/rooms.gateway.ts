@@ -123,6 +123,8 @@ export class RoomsGateway {
         if (socketId && this.server.sockets.sockets.get(socketId)) {
           const roomName = `room-${newRoom.id}`;
           this.server.sockets.sockets.get(socketId).join(roomName);
+          console.log("JOINED ROOM");
+          console.log(newRoom);
           this.server.to(socketId).emit('joinedRoom', newRoom);
         }
       });

@@ -224,8 +224,27 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
         // Include other room data as required
       },
     });
+
+    // Get the users from the created room
+    const users = newRoom.userOnRooms.map(ur => ur.user);
+    let clientUser: any | undefined;
+    let receivingUser: any | undefined;
     
-    return newRoom;
+    // Split the users into clientUser and receivingUser
+    if (users.length === 2) {
+      [clientUser, receivingUser] = users[0].id === client_id ? users : users.reverse();
+    }
+
+    return {
+      id: newRoom.id,
+      roomName: newRoom.roomName,
+      roomType: newRoom.roomType,
+      userId: client_id, // userId was missing from your return object
+      userOnRooms: newRoom.userOnRooms, // userOnRooms was missing from your return object
+      messages: newRoom.messages,
+      clientUser,
+      receivingUser,
+    };
   }
   
   

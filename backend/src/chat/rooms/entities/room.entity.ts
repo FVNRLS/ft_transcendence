@@ -23,4 +23,6 @@ export class RoomDetailsDto {
   userId: number;
   userOnRooms: UserOnRoomDto[];
   messages: MessageDto[];
+  clientUser?: any; // added
+  receivingUser?: any; // added
 }
