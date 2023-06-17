@@ -45,3 +45,24 @@
 .table-row:nth-child(odd) {
   background-color: #fff;
 }
+
+.icon-right {
+  position: absolute;
+  top: 55%;
+  left: 65%;
+}
+
+.icon-right:hover {
+  cursor: pointer;
+}
+
+.icon-left {
+  position: absolute;
+  top: 55%;
+  right: 65%;
+}
+
+.icon-left:hover {
+  cursor: pointer;
+}
+

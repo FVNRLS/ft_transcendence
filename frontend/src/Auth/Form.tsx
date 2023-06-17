@@ -49,7 +49,7 @@ const Form = () =>
 					}});
 				if (response.data.status === 201)
 				{
-					Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 3 });
+					Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 2 });
 					await axios.post("http://localhost:5000/auth/set_status", {cookie: response.data.cookie, status: 'online'});
 					navigate('/');
 				}
@@ -76,7 +76,7 @@ const Form = () =>
 				});
 				if (response.data.status === 201)
 				{
-					Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 3 });
+					Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 2 });
 					await axios.post("http://localhost:5000/auth/set_status", {cookie: response.data.cookie, status: 'online'});
 					navigate('/');
 				}
@@ -110,7 +110,7 @@ const Form = () =>
 			});
 			if (response.data.status === 201)
 			{
-				Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 3 });
+				Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 2 });
 				await axios.post("http://localhost:5000/auth/set_status", {cookie: response.data.cookie, status: 'online'});
 				navigate('/');
 			}

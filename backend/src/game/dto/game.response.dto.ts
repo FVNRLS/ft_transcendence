@@ -22,5 +22,6 @@ export interface GameRatingResponse {
 	totalMatches: Number,
 	wins: Number,
 	losses: Number,
+	xp: Number,
 	rank: Number,
 }
