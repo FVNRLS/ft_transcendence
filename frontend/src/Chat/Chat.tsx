@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import './Chat.css';
 import { useNavigate } from 'react-router-dom';
 import Header from '../Header/Header';
-import Pic from './download.jpeg';
 import Cookies from 'js-cookie';
 import io from 'socket.io-client';
 import { Socket } from 'socket.io-client';
@@ -13,14 +12,21 @@ import NewChannelCreation from './NewChannelCreation';
 import NewDirectMessageCreation from './NewDirectMessageCreation';
 import DirectMessagesHeader from './DirectMessagesHeader';
 import GroupHeader from './GroupHeader';
+import axios from 'axios';
 
 
 interface Message {
   id: number;
   userId: number;
+  username: string;
   roomId: number;
   createdAt: Date;
   content: string;
+}
+
+interface userPic {
+  pic: string,
+  username: string
 }
 
 // Defining interface for User and Room
@@ -63,7 +69,8 @@ const Chat = () => {
   const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);
   const [blockedUsers, setBlockedUsers] = useState<number[]>([]);
   const [isChatHeaderClicked, setIsChatHeaderClicked] = useState(false);
-
+  const [profPic, setProfPic] = useState('');
+  const [userPics, setUserPics] = useState<userPic[]>([]);
 
   // Reference for the socket
   const socketRef = useRef<Socket | null>(null);
@@ -339,7 +346,47 @@ const Chat = () => {
     }
   }, [channels, directRooms]);
   
-  
+  useEffect(() => {
+    const getProfPic = async () => {
+      try
+      {
+        const response = await axios.post('http://localhost:5000/storage/get_profile_picture', { cookie: session });
+        const uintArray = new Uint8Array(response.data.buffer.data);
+				const blob = new Blob([uintArray], { type: 'mimetype' });
+				const imageUrl = URL.createObjectURL(blob);
+				setProfPic(imageUrl);
+      }
+      catch (error)
+      {
+        console.log(error);
+      }
+    }
+
+    const getImgUrl = (pic: Buffer) => {
+      const uintArray = new Uint8Array(pic);
+      const blob = new Blob([uintArray], { type: 'mimetype' });
+      const imageUrl = URL.createObjectURL(blob);
+      return (imageUrl);
+    }
+
+    const getUserPics = async () => {
+      try
+      {
+        const response = await axios.post("http://localhost:5000/friendship/get_users", {cookie: session});
+        setUserPics(response.data.map((user:any) => ({pic: getImgUrl(user.picture.buffer.data), username: user.username})));
+      }
+      catch (error)
+      {
+        console.log(error);
+      }
+    }
+
+    if (session && profPic === '')
+      getProfPic();
+    
+    if (session && !userPics[0])
+      getUserPics();
+  });
   
   const handleKeyPress = (event:any) => {
     if (event.key === 'Enter') {
@@ -373,7 +420,7 @@ const Chat = () => {
 
             {/* User Profile Picture */}
             <div className="profile">
-              <img src={Pic} alt="Profile" />
+              <img src={profPic} alt="Profile" />
             </div>
 
             {/* Check if sidebar is open or not */}
@@ -407,7 +454,6 @@ const Chat = () => {
                     <ul>
                       {directRooms.map((dm, index) => {
                         let otherUsername = dm.receivingUser.username;
-
 
                         return (
                           <li key={index}>
@@ -484,7 +530,7 @@ const Chat = () => {
                   className={`message ${loggedInUser && loggedInUser.id === message.userId ? "user-message" : "other-message"}`} 
                   key={index}
                 >
-                  {!(loggedInUser && loggedInUser.id === message.userId) && <img src={Pic} alt="Profile" />}
+                  {!(loggedInUser && loggedInUser.id === message.userId) && <img src={userPics.find((user) => user.username === message.username)?.pic} alt="Profile" />}
                   <div className={(loggedInUser && loggedInUser.id === message.userId) ? "message-content user-message-content" : "message-content"}>
                     <p>{message.content}</p>
                     <span className="message-time">{new Date(message.createdAt).toLocaleTimeString(undefined, {
