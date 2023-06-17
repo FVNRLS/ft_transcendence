@@ -155,6 +155,7 @@ export class GameService {
 				totalMatches: rating.totalMatches,
 				wins: rating.wins,
 				losses: rating.losses,
+				xp: rating.xp,
 				rank: rating.rank,
 			};
 
