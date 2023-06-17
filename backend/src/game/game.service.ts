@@ -67,25 +67,29 @@ export class GameService {
 	
 	async getPersonalScores(cookie: string): Promise<GameScoreResponse[]> {
 		try {
-			const user = await this.securityService.verifyCookie(cookie);
-		
+			const session = await this.securityService.verifyCookie(cookie);
+			const user = await this.prisma.user.findFirst({ where: {id: session.userId} });
+			console.log(user.id)
+			
 			let scoreTable: GameScoreResponse[] = [];
-			const scoreList: Score[] = await this.prisma.score.findMany();
+			const scoreList: Score[] = await this.prisma.score.findMany({ where: {userId: user.id} });
+			scoreList.sort((a, b) => b.gameTime.getTime() - a.gameTime.getTime());
+
 			
 			if (scoreList.length === 0) {
 				throw new HttpException("Oh no! It looks like you didn't play our ping pong game yet!", HttpStatus.NO_CONTENT);
 			}
+			console.log("xuj");
 			
 			for (let i: number = 0; i < scoreList.length; i++) {
-				const score = scoreList[i];
-				if (score.userId == user.id) {
+					const score = scoreList[i];
 					const scoreResponse = await this.getScore(score);
 					scoreTable.push(scoreResponse);
-				}
 			};
 			
 			return scoreTable;
 		} catch (error) {
+			console.log(error);
 			if (error instanceof HttpException) {
 				throw error;
 			} else {
@@ -175,9 +179,13 @@ export class GameService {
 		}
 	}
 	
+	/* 
+		Fetch all ratings and sort them by xp in descending order, totalMatches in descending order, and userId in ascending order
+		Update the rank for each rating
+		Update the rank for the current user 
+	*/
 	private async updateRatingTable(gameResult: Rating): Promise<void> {
 		try {
-			// Fetch all ratings and sort them by xp in descending order, totalMatches in descending order, and userId in ascending order
 			const ratings = await this.prisma.rating.findMany({
 				orderBy: [
 					{ xp: 'desc' },
@@ -186,12 +194,10 @@ export class GameService {
 				]
 			});
 
-			// Update the rank for each rating
 			for (let i = 0; i < ratings.length; i++) {
 				const currentRating = ratings[i];
 				const rank = i + 1;
 
-				// Update the rank for the current user
 				await this.prisma.rating.update({ where: { id: currentRating.id }, data: { rank } });
 			}
 		} catch (error) {
