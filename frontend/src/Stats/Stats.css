@@ -1,6 +1,6 @@
 .stats-cont {
   display: grid;
-  width: 50vw;
+  width: 400px;
   height: 60vh;
   grid-template-columns: 1fr;
   grid-gap: 10px;
@@ -9,13 +9,13 @@
   font-family: "Montserrat", sans-serif;
   font-weight: bold;
   background-color: #f9f9f9;
-  max-width: 400px;
   margin: 0 auto;
   overflow-y: scroll;
 }
 
 .table-header {
   grid-column: 1 / -1;
+  height: 5rem;
   text-align: center;
   font-weight: bold;
   font-size: 26px;
@@ -32,6 +32,7 @@
 }
 
 .table-row {
+  height: 5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
@@ -66,3 +67,7 @@
   cursor: pointer;
 }
 
+
+.row-rank {
+  flex-direction: row;
+}

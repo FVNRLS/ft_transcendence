@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/06/17 14:33:26 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/17 14:40:24 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,6 @@ export class GameService {
 			const scoreList: Score[] = await this.prisma.score.findMany({ where: {userId: user.id} });
 			scoreList.sort((a, b) => b.gameTime.getTime() - a.gameTime.getTime());
 
-			
 			if (scoreList.length === 0) {
 				throw new HttpException("Oh no! It looks like you didn't play our ping pong game yet!", HttpStatus.NO_CONTENT);
 			}

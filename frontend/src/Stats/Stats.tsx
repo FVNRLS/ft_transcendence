@@ -14,6 +14,15 @@ interface GameScore {
 	gameTime: String,
 }
 
+interface RankResp {
+	username: String,
+	totalMatches: Number,
+	wins: Number,
+	losses: Number,
+	xp: Number,
+	rank: Number,
+}
+
 const Stats = () => {
 
 	const session = Cookies.get('session');
@@ -22,6 +31,7 @@ const Stats = () => {
 
 	const [scoreArr, setScoreArr] = useState<GameScore[]>([]);
 	const [isRating, setIsRating] = useState(false);
+	const [rankArr, setRankArr] = useState<RankResp[]>([]);
 
 	useEffect(() => {
 		if (!session)
@@ -41,8 +51,23 @@ const Stats = () => {
 			}
 		}
 
+		const getRankArr = async () => {
+			try
+			{
+				const response = await axios.post('http://localhost:5000/game/get_ranking_table', {cookie: session});
+				setRankArr(response.data);
+			}
+			catch (error)
+			{
+				console.log(error);
+			}
+		}
+
 		if (session && !scoreArr[0])
 			getScoreArr();
+		
+		if (session && !rankArr[0])
+			getRankArr();
 	})
 
 	return (
@@ -58,8 +83,8 @@ const Stats = () => {
 						<div className="column">No Stats Yet</div>
 					</div>
 					)}
-					{scoreArr.map((score) => (
-					<div className="table-row">
+					{scoreArr.map((score, index) => (
+					<div className="table-row" key={index}>
 						<div className="column">{score.enemyName}</div>
 						<div className="column">{score.score}</div>
 					</div>
@@ -68,8 +93,21 @@ const Stats = () => {
 				<FontAwesomeIcon className="icon-right" 
 					icon={faArrowRight} color="#f9f9f9" size="2x" onClick={() => {setIsRating(true)}}/>
 				</>)}
-				{isRating && <FontAwesomeIcon className="icon-left"
-					icon={faArrowLeft} color="#f9f9f9" size="2x" onClick={() => {setIsRating(false)}}/>}
+				{isRating && (
+				<>
+				<div className="stats-cont">
+				<div style={{backgroundColor: '#0fc384b5'}} className="table-header">Ranking</div>
+					{rankArr.map((user, index) => (
+					<div className="table-row row-rank" key={index}>
+						<div className="column" style={{fontSize: '18px'}}>{user.username}</div>
+						<div className="column">{`${user.xp} XP`}</div>
+						<div className="column">{`${user.rank}`}</div>
+					</div>
+					))}
+				</div>
+				<FontAwesomeIcon className="icon-left"
+					icon={faArrowLeft} color="#f9f9f9" size="2x" onClick={() => {setIsRating(false)}}/>
+				</>)}
 			</div>
 		</>
 	)
