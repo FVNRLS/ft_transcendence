@@ -23,7 +23,6 @@ export class GameService {
 		private prisma: PrismaService,
 	) {}
 	
-	//TODO: delete route in controllers!
 	//here no route/endpoint required - the public function is only to apply after the match end in GameGateway
 	async updateGameData(dto: GameDto): Promise<void> {
 		try {
@@ -45,20 +44,17 @@ export class GameService {
 				},
 			});
 
-			const currentRating = await this.prisma.rating.update({
+			const gameResult: Rating = await this.prisma.rating.update({
 				where: { userId: user.id },
 				data: {
 					totalMatches: { increment: 1 },
-					wins: dto.win === 'true' ? {
-						increment: 1,
-					} : undefined,
-					losses: dto.win === 'true' ? undefined : {
-						increment: 1,
-					},
-				},
+					wins: dto.win === 'true' ? { increment: 1 } : undefined,
+					losses: dto.win === 'true' ? undefined : { increment: 1 },
+					xp: dto.win === "true" ? { increment: 10 } : undefined,
+				}
 			});
 
-			await this.updateRatingTable(currentRating);		
+			await this.updateRatingTable(gameResult);		
 		} catch (error) {
 			console.log(error);
 			if (error instanceof HttpException) {
@@ -71,25 +67,29 @@ export class GameService {
 	
 	async getPersonalScores(cookie: string): Promise<GameScoreResponse[]> {
 		try {
-			const user = await this.securityService.verifyCookie(cookie);
-		
+			const session = await this.securityService.verifyCookie(cookie);
+			const user = await this.prisma.user.findFirst({ where: {id: session.userId} });
+			console.log(user.id)
+			
 			let scoreTable: GameScoreResponse[] = [];
-			const scoreList: Score[] = await this.prisma.score.findMany();
+			const scoreList: Score[] = await this.prisma.score.findMany({ where: {userId: user.id} });
+			scoreList.sort((a, b) => b.gameTime.getTime() - a.gameTime.getTime());
+
 			
 			if (scoreList.length === 0) {
 				throw new HttpException("Oh no! It looks like you didn't play our ping pong game yet!", HttpStatus.NO_CONTENT);
 			}
+			console.log("xuj");
 			
 			for (let i: number = 0; i < scoreList.length; i++) {
-				const score = scoreList[i];
-				if (score.userId == user.id) {
+					const score = scoreList[i];
 					const scoreResponse = await this.getScore(score);
 					scoreTable.push(scoreResponse);
-				}
 			};
 			
 			return scoreTable;
 		} catch (error) {
+			console.log(error);
 			if (error instanceof HttpException) {
 				throw error;
 			} else {
@@ -155,6 +155,7 @@ export class GameService {
 				totalMatches: rating.totalMatches,
 				wins: rating.wins,
 				losses: rating.losses,
+				xp: rating.xp,
 				rank: rating.rank,
 			};
 
@@ -178,44 +179,30 @@ export class GameService {
 				throw new HttpException("Ooops...Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-
-	private async updateRatingTable(currentRating: Rating): Promise<void> {
+	
+	/* 
+		Fetch all ratings and sort them by xp in descending order, totalMatches in descending order, and userId in ascending order
+		Update the rank for each rating
+		Update the rank for the current user 
+	*/
+	private async updateRatingTable(gameResult: Rating): Promise<void> {
 		try {
-			const winPercentage = currentRating.wins / currentRating.totalMatches;
-			const rating = Math.round((winPercentage * 10000) + (currentRating.totalMatches * 10));
-		
-			await this.prisma.rating.update({ where: { id: currentRating.id }, data: { rank: rating } });
-		
-			// Find all ratings that are higher than the current user's new rank and sort them by rank in descending order
-			const higherRatings = await this.prisma.rating.findMany({ where: { rank: { gt: rating } }, orderBy: { rank: 'desc' } });
-		
-			// Shift the rankings of all higher-rated users down by 1
-			for (const higherRating of higherRatings) {
-				await this.prisma.rating.update({ where: { id: higherRating.id }, data: { rank: higherRating.rank + 1 } });
-			}
-		
-			// Update the rankings of any users who have the same rank as the current user
-			const sameRankRatings = await this.prisma.rating.findMany({ where: { rank: rating, id: { not: currentRating.id } } });
-		
-			for (const sameRankRating of sameRankRatings) {
-				// If the user has the same rank as the current user, but has played fewer games, they should be ranked higher
-				if (sameRankRating.totalMatches < currentRating.totalMatches) {
-					await this.prisma.rating.update({
-						where: { id: sameRankRating.id },
-						data: { rank: sameRankRating.rank - 1 },
-					});
-				}
-				// Otherwise, they should be ranked lower
-				else if (sameRankRating.totalMatches > currentRating.totalMatches) {
-					await this.prisma.rating.update({
-						where: { id: sameRankRating.id },
-						data: { rank: sameRankRating.rank + 1 },
-					});
-				}
+			const ratings = await this.prisma.rating.findMany({
+				orderBy: [
+					{ xp: 'desc' },
+					{ totalMatches: 'desc' },
+					{ userId: 'asc' }
+				]
+			});
+
+			for (let i = 0; i < ratings.length; i++) {
+				const currentRating = ratings[i];
+				const rank = i + 1;
+
+				await this.prisma.rating.update({ where: { id: currentRating.id }, data: { rank } });
 			}
 		} catch (error) {
 			throw error;
 		}
 	}
-	
 }
