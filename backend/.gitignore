@@ -4,3 +4,5 @@ backend/prisma/migrations/*
 
 # Keep environment variables out of version control
 .env
+
+package-lock.json
