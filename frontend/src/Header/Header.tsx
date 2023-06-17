@@ -20,7 +20,7 @@ function Header() {
 			{
 				const response = await axios.post("http://localhost:5000/game/get_personal_scores", {cookie});
 				const array = response.data;
-				setLastScore(array[array.length - 1].score);
+				setLastScore(array[0].score);
 				setGotScore(true);
 			}
 			catch (error)
