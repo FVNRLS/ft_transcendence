@@ -123,6 +123,10 @@ model UserOnRooms {
   userId       Int
   user         User     @relation(fields: [userId], references: [id])
   role         UserRole @default(MEMBER)
+  isBanned     Boolean  @default(false)
+  isKicked     Boolean  @default(false)
+  isMuted      Boolean  @default(false)
+  muteExpiresAt DateTime?
 
   @@unique([roomId, userId])
   @@map("useronrooms")

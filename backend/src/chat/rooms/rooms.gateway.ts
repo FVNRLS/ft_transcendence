@@ -14,6 +14,8 @@ import { SecurityService } from 'src/security/security.service';
 import { ChatUserService } from './chat_user.service';
 import { ChatAuthGateway } from '../auth/chat_auth.gateway';
 import { RoomDetailsDto } from './entities/room.entity';
+import { KickDto, BanDto, MuteDto, UnbanDto, UnmuteDto } from './dto/room-action.dto'; // You will need to create these DTOs
+
 
 @WebSocketGateway(+process.env.CHAT_PORT, { 
   cors: {
@@ -244,4 +246,87 @@ export class RoomsGateway {
       return { success: false, message: error.message };
     }
   }
+
+
+
+  // Import required dependencies at the top
+  // import { WsIsUserAdminGuard } from '../guards/ws-is-user-admin-guard/ws-is-user-admin-guard.guard';
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('kickUser')
+  async kickUser(
+    @MessageBody() kickDto: KickDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      await this.roomsService.kickUser(kickDto.userId, kickDto.roomId, client);
+      return { success: true, message: 'User kicked successfully' };
+    } catch (error) {
+      console.log('Error:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('banUser')
+  async banUser(
+    @MessageBody() banDto: BanDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      await this.roomsService.banUser(banDto.userId, banDto.roomId, client);
+      return { success: true, message: 'User banned successfully' };
+    } catch (error) {
+      console.log('Error:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('unbanUser')
+  async unbanUser(
+    @MessageBody() unbanDto: UnbanDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      await this.roomsService.unbanUser(unbanDto.userId, unbanDto.roomId);
+      return { success: true, message: 'User unbanned successfully' };
+    } catch (error) {
+      console.log('Error:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+  
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('muteUser')
+  async muteUser(
+    @MessageBody() muteDto: MuteDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      await this.roomsService.muteUser(muteDto.userId, muteDto.roomId, muteDto.muteExpiresAt, client);
+      return { success: true, message: 'User muted successfully' };
+    } catch (error) {
+      console.log('Error:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('unmuteUser')
+  async unmuteUser(
+    @MessageBody() unmuteDto: UnmuteDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      await this.roomsService.unmuteUser(unmuteDto.userId, unmuteDto.roomId);
+      return { success: true, message: 'User unmuted successfully' };
+    } catch (error) {
+      console.log('Error:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+  
+
 }

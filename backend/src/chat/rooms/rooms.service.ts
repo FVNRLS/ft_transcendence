@@ -6,6 +6,8 @@ import { Socket } from 'socket.io';
 import { SecurityService } from 'src/security/security.service';
 import { Prisma, RoomType, User, UserRole } from '@prisma/client';
 import * as argon2 from "argon2";
+import { NotFoundException, BadRequestException } from '@nestjs/common';
+
 
 
 
@@ -85,24 +87,6 @@ export class RoomsService {
     
     return newRoom;
   }
-  
-
-//   async addUsersToRoom(roomId: number, userIds: number[]) {
-//     // Add users to the room in the database
-//     if (roomId) {
-//       for (let userId of userIds) {
-//         if (userId) {
-//           await this.prisma.userOnRooms.create({
-//               data: {
-//                   roomId: roomId,
-//                   userId: userId,
-//                   role: UserRole.MEMBER, // you can change the role based on your need
-//               },
-//           });
-//       }
-//         }
-//     }
-// }
 
 async addUsersToRoom(roomId: number, userIds: number[]) {
   // Add users to the room in the database
@@ -471,23 +455,6 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       },
     });
   }
-  
-  // async removeRoomPassword(roomId: number) {
-  //   const room = await this.prisma.room.findUnique({
-  //     where: { id: roomId },
-  //   });
-  //   if (!room) {
-  //     throw new Error(`No room found for id ${roomId}`);
-  //   }
-
-  //   return this.prisma.room.update({
-  //     where: { id: roomId },
-  //     data: {
-  //       hashedPassword: null,
-  //       salt: null,
-  //     },
-  //   });
-  // }
 
   async removeRoomPassword(roomId: number) {
     const room = await this.prisma.room.findUnique({
@@ -506,79 +473,6 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       },
     });
 }
-
-  
-
-  // async getUserRooms(userId: number) {
-  //   // Fetch blocked users by the logged-in user
-  //   const blockedUsers = await this.prisma.block.findMany({
-  //     where: { blockerId: userId },
-  //   });
-
-  //   const userRooms = await this.prisma.userOnRooms.findMany({
-  //     where: { userId: userId },
-  //     include: {
-  //       room: {
-  //         select: {
-  //           id: true,
-  //           roomName: true,
-  //           roomType: true,
-  //           hashedPassword: true,
-  //           // Include users in each room
-  //           userOnRooms: {
-  //             select: {
-  //               user: {
-  //                 select: {
-  //                   id: true,
-  //                   username: true,
-  //                   // Include other fields as required
-  //                 }
-  //               }
-  //             }
-  //           },
-  //           // Include last 100 messages in each room
-  //           messages: {
-  //             select: {
-  //               id: true,
-  //               userId: true,
-  //               roomId: true,
-  //               createdAt: true,
-  //               content: true,
-  //             },
-  //             orderBy: {
-  //               createdAt: 'asc',
-  //             },
-  //             take: 100,
-  //              // Exclude messages from blocked users
-  //              where: {
-  //               NOT: blockedUsers.map(blockedUser => {
-  //                 return {
-  //                   userId: blockedUser.blockedId,
-  //                   createdAt: {
-  //                     gte: blockedUser.createdAt,
-  //                   },
-  //                 };
-  //               }),
-  //             },
-  //           },
-  //           // Include other room data as required
-  //         }
-  //       },
-  //     },
-  //   });
-
-  //   return userRooms.map(userRoom => ({
-  //     id: userRoom.room.id,
-  //     roomName: userRoom.room.roomName,
-  //     roomType: userRoom.room.roomType,
-  //     hasPassword: userRoom.room.hashedPassword !== null,
-  //     users: userRoom.room.userOnRooms.map(ur => ur.user),
-  //     messages: userRoom.room.messages,
-  //   }));
-  // }
-
-
-  
   
   async getBlockedUsers(userId: number) {
     return this.prisma.block.findMany({
@@ -657,67 +551,6 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
     });
   }
 
-  // async getUserGroupRooms(userId: number, blockedUsers) {
-  //   const userRooms = await this.prisma.userOnRooms.findMany({
-  //     where: { userId: userId, room: { roomType: { not: 'DIRECT' } } },
-  //     include: {
-  //       room: {
-  //         select: {
-  //           id: true,
-  //           roomName: true,
-  //           roomType: true,
-  //           hashedPassword: true,
-  //           // Include users in each room
-  //           userOnRooms: {
-  //             select: {
-  //               user: {
-  //                 select: {
-  //                   id: true,
-  //                   username: true,
-  //                 },
-  //               },
-  //             },
-  //           },
-  //           // Include last 100 messages in each room
-  //           messages: {
-  //             select: {
-  //               id: true,
-  //               userId: true,
-  //               roomId: true,
-  //               createdAt: true,
-  //               content: true,
-  //             },
-  //             orderBy: {
-  //               createdAt: 'asc',
-  //             },
-  //             take: 100,
-  //             where: {
-  //               NOT: blockedUsers.map(blockedUser => {
-  //                 return {
-  //                   userId: blockedUser.blockedId,
-  //                   createdAt: {
-  //                     gte: blockedUser.createdAt,
-  //                   },
-  //                 };
-  //               }),
-  //             },
-  //           },
-  //         },
-  //       },
-  //     },
-  //   });
-
-  //   // Format the returned data for Group rooms
-  //   return userRooms.map(userRoom => ({
-  //     id: userRoom.room.id,
-  //     roomName: userRoom.room.roomName,
-  //     roomType: userRoom.room.roomType,
-  //     hasPassword: userRoom.room.hashedPassword !== null,
-  //     users: userRoom.room.userOnRooms.map(ur => ur.user),
-  //     messages: userRoom.room.messages,
-  //   }));
-  // }
-
   async getUserGroupRooms(userId: number, blockedUsers) {
     const userRooms = await this.prisma.userOnRooms.findMany({
       where: { userId: userId, room: { roomType: { not: 'DIRECT' } } },
@@ -794,6 +627,105 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
     // Combine and return the results
     return [...directRooms, ...groupRooms];
   }
+
+  async kickUser(userId: number, roomId: number, client: Socket) {
+    const userOnRoom = await this.prisma.userOnRooms.findFirst({
+      where: {
+        roomId,
+        userId,
+      },
+    });
+  
+    if (!userOnRoom) throw new NotFoundException('User or room not found');
+  
+    // Here you can add logic to use the `client` object, if needed.
+  
+    // Remove user from the room
+    await this.prisma.userOnRooms.delete({
+      where: { id: userOnRoom.id },
+    });
+  }
+  
+  async banUser(userId: number, roomId: number, client: Socket) {
+    const userOnRoom = await this.prisma.userOnRooms.findFirst({
+      where: {
+        roomId,
+        userId,
+      },
+    });
+  
+    if (!userOnRoom) throw new NotFoundException('User or room not found');
+  
+    // Here you can add logic to use the `client` object, if needed.
+  
+    // Update the user's ban status
+    await this.prisma.userOnRooms.update({
+      where: { id: userOnRoom.id },
+      data: { isBanned: true },
+    });
+  }
+
+  async unbanUser(userId: number, roomId: number) {
+    const userOnRoom = await this.prisma.userOnRooms.findFirst({
+      where: {
+        roomId,
+        userId,
+      },
+    });
+  
+    if (!userOnRoom) throw new NotFoundException('User or room not found');
+  
+    // Update the user's ban status
+    await this.prisma.userOnRooms.update({
+      where: { id: userOnRoom.id },
+      data: { isBanned: false },
+    });
+  }
+  
+  
+  async muteUser(userId: number, roomId: number, muteExpiresAt: number, client: Socket) {
+    const userOnRoom = await this.prisma.userOnRooms.findFirst({
+      where: {
+        roomId,
+        userId,
+      },
+    });
+  
+    if (!userOnRoom) throw new NotFoundException('User or room not found');
+  
+    // Here you can add logic to use the `client` object, if needed.
+  
+    // Update the user's mute status
+    await this.prisma.userOnRooms.update({
+      where: { id: userOnRoom.id },
+      data: { 
+        isMuted: true,
+        muteExpiresAt: muteExpiresAt ? new Date(muteExpiresAt) : null,
+      },
+    });
+  }
+
+  async unmuteUser(userId: number, roomId: number) {
+    const userOnRoom = await this.prisma.userOnRooms.findFirst({
+      where: {
+        roomId,
+        userId,
+      },
+    });
+  
+    if (!userOnRoom) throw new NotFoundException('User or room not found');
+  
+    // Update the user's mute status
+    await this.prisma.userOnRooms.update({
+      where: { id: userOnRoom.id },
+      data: { 
+        isMuted: false,
+        muteExpiresAt: null,
+      },
+    });
+  }
+  
+  
 
    
 }
