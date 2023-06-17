@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/27 15:25:45 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/06/16 14:20:57 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/17 14:33:26 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,6 @@ export class GameService {
 
 			await this.updateRatingTable(gameResult);		
 		} catch (error) {
-			console.log(error);
 			if (error instanceof HttpException) {
 				throw error;
 			} else {
@@ -69,7 +68,6 @@ export class GameService {
 		try {
 			const session = await this.securityService.verifyCookie(cookie);
 			const user = await this.prisma.user.findFirst({ where: {id: session.userId} });
-			console.log(user.id)
 			
 			let scoreTable: GameScoreResponse[] = [];
 			const scoreList: Score[] = await this.prisma.score.findMany({ where: {userId: user.id} });
@@ -79,7 +77,6 @@ export class GameService {
 			if (scoreList.length === 0) {
 				throw new HttpException("Oh no! It looks like you didn't play our ping pong game yet!", HttpStatus.NO_CONTENT);
 			}
-			console.log("xuj");
 			
 			for (let i: number = 0; i < scoreList.length; i++) {
 					const score = scoreList[i];
