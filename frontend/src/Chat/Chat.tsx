@@ -15,9 +15,17 @@ import GroupHeader from './GroupHeader';
 import axios from 'axios';
 
 
+// Defining interface for User and Room
+export interface User {
+  id: number;
+  username: string;
+  role: string;
+}
+
 interface Message {
   id: number;
-  userId: number;
+  // userId: number;
+  user: User;  // Add this line to include User in Message
   username: string;
   roomId: number;
   createdAt: Date;
@@ -29,12 +37,6 @@ interface userPic {
   username: string
 }
 
-// Defining interface for User and Room
-export interface User {
-  id: number;
-  username: string;
-  role: string;
-}
 
 export interface Room {
   id: number;
@@ -229,6 +231,8 @@ const Chat = () => {
       
   
       socketRef.current?.on('newMessage', (newMessage: Message) => {
+        console.log("newMessage");
+        console.log(newMessage);
       
         // Define a helper function to find the room in an array of rooms
         const findRoomIndex = (rooms: Room[]) => rooms.findIndex(room => room.id === newMessage.roomId);
@@ -527,11 +531,11 @@ const Chat = () => {
               {/* First message */}
               {selectedRoom && selectedRoom.messages.map((message, index) => (
                 <div 
-                  className={`message ${loggedInUser && loggedInUser.id === message.userId ? "user-message" : "other-message"}`} 
+                  className={`message ${loggedInUser && loggedInUser.id === message.user.id ? "user-message" : "other-message"}`} 
                   key={index}
                 >
-                  {!(loggedInUser && loggedInUser.id === message.userId) && <img src={userPics.find((user) => user.username === message.username)?.pic} alt="Profile" />}
-                  <div className={(loggedInUser && loggedInUser.id === message.userId) ? "message-content user-message-content" : "message-content"}>
+                  {!(loggedInUser && loggedInUser.id === message.user.id) && <img src={userPics.find((user) => user.username === message.user.username)?.pic} alt="Profile" />}
+                  <div className={(loggedInUser && loggedInUser.id === message.user.id) ? "message-content user-message-content" : "message-content"}>
                     <p>{message.content}</p>
                     <span className="message-time">{new Date(message.createdAt).toLocaleTimeString(undefined, {
                         hour: 'numeric',

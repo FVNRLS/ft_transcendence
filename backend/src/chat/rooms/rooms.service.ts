@@ -13,13 +13,45 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class RoomsService {
+  private readonly userSelection: Prisma.UserSelect = {
+    id: true,
+    username: true,
+  };
+
+  private readonly messageSelection: Prisma.MessageSelect = {
+    id: true,
+    roomId: true,
+    user: { select: this.userSelection },
+    createdAt: true,
+    content: true,
+  };
+
+
+  private readonly roomSelection: Prisma.RoomSelect = {
+    id: true,
+    roomName: true,
+    roomType: true,
+    userOnRooms: { select: { user: { select: this.userSelection } } },
+    messages: {
+      select: this.messageSelection,
+      orderBy: {
+        createdAt: 'asc',
+      },
+      take: 100,
+    },
+  };
+
   constructor(
     private readonly prisma: PrismaService,
-    private securityService: SecurityService
-    ) {}
+    private securityService: SecurityService,
+    ) {
 
-  async createGroupRoom(createRoomDto: CreateRoomDto) {
-    const client_id = createRoomDto.members[createRoomDto.members.length - 1].id;
+    }
+
+
+  async createGroupRoom(createRoomDto: CreateRoomDto, userId: number) {
+    // const client_id = createRoomDto.members[createRoomDto.members.length - 1].id;
+    const client_id = userId;
     let salt = null;
     let hashedPassword = null;
 
@@ -34,24 +66,65 @@ export class RoomsService {
       salt = hashedResults.salt;
       hashedPassword = hashedResults.hashedPassword;
     }
+    // const room = await this.prisma.room.create({
+    //   data: {
+    //     roomName:       createRoomDto.roomName,
+    //     roomType:       createRoomDto.roomType,
+    //     hashedPassword: hashedPassword,
+    //     salt:           salt,
+    //     userId: client_id,
+    //   },
+    // });
+    
+    // const userIds = createRoomDto.members.map(member => member.id);
+    // if (!userIds) {
+    //   console.log("USERIDS IS NULL");
+    // } else {
+    //   await this.addUsersToRoom(room.id, userIds);
+    // }
+
+    // const room = await this.prisma.room.create({
+    //   data: {
+    //     roomName: createRoomDto.roomName,
+    //     roomType: createRoomDto.roomType,
+    //     hashedPassword: hashedPassword,
+    //     salt: salt,
+    //     userId: client_id,
+    //     userOnRooms: {
+    //       create: createRoomDto.members.map(member => ({
+    //         userId: member.id,
+    //       })),
+    //     },
+    //   },
+    // });
+
     const room = await this.prisma.room.create({
       data: {
-        roomName:       createRoomDto.roomName,
-        roomType:       createRoomDto.roomType,
+        roomName: createRoomDto.roomName,
+        roomType: createRoomDto.roomType,
         hashedPassword: hashedPassword,
-        salt:           salt,
+        salt: salt,
         userId: client_id,
+        userOnRooms: {
+          create: [
+            // Set client as owner
+            {
+              userId: client_id,
+              role: UserRole.OWNER,
+            },
+            // Add other members
+            ...createRoomDto.members
+              .filter(member => member.id !== client_id)
+              .map(member => ({
+                userId: member.id,
+                // No need to specify role here as 'MEMBER' is the default
+              })),
+          ],
+        },
       },
     });
     
-    const userIds = createRoomDto.members.map(member => member.id);
-    if (!userIds) {
-      console.log("USERIDS IS NULL");
-    } else {
-      await this.addUsersToRoom(room.id, userIds);
-    }
-    
-    this.setUserRole(client_id, room.id, UserRole.OWNER);
+    // this.setUserRole(client_id, room.id, UserRole.OWNER);
     
     // Fetch the room with its related data
     const newRoom = await this.prisma.room.findUnique({
@@ -69,13 +142,7 @@ export class RoomsService {
           }
         },
         messages: {
-          select: {
-            id: true,
-            userId: true,
-            roomId: true,
-            createdAt: true,
-            content: true,
-          },
+          select: this.messageSelection,
           orderBy: {
             createdAt: 'asc',
           },
@@ -119,12 +186,13 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
 }
 
 
-  async createDirectRoom(createRoomDto: CreateRoomDto) {
+  async createDirectRoom(createRoomDto: CreateRoomDto, userId: number) {
     console.log("Create Direct Room");
 
     const user1Id = createRoomDto.members[0].id;
-    console.log(user1Id);
-    const client_id = createRoomDto.members[createRoomDto.members.length - 1].id;
+    // const client_id = createRoomDto.members[createRoomDto.members.length - 1].id;
+    const client_id = userId;
+
     console.log(client_id);
     // Check if a direct room already exists between the two users
     const existingRoom = await this.prisma.room.findFirst({
@@ -193,13 +261,7 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
           }
         },
         messages: {
-          select: {
-            id: true,
-            userId: true,
-            roomId: true,
-            createdAt: true,
-            content: true,
-          },
+          select: this.messageSelection,
           orderBy: {
             createdAt: 'asc',
           },
@@ -502,13 +564,7 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
             },
             // Include last 100 messages in each room
             messages: {
-              select: {
-                id: true,
-                userId: true,
-                roomId: true,
-                createdAt: true,
-                content: true,
-              },
+              select: this.messageSelection,
               orderBy: {
                 createdAt: 'asc',
               },
@@ -523,7 +579,7 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
                   };
                 }),
               },
-            },
+            },            
           },
         },
       },
@@ -574,14 +630,9 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
               },
             },
             // Include last 100 messages in each room
+            // Include last 100 messages in each room
             messages: {
-              select: {
-                id: true,
-                userId: true,
-                roomId: true,
-                createdAt: true,
-                content: true,
-              },
+              select: this.messageSelection,
               orderBy: {
                 createdAt: 'asc',
               },
@@ -596,11 +647,14 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
                   };
                 }),
               },
-            },
+            },   
           },
         },
       },
     });
+
+    console.log("USER GROUP ROOMS");
+    console.log(userRooms);
 
     // Format the returned data for Group rooms
     return userRooms.map(userRoom => ({
@@ -623,6 +677,8 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
 
     // Fetch Group Rooms
     const groupRooms = await this.getUserGroupRooms(userId, blockedUsers);
+
+
 
     // Combine and return the results
     return [...directRooms, ...groupRooms];

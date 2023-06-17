@@ -74,6 +74,8 @@ services:
     volumes:
     - nest_vol:/nest/
     - react_vol:/react/
+    - /nest/node_modules
+    - /react/node_modules
     networks:
     - internal
     depends_on:
@@ -95,6 +97,8 @@ services:
     volumes:
     - nest_vol:/nest/
     - react_vol:/react/
+    - /nest/node_modules
+    - /react/node_modules
     depends_on:
     - nest_js
     restart: unless-stopped

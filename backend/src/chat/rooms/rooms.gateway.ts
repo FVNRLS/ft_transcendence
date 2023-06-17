@@ -71,7 +71,7 @@ export class RoomsGateway {
     this.addCurrentUserToMembers(createRoomDto, userId);
   
     // Create room based on its type
-    let newRoom = await this.createRoomBasedOnType(createRoomDto);
+    let newRoom = await this.createRoomBasedOnType(createRoomDto, userId);
 
     if (!newRoom) {
       return "Error: DM already exists";
@@ -103,10 +103,11 @@ export class RoomsGateway {
     }
   }
   
-  async createRoomBasedOnType(createRoomDto: CreateRoomDto) {
+  async createRoomBasedOnType(createRoomDto: CreateRoomDto, userId: number) {
     return createRoomDto.roomType == RoomType.DIRECT
-      ? await this.roomsService.createDirectRoom(createRoomDto)
-      : await this.roomsService.createGroupRoom(createRoomDto);
+      ? await this.roomsService.createDirectRoom(createRoomDto, userId)
+      : await this.roomsService.createGroupRoom(createRoomDto, userId);
+    // return await this.roomsService.createDirectRoom(createRoomDto, userId);
   }
   
   updateRoomData(newRoom: any) {
@@ -202,6 +203,9 @@ export class RoomsGateway {
     const userRooms = await this.roomsService.getUserRooms(userId);
 
     client.emit('getUserRooms', userRooms);
+
+    console.log("USER ROOMS");
+    console.log(userRooms);
 
     return "Success";
   }

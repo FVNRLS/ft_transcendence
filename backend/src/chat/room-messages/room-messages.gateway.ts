@@ -54,6 +54,9 @@ export class MessagesGateway {
         NOT: { userId: { in: blockedUserIds } },
       },
     });
+
+    console.log("SENT MESSAGE:");
+    console.log(newMessage);
   
     // Emit the new message to each recipient
     for (const recipient of recipients) {

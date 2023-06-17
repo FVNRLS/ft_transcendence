@@ -7,12 +7,20 @@ export class UserOnRoomDto {
   };
 }
 
-export class MessageDto {
+export class UserDto {
   id: number;
-  userId: number;
-  roomId: number;
-  createdAt: Date;
-  content: string;
+  username: string;
+  // include other properties as required
+}
+
+
+export class MessageDto {
+  userId?: number;
+  id?: number;
+  createdAt?: Date; 
+  user?: UserDto;
+  roomId?: number;
+  content?: string;
 }
 
 export class RoomDetailsDto {
