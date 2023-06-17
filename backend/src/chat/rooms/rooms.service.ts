@@ -425,7 +425,12 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
   async setUserRole(userId: number, roomId: number, role: UserRole) {
     console.log(`userId: ${userId}, roomId: ${roomId}, role: ${role}`);
     const userRoom = await this.prisma.userOnRooms.findUnique({
-      where: { roomId_userId: { roomId, userId } }
+      where: {
+        roomId_userId: {
+          roomId: roomId,
+          userId: userId,
+        },
+      },
     });
 
     if (!userRoom) {

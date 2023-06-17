@@ -204,7 +204,7 @@ export class RoomsGateway {
     return "Success";
   }
   
-  @HasRoomPermission('OWNER')
+  // @HasRoomPermission('OWNER')
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('setUserRole')
   async setUserRole(
