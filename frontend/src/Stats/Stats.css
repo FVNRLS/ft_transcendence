@@ -29,11 +29,13 @@
 
 .column {
   padding: 5px;
+  width: 3rem;
 }
 
 .table-row {
   height: 5rem;
   display: flex;
+  padding: 0 2rem;
   flex-direction: column;
   justify-content: space-evenly;
   align-items: center;
@@ -69,5 +71,6 @@
 
 
 .row-rank {
+  justify-content: space-between;
   flex-direction: row;
 }
