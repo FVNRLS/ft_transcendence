@@ -18,6 +18,21 @@ interface serverState {
 	ready: boolean
 }
 
+
+const getRandomAngle = () => {
+	// Define the safe ranges in radians.
+	// Each range ensures the ball is always at least 45 degrees away from going straight in any direction.
+	const safeRanges = [
+	  [Math.PI / 4, 3 * Math.PI / 4],
+	  [5 * Math.PI / 4, 7 * Math.PI / 4],
+	];
+  
+	// Randomly pick a range.
+	const randomRange = safeRanges[Math.floor(Math.random() * safeRanges.length)];
+	// Return a random angle within the picked range.
+	return Math.random() * (randomRange[1] - randomRange[0]) + randomRange[0];
+  };
+
 const Game = () => {
 
 	const session = Cookies.get('session');
@@ -34,7 +49,7 @@ const Game = () => {
 	const [socket, setSocket] = useState<Socket | null>(null);
 	
 	const [ballPos, setBallPos] = useState({x:(1280 / 2 - 15), y: (720 / 2) - 15});
-	const [ballAngle, setBallAngle] = useState(Math.random() * Math.PI * 2);
+	const [ballAngle, setBallAngle] = useState(getRandomAngle());
 	const [cursorY, setCursorY] = useState(0);
 	const [scoreLeft, setScoreLeft] = useState(0);
 	const [scoreRight, setScoreRight] = useState(0);
@@ -76,6 +91,7 @@ const Game = () => {
 
 	const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   	const [screenHeight, setScreenHeight] = useState(window.innerHeight);
+	
 
 	const leftPlayerRef = useRef(null);
 	const rightPlayerRef = useRef(null);
@@ -133,7 +149,7 @@ const Game = () => {
 
 					if (
 						(
-						newBallX <= (50) &&
+						newBallX <= (48) &&
 						newBallY >= (leftPlayerBar.top - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 + 5)) &&
 						newBallY <= (leftPlayerBar.bottom - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2)) &&
 						newBallX > (0)
@@ -169,7 +185,7 @@ const Game = () => {
 				}
 			
 				if (newBallY < 0 || newBallY > 720 - 30) {
-					setBallAngle(-gameState.ballAngle);
+					setBallAngle(-gameState.ballAngle );
 				}
 				// socket?.emit('move', localState);
 		}
@@ -193,7 +209,7 @@ const Game = () => {
 
 	const respawnBall = () => {
 		setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
-		setBallAngle(Math.random() * Math.PI * 2);
+		setBallAngle(getRandomAngle());
 	}
 
 	const changeBg = () => {
