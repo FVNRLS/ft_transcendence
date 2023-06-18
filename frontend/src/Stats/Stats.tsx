@@ -68,7 +68,7 @@ const Stats = () => {
 		
 		if (session && !rankArr[0])
 			getRankArr();
-	})
+	}, [rankArr, scoreArr, session])
 
 	return (
 		<>
@@ -78,12 +78,12 @@ const Stats = () => {
 				<>
 				<div className="stats-cont">
 				<div className="table-header">Game Statistics</div>
-					{!scoreArr[0] && (
+					{scoreArr[0]?.score === '' && (
 					<div className="table-row">
 						<div className="column">No Stats Yet</div>
 					</div>
 					)}
-					{scoreArr.map((score, index) => (
+					{scoreArr[0]?.score !== '' && scoreArr.map((score, index) => (
 					<div className="table-row" key={index}>
 						<div className="column">{score.enemyName}</div>
 						<div className="column">{score.score}</div>
