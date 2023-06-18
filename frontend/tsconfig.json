@@ -18,9 +18,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "outDir": "dist",  // Add this line to specify the output directory
     "jsx": "react-jsx"
   },
   "include": [
-    "src"
+    "src",
+    "public"  // Add "public" directory to include in the compilation
   ]
 }
