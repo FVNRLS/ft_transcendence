@@ -23,6 +23,6 @@
   },
   "include": [
     "src",
-    "public"  // Add "public" directory to include in the compilation
+    "public"
   ]
 }
