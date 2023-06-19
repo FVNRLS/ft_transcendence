@@ -377,7 +377,7 @@ const Chat = () => {
     const getUserPics = async () => {
       try
       {
-        const response = await axios.post(`http://${app_ip}:5000/friendship/get_users`, {cookie: session});
+        const response = await axios.post(`http://${app_ip}:5000/friendship/get_users_all`, {cookie: session});
         setUserPics(response.data.map((user:any) => ({pic: getImgUrl(user.picture.buffer.data), username: user.username})));
       }
       catch (error)

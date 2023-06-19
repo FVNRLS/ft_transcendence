@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/11 18:09:00 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/06/02 18:03:35 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/19 15:18:00 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -332,6 +332,33 @@ export class FriendshipService {
           ]
         }
       });
+
+
+      let userListResponse: UserListDataResponse[] = [];
+      for (let i: number = 0; i < users.length; i++) {
+        const userTmp = users[i];
+        if (userTmp.username != user.username)
+        {
+          const pic = await this.googleDriveService.getProfilePicture(cookie, userTmp);
+          const userResponse = {username: userTmp.username, picture: pic};
+          userListResponse.push(userResponse);
+        }
+      }
+
+      userListResponse.sort((a, b) => a.username.localeCompare(b.username));
+  
+      return userListResponse;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getUserListAll(cookie: string): Promise<UserListDataResponse[]> {
+    try {
+      const session = await this.securityService.verifyCookie(cookie);
+      const user: User = await this.prisma.user.findUnique({ where: { id: session.userId } });      
+
+      const users = await this.prisma.user.findMany();
 
 
       let userListResponse: UserListDataResponse[] = [];
