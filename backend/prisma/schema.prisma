@@ -30,6 +30,8 @@ model User {
   friends             Friend[]
   messages            Message[]
   userrooms           UserOnRooms[]
+  bannedInRooms       BannedUser[]
+  mutedInRooms        MutedUser[]
   blockedUsers        Block[] @relation("BlockBlocker")
   blockingUsers       Block[] @relation("BlockBlocked")
 
@@ -111,6 +113,8 @@ model Room {
   userId                Int
   userOnRooms           UserOnRooms[]
   messages              Message[]
+  bannedUsers           BannedUser[]
+  mutedUsers            MutedUser[]
 
   @@map("rooms")
 }
@@ -123,14 +127,35 @@ model UserOnRooms {
   userId       Int
   user         User     @relation(fields: [userId], references: [id])
   role         UserRole @default(MEMBER)
-  isBanned     Boolean  @default(false)
-  isKicked     Boolean  @default(false)
-  isMuted      Boolean  @default(false)
   muteExpiresAt DateTime?
 
   @@unique([roomId, userId])
   @@map("useronrooms")
 }
+
+model BannedUser {
+  id      Int    @id @default(autoincrement())
+  userId  Int
+  roomId  Int
+  bannedAt DateTime @default(now())
+
+  room    Room   @relation(fields: [roomId], references: [id])
+  user    User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, roomId])
+}
+
+model MutedUser {
+  userId Int
+  roomId Int
+  muteExpiresAt DateTime?
+  user   User   @relation(fields: [userId], references: [id])
+  room   Room   @relation(fields: [roomId], references: [id])
+
+  @@id([userId, roomId])
+}
+
+
 
 enum RoomType {
   PUBLIC

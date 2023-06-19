@@ -702,86 +702,193 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
     });
   }
   
-  async banUser(userId: number, roomId: number, client: Socket) {
-    const userOnRoom = await this.prisma.userOnRooms.findFirst({
+  // async banUser(userId: number, roomId: number, client: Socket) {
+  //   const userOnRoom = await this.prisma.userOnRooms.findFirst({
+  //     where: {
+  //       roomId,
+  //       userId,
+  //     },
+  //   });
+  
+  //   if (!userOnRoom) throw new NotFoundException('User or room not found');
+  
+  //   // Here you can add logic to use the `client` object, if needed.
+  
+  //   // Update the user's ban status
+  //   await this.prisma.userOnRooms.update({
+  //     where: { id: userOnRoom.id },
+  //     data: { isBanned: true },
+  //   });
+  // }
+
+  // async unbanUser(userId: number, roomId: number) {
+  //   const userOnRoom = await this.prisma.userOnRooms.findFirst({
+  //     where: {
+  //       roomId,
+  //       userId,
+  //     },
+  //   });
+  
+  //   if (!userOnRoom) throw new NotFoundException('User or room not found');
+  
+  //   // Update the user's ban status
+  //   await this.prisma.userOnRooms.update({
+  //     where: { id: userOnRoom.id },
+  //     data: { isBanned: false },
+  //   });
+  // }
+
+  async banUser(userId: number, roomId: number) {
+    // Check if the user is already banned
+    const bannedUser = await this.prisma.bannedUser.findUnique({
       where: {
-        roomId,
-        userId,
+        userId_roomId: {
+          userId,
+          roomId,
+        },
       },
     });
   
-    if (!userOnRoom) throw new NotFoundException('User or room not found');
+    if (bannedUser) {
+      throw new Error('User is already banned from this room');
+    }
   
-    // Here you can add logic to use the `client` object, if needed.
-  
-    // Update the user's ban status
-    await this.prisma.userOnRooms.update({
-      where: { id: userOnRoom.id },
-      data: { isBanned: true },
+    // Add user to BannedUser table
+    await this.prisma.bannedUser.create({
+      data: {
+        userId,
+        roomId,
+      },
     });
+  
+    return { success: true };
   }
-
+  
   async unbanUser(userId: number, roomId: number) {
-    const userOnRoom = await this.prisma.userOnRooms.findFirst({
+    // Check if the user is banned
+    const bannedUser = await this.prisma.bannedUser.findUnique({
       where: {
-        roomId,
-        userId,
+        userId_roomId: {
+          userId,
+          roomId,
+        },
       },
     });
   
-    if (!userOnRoom) throw new NotFoundException('User or room not found');
+    if (!bannedUser) {
+      throw new Error('User is not banned from this room');
+    }
   
-    // Update the user's ban status
-    await this.prisma.userOnRooms.update({
-      where: { id: userOnRoom.id },
-      data: { isBanned: false },
+    // Remove user from BannedUser table
+    await this.prisma.bannedUser.delete({
+      where: {
+        userId_roomId: {
+          userId,
+          roomId,
+        },
+      },
     });
+  
+    return { success: true };
   }
   
   
-  async muteUser(userId: number, roomId: number, muteExpiresAt: number, client: Socket) {
-    const userOnRoom = await this.prisma.userOnRooms.findFirst({
-      where: {
-        roomId,
-        userId,
-      },
-    });
   
-    if (!userOnRoom) throw new NotFoundException('User or room not found');
+  // async muteUser(userId: number, roomId: number, muteExpiresAt: number, client: Socket) {
+  //   const userOnRoom = await this.prisma.userOnRooms.findFirst({
+  //     where: {
+  //       roomId,
+  //       userId,
+  //     },
+  //   });
   
-    // Here you can add logic to use the `client` object, if needed.
+  //   if (!userOnRoom) throw new NotFoundException('User or room not found');
   
-    // Update the user's mute status
-    await this.prisma.userOnRooms.update({
-      where: { id: userOnRoom.id },
-      data: { 
-        isMuted: true,
-        muteExpiresAt: muteExpiresAt ? new Date(muteExpiresAt) : null,
-      },
-    });
-  }
+  //   // Here you can add logic to use the `client` object, if needed.
+  
+  //   // Update the user's mute status
+  //   await this.prisma.userOnRooms.update({
+  //     where: { id: userOnRoom.id },
+  //     data: { 
+  //       isMuted: true,
+  //       muteExpiresAt: muteExpiresAt ? new Date(muteExpiresAt) : null,
+  //     },
+  //   });
+  // }
 
+  // async unmuteUser(userId: number, roomId: number) {
+  //   const userOnRoom = await this.prisma.userOnRooms.findFirst({
+  //     where: {
+  //       roomId,
+  //       userId,
+  //     },
+  //   });
+  
+  //   if (!userOnRoom) throw new NotFoundException('User or room not found');
+  
+  //   // Update the user's mute status
+  //   await this.prisma.userOnRooms.update({
+  //     where: { id: userOnRoom.id },
+  //     data: { 
+  //       isMuted: false,
+  //       muteExpiresAt: null,
+  //     },
+  //   });
+  // }
+
+  async muteUser(userId: number, roomId: number, muteExpiresAt?: Date) {
+    // Check if the user is already muted
+    const mutedUser = await this.prisma.mutedUser.findUnique({
+      where: {
+        userId_roomId: {
+          userId,
+          roomId,
+        },
+      },
+    });
+  
+    if (mutedUser) {
+      throw new Error('User is already muted in this room');
+    }
+  
+    // Add user to MutedUser table
+    await this.prisma.mutedUser.create({
+      data: {
+        userId,
+        roomId,
+        muteExpiresAt,  // Add this line
+      },
+    });
+  
+    return { success: true };
+  }
+  
+  
   async unmuteUser(userId: number, roomId: number) {
-    const userOnRoom = await this.prisma.userOnRooms.findFirst({
+    // Check if the user is muted
+    const mutedUser = await this.prisma.mutedUser.findUnique({
       where: {
-        roomId,
-        userId,
+        userId_roomId: {
+          userId,
+          roomId,
+        },
       },
     });
   
-    if (!userOnRoom) throw new NotFoundException('User or room not found');
+    if (!mutedUser) {
+      throw new Error('User is not muted in this room');
+    }
   
-    // Update the user's mute status
-    await this.prisma.userOnRooms.update({
-      where: { id: userOnRoom.id },
-      data: { 
-        isMuted: false,
-        muteExpiresAt: null,
+    // Remove user from MutedUser table
+    await this.prisma.mutedUser.delete({
+      where: {
+        userId_roomId: {
+          userId,
+          roomId,
+        },
       },
     });
+  
+    return { success: true };
   }
-  
-  
-
-   
 }

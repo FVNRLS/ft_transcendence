@@ -279,7 +279,7 @@ export class RoomsGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      await this.roomsService.banUser(banDto.userId, banDto.roomId, client);
+      await this.roomsService.banUser(banDto.userId, banDto.roomId);
       return { success: true, message: 'User banned successfully' };
     } catch (error) {
       console.log('Error:', error.message);
@@ -310,13 +310,15 @@ export class RoomsGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      await this.roomsService.muteUser(muteDto.userId, muteDto.roomId, muteDto.muteExpiresAt, client);
+      const muteExpiresAt = muteDto.muteExpiresAt ? new Date(muteDto.muteExpiresAt) : undefined;
+      await this.roomsService.muteUser(muteDto.userId, muteDto.roomId, muteExpiresAt);
       return { success: true, message: 'User muted successfully' };
     } catch (error) {
       console.log('Error:', error.message);
       return { success: false, error: error.message };
     }
   }
+  
 
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('unmuteUser')
