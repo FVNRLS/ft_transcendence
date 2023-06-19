@@ -4,7 +4,8 @@ import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
 
 const CLIENT_ID = process.env.REACT_APP_ID;
-const REDIRECT_URI = 'http://localhost:5000/auth/authorize_callback';
+const app_ip = process.env.REACT_APP_IP;
+const REDIRECT_URI = `http://${app_ip}:5000/auth/authorize_callback`;
 
 function Homepage() {
   const session = Cookies.get('session');
@@ -12,6 +13,8 @@ function Homepage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log(app_ip);
+
     if (session)
       navigate('/dashboard');
   }, [navigate, session])

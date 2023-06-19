@@ -16,10 +16,11 @@ import { ChatAuthGateway } from '../auth/chat_auth.gateway';
 import { RoomDetailsDto } from './entities/room.entity';
 import { KickDto, BanDto, MuteDto, UnbanDto, UnmuteDto } from './dto/room-action.dto'; // You will need to create these DTOs
 
+const app_ip = process.env.REACT_APP_IP;
 
 @WebSocketGateway(+process.env.CHAT_PORT, { 
   cors: {
-      origin: "http://localhost:3000", // Replace with the origin you want to allow
+      origin: `http://${app_ip}:3000`, // Replace with the origin you want to allow
       methods: ["GET", "POST"],
       credentials: true
   } 

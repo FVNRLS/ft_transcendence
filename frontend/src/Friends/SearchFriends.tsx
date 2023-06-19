@@ -14,6 +14,7 @@ interface User {
 const SearchFriends = () => {
 
 	const session = Cookies.get('session');
+	const app_ip = process.env.REACT_APP_IP;
 
 	const navigate = useNavigate();
 
@@ -44,7 +45,7 @@ const SearchFriends = () => {
 		const getUserList = async () => {
 			setIsLoading(true);
 			try {
-				const response = await axios.post("http://localhost:5000/friendship/get_users", {cookie: session});
+				const response = await axios.post(`http://${app_ip}:5000/friendship/get_users`, {cookie: session});
 				setUsers(response.data.map((user:any) => ({...user, added: false, picture: getImgUrl(user.picture.buffer.data)})));
 			} catch (error) {
 				console.log(error);
@@ -76,7 +77,7 @@ const SearchFriends = () => {
 
 		setUsers(usrList?.filter((user) => user !== null) as User[]);
 		try {
-			await axios.post("http://localhost:5000/friendship/add", {cookie: session, friendName: user.username});
+			await axios.post(`http://${app_ip}:5000/friendship/add`, {cookie: session, friendName: user.username});
 		} catch (error) {
 			console.log(error);
 		}

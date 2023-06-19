@@ -16,6 +16,7 @@ import Cookies from 'js-cookie';
 
 function App() {
   const session = Cookies.get('session');
+  const app_ip = process.env.REACT_APP_IP;
 
   // Register the event listeners
   useEffect(() => {
@@ -24,7 +25,7 @@ function App() {
       if (session !== undefined)
       {
         try {
-          await axios.post("http://localhost:5000/auth/set_status", {cookie: session, status: 'online'});
+          await axios.post(`http://${app_ip}:5000/auth/set_status`, {cookie: session, status: 'online'});
         } catch (error) {
           console.log(error);
         }
@@ -35,7 +36,7 @@ function App() {
       if (session !== undefined)
       {
         try {
-          await axios.post("http://localhost:5000/auth/set_status", {cookie: session, status: 'offline'});
+          await axios.post(`http://${app_ip}:5000/auth/set_status`, {cookie: session, status: 'offline'});
         } catch (error) {
           console.log(error);
         }

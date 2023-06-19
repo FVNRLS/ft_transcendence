@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/06/03 15:56:58 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/19 13:39:19 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@ import { AuthService } from "./auth.service"
 import { AuthDto } from "./dto";
 import { AuthResponse, UserDataResponse } from "./dto/response.dto";
 import { Response } from 'express';
+
+const app_ip = process.env.REACT_APP_IP;
 
 @Controller("/auth")
 
@@ -27,7 +29,7 @@ export class AuthController {
     try {
 			const token = await this.authService.authorizeCallback(code);
 			
-			res.redirect(`http://localhost:3000/form?token=${token}`);
+			res.redirect(`http://${app_ip}:3000/form?token=${token}`);
     } catch (error) {
     	throw error;
     }

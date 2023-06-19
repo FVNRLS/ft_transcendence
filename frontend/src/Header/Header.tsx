@@ -6,6 +6,7 @@ import axios from 'axios';
 
 function Header() {
 	const cookie = Cookies.get('session');
+	const app_ip = process.env.REACT_APP_IP;
 	const navigate = useNavigate();
 
 	const [btnColor, setBtnColor] = useState('rgba(128, 128, 128, 0.5)');
@@ -18,7 +19,7 @@ function Header() {
 		const getLastScore = async () => {
 			try
 			{
-				const response = await axios.post("http://localhost:5000/game/get_personal_scores", {cookie});
+				const response = await axios.post(`http://${app_ip}:5000/game/get_personal_scores`, {cookie});
 				const array = response.data;
 				setLastScore(array[0].score);
 				setGotScore(true);
@@ -44,7 +45,7 @@ function Header() {
 	const handleSwitch = async () => {
 		try
 		{
-			await axios.post("http://localhost:5000/security/change_tfa", {cookie});
+			await axios.post(`http://${app_ip}:5000/security/change_tfa`, {cookie});
 		} catch (error) {
 			console.log(error);
 		}
@@ -64,8 +65,8 @@ function Header() {
 
 	const handleLogOut = async () => {
 		try {
-			await axios.post("http://localhost:5000/auth/set_status", {cookie, status: 'offline'});
-			const response = await axios.post('http://localhost:5000/auth/logout', {cookie});
+			await axios.post(`http://${app_ip}:5000/auth/set_status`, {cookie, status: 'offline'});
+			const response = await axios.post(`http://${app_ip}:5000/auth/logout`, {cookie});
 			if (response.data.status === 200)
 			{
 				Cookies.remove('session');
@@ -83,7 +84,7 @@ function Header() {
 					<Link className="dashboard-btn" to='/dashboard'>Dashboard</Link>
 				</li>
 				<li className='list-item stats' onClick={() => {navigate('/stats')}} >Last Match: {lastScore}</li>
-				<li className='list-item' >No messages</li>
+				<li className='list-item stats' onClick={() => {navigate('/chat')}} >No messages</li>
 				<li className='list-item' >
 					<button style={btnStyle} className='tfa-btn' onClick={handleSwitch}>TFA</button>
 				</li>

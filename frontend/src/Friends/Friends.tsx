@@ -17,6 +17,7 @@ interface User {
 const Friends = () => {
 
 	const session = Cookies.get('session');
+	const app_ip = process.env.REACT_APP_IP;
 	const navigate = useNavigate();
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -36,9 +37,9 @@ const Friends = () => {
 		const getUserList = async () => {
 			setIsLoading(true);
 			try {
-				const response = await axios.post("http://localhost:5000/friendship/get_to_accept", {cookie: session});
+				const response = await axios.post(`http://${app_ip}:5000/friendship/get_to_accept`, {cookie: session});
 				setInvitators(response.data.map((user:any) => ({...user, added: false, picture: getImgUrl(user.picture.buffer.data)})));
-				const response1 = await axios.post("http://localhost:5000/friendship/get_accepted", {cookie: session});
+				const response1 = await axios.post(`http://${app_ip}:5000/friendship/get_accepted`, {cookie: session});
 				setFriends(response1.data.map((user:any) => ({...user, added: false, picture: getImgUrl(user.picture.buffer.data)})));
 			} catch (error) {
 				console.log(error);
@@ -61,7 +62,7 @@ const Friends = () => {
 
 		setInvitators(invList?.filter((user) => user !== null) as User[]);
 		try {
-			await axios.post("http://localhost:5000/friendship/accept", {cookie: session, friendName: user.username});
+			await axios.post(`http://${app_ip}:5000/friendship/accept`, {cookie: session, friendName: user.username});
 		} catch (error) {
 			console.log(error);
 		}
@@ -71,7 +72,7 @@ const Friends = () => {
 		setFriends(friends?.filter((usr) => usr.username !== user.username) as User[]);
 
 		try {
-			await axios.post("http://localhost:5000/friendship/delete", {cookie: session, friendName: user.username});
+			await axios.post(`http://${app_ip}:5000/friendship/delete`, {cookie: session, friendName: user.username});
 		} catch (error) {
 			console.log(error);
 		}
@@ -81,7 +82,7 @@ const Friends = () => {
 		setInvitators(invitators?.filter((usr) => usr.username !== user.username) as User[]);
 
 		try {
-			await axios.post("http://localhost:5000/friendship/reject", {cookie: session, friendName: user.username});
+			await axios.post(`http://${app_ip}:5000/friendship/reject`, {cookie: session, friendName: user.username});
 		} catch (error) {
 			console.log(error);
 		}

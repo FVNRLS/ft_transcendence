@@ -15,10 +15,11 @@ import { SendDirectMessageDto } from './dto/send-direct-message.dto';
 import { ChatAuthGateway } from '../auth/chat_auth.gateway';
 import { PrismaService } from 'src/prisma/prisma.service';
 
+const app_ip = process.env.REACT_APP_IP;
 
 @WebSocketGateway(+process.env.CHAT_PORT, { 
   cors: {
-      origin: "http://localhost:3000", // Replace with the origin you want to allow
+      origin: `http://${app_ip}:3000`, // Replace with the origin you want to allow
       methods: ["GET", "POST"],
       credentials: true
   } 

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 const Profile = () => {
 
 	const session = Cookies.get('session');
+	const app_ip = process.env.REACT_APP_IP;
 
 	const [oldUsername, setOldUsername] = useState('');
 	const [oldEmail, setOldEmail] = useState('');
@@ -21,7 +22,7 @@ const Profile = () => {
 		const getUserData = async () => {
 			try {
 				setIsLoading(true);
-				const response = await axios.post('http://localhost:5000/auth/get_data', { cookie: session });
+				const response = await axios.post(`http://${app_ip}:5000/auth/get_data`, { cookie: session });
 				setOldUsername(response.data.username);
 				setOldEmail(response.data.email);
 			} catch (error) {
@@ -31,7 +32,7 @@ const Profile = () => {
 
 		const getPic = async () => {
 			try {
-				const response = await axios.post('http://localhost:5000/storage/get_profile_picture', { cookie: session });
+				const response = await axios.post(`http://${app_ip}:5000/storage/get_profile_picture`, { cookie: session });
 				const uintArray = new Uint8Array(response.data.buffer.data);
 				const blob = new Blob([uintArray], { type: 'mimetype' });
 				const imageUrl = URL.createObjectURL(blob);
@@ -87,7 +88,7 @@ const Profile = () => {
 				formData.append('email', email);
 			if (username)
 				formData.append('username', username);
-			const response = await axios.post('http://localhost:5000/auth/update_profile', formData, {
+			const response = await axios.post(`http://${app_ip}:5000/auth/update_profile`, formData, {
 				headers: {
 				"Content-Type": "multipart/form-data",
 			}});

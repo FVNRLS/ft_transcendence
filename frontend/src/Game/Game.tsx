@@ -21,6 +21,7 @@ interface serverState {
 const Game = () => {
 
 	const session = Cookies.get('session');
+	const app_ip = process.env.REACT_APP_IP;
 
 	const navigate = useNavigate();
 
@@ -67,7 +68,7 @@ const Game = () => {
 	});
 
 	const connectToSocket = () => {
-		const newSocket = io("http://localhost:5005", { transports: ['websocket'],
+		const newSocket = io(`http://${app_ip}:5005`, { transports: ['websocket'],
 		extraHeaders: {
 		  'Cookie': `session=${session}`
 		}});

@@ -27,6 +27,8 @@ const Stats = () => {
 
 	const session = Cookies.get('session');
 
+	const app_ip = process.env.REACT_APP_IP;
+
 	const navigate = useNavigate();
 
 	const [scoreArr, setScoreArr] = useState<GameScore[]>([]);
@@ -42,7 +44,7 @@ const Stats = () => {
 		const getScoreArr = async () => {
 			try
 			{
-				const response = await axios.post('http://localhost:5000/game/get_personal_scores', {cookie: session});
+				const response = await axios.post(`http://${app_ip}:5000/game/get_personal_scores`, {cookie: session});
 				setScoreArr(response.data);
 			}
 			catch (error) 
@@ -54,7 +56,7 @@ const Stats = () => {
 		const getRankArr = async () => {
 			try
 			{
-				const response = await axios.post('http://localhost:5000/game/get_ranking_table', {cookie: session});
+				const response = await axios.post(`http://${app_ip}:5000/game/get_ranking_table`, {cookie: session});
 				setRankArr(response.data);
 			}
 			catch (error)

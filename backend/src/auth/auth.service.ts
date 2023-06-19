@@ -36,7 +36,8 @@ export class AuthService {
   async authorizeCallback(code: string): Promise<string> {
     try {
       const CLIENT_ID = process.env.REACT_APP_ID;
-      const REDIRECT_URI = "http://localhost:5000/auth/authorize_callback";
+      const app_ip = process.env.REACT_APP_IP;
+      const REDIRECT_URI = `http://${app_ip}:5000/auth/authorize_callback`;
       const SECRET = process.env.REACT_APP_SECRET;
   
       const response = await axios.post("https://api.intra.42.fr/oauth/token", {

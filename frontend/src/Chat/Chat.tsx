@@ -57,6 +57,7 @@ const Chat = () => {
 
   // Fetching session data
   const session = Cookies.get('session');
+  const app_ip = process.env.REACT_APP_IP;
   // Instantiate navigate for routing
   const navigate = useNavigate();
 
@@ -134,7 +135,7 @@ const Chat = () => {
     if (!session) navigate('/not-logged');
 
     // Initialize socket connection
-    socketRef.current = io('http://localhost:7979', {
+    socketRef.current = io(`http://${app_ip}:7979`, {
       withCredentials: true
     });
 
@@ -354,7 +355,7 @@ const Chat = () => {
     const getProfPic = async () => {
       try
       {
-        const response = await axios.post('http://localhost:5000/storage/get_profile_picture', { cookie: session });
+        const response = await axios.post(`http://${app_ip}:5000/storage/get_profile_picture`, { cookie: session });
         const uintArray = new Uint8Array(response.data.buffer.data);
 				const blob = new Blob([uintArray], { type: 'mimetype' });
 				const imageUrl = URL.createObjectURL(blob);
@@ -376,7 +377,7 @@ const Chat = () => {
     const getUserPics = async () => {
       try
       {
-        const response = await axios.post("http://localhost:5000/friendship/get_users", {cookie: session});
+        const response = await axios.post(`http://${app_ip}:5000/friendship/get_users`, {cookie: session});
         setUserPics(response.data.map((user:any) => ({pic: getImgUrl(user.picture.buffer.data), username: user.username})));
       }
       catch (error)

@@ -4,10 +4,11 @@ import { Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SecurityService } from 'src/security/security.service';
 
+const app_ip = process.env.REACT_APP_IP;
 
 @WebSocketGateway(+process.env.CHAT_PORT, { 
   cors: {
-      origin: "http://localhost:3000", // Replace with the origin you want to allow
+      origin: `http://${app_ip}:3000`, // Replace with the origin you want to allow
       methods: ["GET", "POST"],
       credentials: true
   } 

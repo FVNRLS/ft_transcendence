@@ -20,6 +20,8 @@ const Form = () =>
 
 	const navigate = useNavigate();
 
+	const app_ip = process.env.REACT_APP_IP;
+
 	const handleFileChange = (event:any) => {
 		setFile(event.target.files[0]);
 	};
@@ -43,14 +45,14 @@ const Form = () =>
 		if (file)
 			formData.append('file', file);
 			try {
-				const response = await axios.post('http://localhost:5000/auth/signup', formData, {
+				const response = await axios.post(`http://${app_ip}:5000/auth/signup`, formData, {
 					headers: {
 					  "Content-Type": "multipart/form-data",
 					}});
 				if (response.data.status === 201)
 				{
 					Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 2 });
-					await axios.post("http://localhost:5000/auth/set_status", {cookie: response.data.cookie, status: 'online'});
+					await axios.post(`http://${app_ip}:5000/auth/set_status`, {cookie: response.data.cookie, status: 'online'});
 					navigate('/');
 				}
 				else
@@ -69,7 +71,7 @@ const Form = () =>
 		event.preventDefault();
 		setIsLoading(true);
 			try {
-				const response = await axios.post('http://localhost:5000/auth/login', {
+				const response = await axios.post(`http://${app_ip}:5000/auth/login`, {
 					username: username,
 					password: password,
 					token_42: token
@@ -77,7 +79,7 @@ const Form = () =>
 				if (response.data.status === 201)
 				{
 					Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 2 });
-					await axios.post("http://localhost:5000/auth/set_status", {cookie: response.data.cookie, status: 'online'});
+					await axios.post(`http://${app_ip}:5000/auth/set_status`, {cookie: response.data.cookie, status: 'online'});
 					navigate('/');
 				}
 				else if (response.data.status === 202)
@@ -102,7 +104,7 @@ const Form = () =>
 		event.preventDefault();
 		setIsLoading(true);
 		try {
-			const response = await axios.post('http://localhost:5000/auth/login_tfa', {
+			const response = await axios.post(`http://${app_ip}:5000/auth/login_tfa`, {
 				username: username,
 				password: password,
 				TFACode: TFAcode,
@@ -111,7 +113,7 @@ const Form = () =>
 			if (response.data.status === 201)
 			{
 				Cookies.set('session', response.data.cookie, { expires: 1 / 24 * 2 });
-				await axios.post("http://localhost:5000/auth/set_status", {cookie: response.data.cookie, status: 'online'});
+				await axios.post(`http://${app_ip}:5000/auth/set_status`, {cookie: response.data.cookie, status: 'online'});
 				navigate('/');
 			}
 			else
