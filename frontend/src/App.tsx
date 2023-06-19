@@ -33,7 +33,7 @@ function App() {
     };
   
     const setOffline = async () => {
-      if (session !== undefined)
+      if (session !== undefined && session !== null)
       {
         try {
           await axios.post(`http://${app_ip}:5000/auth/set_status`, {cookie: session, status: 'offline'});

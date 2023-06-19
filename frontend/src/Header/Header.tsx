@@ -84,7 +84,7 @@ function Header() {
 					<Link className="dashboard-btn" to='/dashboard'>Dashboard</Link>
 				</li>
 				<li className='list-item stats' onClick={() => {navigate('/stats')}} >Last Match: {lastScore}</li>
-				<li className='list-item stats' onClick={() => {navigate('/chat')}} >No messages</li>
+				{/* <li className='list-item stats' onClick={() => {navigate('/chat')}} >No messages</li> */}
 				<li className='list-item' >
 					<button style={btnStyle} className='tfa-btn' onClick={handleSwitch}>TFA</button>
 				</li>
