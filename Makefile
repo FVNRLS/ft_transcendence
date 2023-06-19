@@ -9,17 +9,17 @@ else
 	$(shell mkdir -p ./docker/postgres_data)
 endif
 	@printf "Starting configuration ${name}...\n"
-	@cd docker && docker-compose up
+	@docker-compose up
 
 # rebuild the Docker images and starting the services
 build:
 	@printf "Building configuration ${name}...\n"
-	@docker-compose -f ./docker/docker-compose.yml up --build
+	@docker-compose up --build
 
 # stop and remove the containers, networks, and volumes created by the up 
 down:
 	@printf "Stopping configuration ${name}...\n"
-	@docker-compose -f ./docker/docker-compose.yml down
+	@docker-compose  down
 
 # deletes unused containers, networks, images and volumes 
 clean: down

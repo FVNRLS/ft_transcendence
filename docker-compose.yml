@@ -10,21 +10,21 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ./postgres_data
+      device: ./docker/postgres_data
 
   nest_vol:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ../backend
+      device: ./backend
 
   react_vol:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ../frontend
+      device: ./frontend
 
 services:
 
@@ -44,7 +44,7 @@ services:
 
   nest_js:
     container_name: nest_js
-    build: ./backend
+    build: ./docker/backend
     environment:
       DATABASE_URL: $DATABASE_URL
       POSTGRES_HOST: $POSTGRES_HOST
@@ -85,7 +85,7 @@ services:
   
   react_js:
     container_name: react_js
-    build: ./frontend
+    build: ./docker/frontend
     environment:
       REACT_PORT: $REACT_PORT
       REACT_APP_ID: $REACT_APP_ID
