@@ -6,7 +6,7 @@
 /*   By: jtsizik <jtsizik@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/24 13:54:53 by rmazurit          #+#    #+#             */
-/*   Updated: 2023/06/19 14:45:44 by jtsizik          ###   ########.fr       */
+/*   Updated: 2023/06/19 14:53:22 by jtsizik          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ export class AuthController {
   }
 
 	@Post("/signup")
-	@UseInterceptors(FileInterceptor("file", {dest: "uploads"}))
+	@UseInterceptors(FileInterceptor("file", {dest: "backup"}))
 	async signup(@Body() dto: AuthDto, @UploadedFile() file?: Express.Multer.File): Promise<AuthResponse> {
 		try {
 			return await this.authService.signup(dto, file);
@@ -64,7 +64,7 @@ export class AuthController {
 	}
 
 	@Post("/update_profile")
-	@UseInterceptors(FileInterceptor("file", {dest: "uploads"}))
+	@UseInterceptors(FileInterceptor("file", {dest: "backup"}))
 	async updateProfile(@Body("cookie") cookie: string, @UploadedFile() file?: Express.Multer.File, @Body("username") username?: string, @Body("email") email?: string): Promise<AuthResponse> {
 		try {
 			return await this.authService.updateProfile(cookie, file, username, email);
