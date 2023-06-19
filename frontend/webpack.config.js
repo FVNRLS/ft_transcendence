@@ -3,6 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
+  mode: 'development', //should be set later to production
   entry: './src/index.tsx',
   output: {
     path: path.resolve(__dirname, 'build'),
@@ -10,6 +11,7 @@ module.exports = {
     publicPath: '/',
   },
   module: {
+    
     rules: [
       {
         test: /\.(js|jsx|ts|tsx)$/,
