@@ -15,14 +15,11 @@
     "noFallthroughCasesInSwitch": true,
     "module": "esnext",
     "moduleResolution": "node",
+    "sourceMap": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "outDir": "dist",  // Add this line to specify the output directory
+    "outDir": "./dist/",
     "jsx": "react-jsx"
   },
-  "include": [
-    "src",
-    "public"
-  ]
 }

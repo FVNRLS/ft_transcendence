@@ -18,6 +18,7 @@
     "@types/react-dom": "^18.0.11",
     "axios": "^1.3.4",
     "js-cookie": "^3.0.5",
+    "leaflet": "^1.9.4",
     "npm": "^9.7.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -34,7 +35,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "webpack --config webpack.config.js",
+    "build": "react-scripts build",
+    "uglify": "node uglify.js && echo 'UglifyJS completed.'",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -57,14 +59,10 @@
     ]
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.22.5",
-    "@babel/preset-react": "^7.22.5",
-    "@babel/preset-typescript": "^7.22.5",
     "@types/js-cookie": "^3.0.3",
     "@types/react-router-dom": "^5.3.3",
-    "@types/terser-webpack-plugin": "^5.2.0",
-    "terser-webpack-plugin": "^4.2.3",
-    "webpack": "^5.87.0",
-    "webpack-cli": "^5.1.4"
+    "path": "^0.12.7",
+    "uglify-js": "^3.17.4",
+    "url-loader": "^4.1.1"
   }
 }
