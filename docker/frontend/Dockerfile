@@ -7,4 +7,4 @@ WORKDIR /react
 # CMD npm install && npm run start
 
 # Alternatively for producion mode - build and start the serve command to serve the built files
-CMD rm -rf ./build && npm install && npm install -g serve && npm run build && npm run minify && serve -s build -l 3000
+CMD rm -rf ./build && npm install && npm install -g serve && npm run build && npm run minify && npm run obfuscate && serve -s build -l 3000
