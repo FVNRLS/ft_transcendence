@@ -36,7 +36,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "uglify": "node uglify.js && echo 'UglifyJS completed.'",
+    "minify": "node ./optimization/minificator.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -62,7 +62,7 @@
     "@types/js-cookie": "^3.0.3",
     "@types/react-router-dom": "^5.3.3",
     "path": "^0.12.7",
-    "uglify-js": "^3.17.4",
+    "terser": "^5.18.1",
     "url-loader": "^4.1.1"
   }
 }
