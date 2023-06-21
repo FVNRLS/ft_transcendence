@@ -4,7 +4,7 @@ FROM node:latest
 WORKDIR /react
 
 # DEVELOPMENT MODE: enable to install dependencies & start, test runner and launch the project in interactive watch mode
-# ENTRYPOINT npm install && npm run start
+ENTRYPOINT npm install && npm run start
 
 # PRODUCTION MODE - enable to build, obfuscate and serve the build directory
-ENTRYPOINT rm -rf ./build && npm install && npm install -g serve && npm run build && npm run obfuscate && serve -s build -l 3000
+# ENTRYPOINT rm -rf ./build && npm install && npm install -g serve && npm run build && npm run obfuscate && serve -s build -l 3000
