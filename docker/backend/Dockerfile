@@ -7,5 +7,3 @@ ENTRYPOINT npm install && chmod +x /nest/node_modules/prisma/build/xdg-open && n
 
 # PRODUCTION MODE - enable to build the backend and serve the static version.
 # ENTRYPOINT npm install && chmod +x /nest/node_modules/prisma/build/xdg-open && npm run start:prod
-
-
