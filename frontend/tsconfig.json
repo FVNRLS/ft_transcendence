@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es6",
     "lib": [
       "dom",
       "dom.iterable",
@@ -15,12 +15,17 @@
     "noFallthroughCasesInSwitch": true,
     "module": "esnext",
     "moduleResolution": "node",
+    "sourceMap": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "outDir": "./dist/",
     "jsx": "react-jsx"
   },
   "include": [
-    "src"
+    "src/**/*.ts",
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }
