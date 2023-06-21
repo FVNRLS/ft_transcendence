@@ -18,12 +18,14 @@
     "@types/react-dom": "^18.0.11",
     "axios": "^1.3.4",
     "js-cookie": "^3.0.5",
+    "@types/js-cookie": "^3.0.3",
     "leaflet": "^1.9.4",
     "npm": "^9.7.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^8.0.5",
     "react-router-dom": "^6.13.0",
+    "@types/react-router-dom": "^5.3.3",
     "react-scripts": "^5.0.1",
     "run": "^1.4.0",
     "RUN": "npm:run@^1.4.0",
@@ -31,13 +33,14 @@
     "socket.io-client": "^4.6.1",
     "start": "^5.1.0",
     "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "javascript-obfuscator": "^4.0.2",
+    "path": "^0.12.7"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "minify": "node ./optimization/minificator.js",
-    "obfuscate": "node ./optimization/obfuscator.js",
+    "obfuscate": "node ./obfuscator/obfuscator.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -59,12 +62,5 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {
-    "@types/js-cookie": "^3.0.3",
-    "@types/react-router-dom": "^5.3.3",
-    "javascript-obfuscator": "^4.0.2",
-    "path": "^0.12.7",
-    "terser": "^5.18.1",
-    "url-loader": "^4.1.1"
-  }
+  "devDependencies": {}
 }
