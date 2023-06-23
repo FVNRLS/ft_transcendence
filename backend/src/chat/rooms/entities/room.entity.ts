@@ -1,4 +1,7 @@
 import { RoomType, UserRole } from '@prisma/client'; // import enums from prisma client
+// import { RoomType, UserOnRooms, Message, BannedUser, MutedUser, RoomCountOutputType } from '@prisma/client';
+
+
 
 export class UserOnRoomDto {
   user: {
@@ -30,7 +33,9 @@ export class RoomDetailsDto {
   password?: string;
   userId: number;
   userOnRooms: UserOnRoomDto[];
-  messages: MessageDto[];
+  messages?: MessageDto[];
   clientUser?: any; // added
   receivingUser?: any; // added
+  bannedUsers?: any; // Added to match structure of newRoom
+  mutedUsers?: any; // Added to match structure of newRoom
 }

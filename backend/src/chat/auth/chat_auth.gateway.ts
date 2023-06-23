@@ -74,5 +74,4 @@ export class ChatAuthGateway {
       delete ChatAuthGateway.userToSocketIdMap[userId];
     }
   }
-
-}
+} 

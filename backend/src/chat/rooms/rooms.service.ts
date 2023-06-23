@@ -27,19 +27,19 @@ export class RoomsService {
   };
 
 
-  private readonly roomSelection: Prisma.RoomSelect = {
-    id: true,
-    roomName: true,
-    roomType: true,
-    userOnRooms: { select: { user: { select: this.userSelection } } },
-    messages: {
-      select: this.messageSelection,
-      orderBy: {
-        createdAt: 'asc',
-      },
-      take: 100,
-    },
-  };
+  // private readonly roomSelection: Prisma.RoomSelect = {
+  //   id: true,
+  //   roomName: true,
+  //   roomType: true,
+  //   userOnRooms: { select: { user: { select: this.userSelection } } },
+  //   messages: {
+  //     select: this.messageSelection,
+  //     orderBy: {
+  //       createdAt: 'asc',
+  //     },
+  //     take: 100,
+  //   },
+  // };
 
   constructor(
     private readonly prisma: PrismaService,
@@ -50,6 +50,7 @@ export class RoomsService {
 
 
   async createGroupRoom(createRoomDto: CreateRoomDto, userId: number) {
+
     // const client_id = createRoomDto.members[createRoomDto.members.length - 1].id;
     const client_id = userId;
     let salt = null;
@@ -66,37 +67,6 @@ export class RoomsService {
       salt = hashedResults.salt;
       hashedPassword = hashedResults.hashedPassword;
     }
-    // const room = await this.prisma.room.create({
-    //   data: {
-    //     roomName:       createRoomDto.roomName,
-    //     roomType:       createRoomDto.roomType,
-    //     hashedPassword: hashedPassword,
-    //     salt:           salt,
-    //     userId: client_id,
-    //   },
-    // });
-    
-    // const userIds = createRoomDto.members.map(member => member.id);
-    // if (!userIds) {
-    //   console.log("USERIDS IS NULL");
-    // } else {
-    //   await this.addUsersToRoom(room.id, userIds);
-    // }
-
-    // const room = await this.prisma.room.create({
-    //   data: {
-    //     roomName: createRoomDto.roomName,
-    //     roomType: createRoomDto.roomType,
-    //     hashedPassword: hashedPassword,
-    //     salt: salt,
-    //     userId: client_id,
-    //     userOnRooms: {
-    //       create: createRoomDto.members.map(member => ({
-    //         userId: member.id,
-    //       })),
-    //     },
-    //   },
-    // });
 
     const room = await this.prisma.room.create({
       data: {
@@ -130,6 +100,18 @@ export class RoomsService {
     const newRoom = await this.prisma.room.findUnique({
       where: { id: room.id },
       include: {
+        bannedUsers: {
+          select: {
+            userId: true,
+            bannedAt: true,
+          }
+        },
+        mutedUsers: {
+          select: {
+            userId: true,
+            muteExpiresAt: true,
+          }
+        },
         userOnRooms: {
           select: {
             user: {
@@ -151,40 +133,38 @@ export class RoomsService {
         // Include other room data as required
       },
     });
-    
     return newRoom;
   }
 
-async addUsersToRoom(roomId: number, userIds: number[]) {
-  // Add users to the room in the database
-  if (roomId) {
-    for (let userId of userIds) {
-      if (userId) {
-        // Check if the user is already in the room
-        const existingEntry = await this.prisma.userOnRooms.findUnique({
-          where: {
-            roomId_userId: {
-              roomId: roomId,
-              userId: userId,
-            },
-          },
-        });
-
-        // If the user is not in the room, add them
-        if (!existingEntry) {
-          await this.prisma.userOnRooms.create({
-            data: {
-              roomId: roomId,
-              userId: userId,
-              role: UserRole.MEMBER, // you can change the role based on your need
+  async addUsersToRoom(roomId: number, userIds: number[]) {
+    // Add users to the room in the database
+    if (roomId) {
+      for (let userId of userIds) {
+        if (userId) {
+          // Check if the user is already in the room
+          const existingEntry = await this.prisma.userOnRooms.findUnique({
+            where: {
+              roomId_userId: {
+                roomId: roomId,
+                userId: userId,
+              },
             },
           });
+
+          // If the user is not in the room, add them
+          if (!existingEntry) {
+            await this.prisma.userOnRooms.create({
+              data: {
+                roomId: roomId,
+                userId: userId,
+                role: UserRole.MEMBER, // you can change the role based on your need
+              },
+            });
+          }
         }
       }
     }
-  }
 }
-
 
   async createDirectRoom(createRoomDto: CreateRoomDto, userId: number) {
     console.log("Create Direct Room");
@@ -294,6 +274,10 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
   }
   
   
+  
+
+
+  
 
   async findAll() {
     return await this.prisma.room.findMany();
@@ -363,22 +347,38 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       throw new Error('Room not found');
     }
   
+    const userId = client.data.userId;
+    
+    // Check if user is banned from room
+    const userBanned = await this.prisma.bannedUser.findFirst({
+      where: {
+        userId: userId,
+        roomId: roomId,
+      },
+    });
+  
+    if (userBanned) {
+      throw new Error('You are banned from this room.');
+    }
+  
+    // Check if the room type is 'DIRECT'
+    if (room.roomType === RoomType.DIRECT) {
+      throw new Error('Cannot manually join direct message rooms.');
+    }
+  
     // If the room has a password and the room type is 'PASSWORD', check that the entered password is correct
     if (room.hashedPassword && room.salt && room.roomType === RoomType.PASSWORD) {
       if (!password) {
         throw new Error('This room requires a password to join.');
       }
   
-      // const hashedPassword = await this.securityService.hashPassword(password, room.salt);
-			const passwordValid = await argon2.verify(room.hashedPassword, password);
-
+      const passwordValid = await argon2.verify(room.hashedPassword, password);
   
       if (!passwordValid) {
         throw new Error('Incorrect password.');
       }
     }
   
-    const userId = client.data.userId;
     const userInRoom = await this.prisma.userOnRooms.findFirst({
       where: {
         userId: userId,
@@ -394,11 +394,11 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
         },
       });
     }
-   return { success: true, message: "Sucessfully joined room." };
-
+  
+    return { success: true, message: "Successfully joined room." };
   }
   
-
+  
   async leaveRoom(roomId: number, client: Socket) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
   
@@ -433,7 +433,6 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       where: { roomId_userId: { roomId, userId } }
     });
   }
-  
   
   async getRoomMembers(roomId: number, clientId: number = null, excludeClient: boolean = false) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
@@ -542,7 +541,9 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
     });
   }
 
-  async getUserDirectRooms(userId: number, blockedUsers) {
+  async getUserDirectRooms(userId: number) {
+    const blockedUsers = await this.getBlockedUsers(userId);
+
     const userRooms = await this.prisma.userOnRooms.findMany({
       where: { userId: userId, room: { roomType: 'DIRECT' } },
       include: {
@@ -607,7 +608,9 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
     });
   }
 
-  async getUserGroupRooms(userId: number, blockedUsers) {
+  async getUserGroupRooms(userId: number) {
+    const blockedUsers = await this.getBlockedUsers(userId);
+  
     const userRooms = await this.prisma.userOnRooms.findMany({
       where: { userId: userId, room: { roomType: { not: 'DIRECT' } } },
       include: {
@@ -617,6 +620,18 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
             roomName: true,
             roomType: true,
             hashedPassword: true,
+            bannedUsers: {
+              select: {
+                userId: true,
+                bannedAt: true,
+              }
+            },
+            mutedUsers: {
+              select: {
+                userId: true,
+                muteExpiresAt: true,
+              }
+            },
             // Include users in each room
             userOnRooms: {
               select: {
@@ -629,7 +644,6 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
                 role: true,  // Include user role
               },
             },
-            // Include last 100 messages in each room
             // Include last 100 messages in each room
             messages: {
               select: this.messageSelection,
@@ -652,10 +666,10 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
         },
       },
     });
-
+  
     console.log("USER GROUP ROOMS");
     console.log(userRooms);
-
+  
     // Format the returned data for Group rooms
     return userRooms.map(userRoom => ({
       id: userRoom.room.id,
@@ -664,19 +678,19 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       hasPassword: userRoom.room.hashedPassword !== null,
       users: userRoom.room.userOnRooms.map(ur => ({...ur.user, role: ur.role})), // Return user with role
       messages: userRoom.room.messages,
+      bannedUsers: userRoom.room.bannedUsers,
+      mutedUsers: userRoom.room.mutedUsers,
     }));
   }
+  
 
 
   async getUserRooms(userId: number) {
-    // Fetch blocked users by the logged-in user
-    const blockedUsers = await this.getBlockedUsers(userId);
-
     // Fetch Direct Rooms
-    const directRooms = await this.getUserDirectRooms(userId, blockedUsers);
+    const directRooms = await this.getUserDirectRooms(userId);
 
     // Fetch Group Rooms
-    const groupRooms = await this.getUserGroupRooms(userId, blockedUsers);
+    const groupRooms = await this.getUserGroupRooms(userId);
 
 
 
@@ -685,14 +699,18 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
   }
 
   async kickUser(userId: number, roomId: number, client: Socket) {
-    const userOnRoom = await this.prisma.userOnRooms.findFirst({
+    const userOnRoom = await this.prisma.userOnRooms.findUnique({
       where: {
-        roomId,
-        userId,
+        roomId_userId: {
+          roomId: roomId,
+          userId: userId,
+        },
       },
     });
-  
+
     if (!userOnRoom) throw new NotFoundException('User or room not found');
+
+    if (userOnRoom.role === 'OWNER') throw new BadRequestException("Can't kick the owner of the room");
   
     // Here you can add logic to use the `client` object, if needed.
   
@@ -701,44 +719,26 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
       where: { id: userOnRoom.id },
     });
   }
-  
-  // async banUser(userId: number, roomId: number, client: Socket) {
-  //   const userOnRoom = await this.prisma.userOnRooms.findFirst({
-  //     where: {
-  //       roomId,
-  //       userId,
-  //     },
-  //   });
-  
-  //   if (!userOnRoom) throw new NotFoundException('User or room not found');
-  
-  //   // Here you can add logic to use the `client` object, if needed.
-  
-  //   // Update the user's ban status
-  //   await this.prisma.userOnRooms.update({
-  //     where: { id: userOnRoom.id },
-  //     data: { isBanned: true },
-  //   });
-  // }
-
-  // async unbanUser(userId: number, roomId: number) {
-  //   const userOnRoom = await this.prisma.userOnRooms.findFirst({
-  //     where: {
-  //       roomId,
-  //       userId,
-  //     },
-  //   });
-  
-  //   if (!userOnRoom) throw new NotFoundException('User or room not found');
-  
-  //   // Update the user's ban status
-  //   await this.prisma.userOnRooms.update({
-  //     where: { id: userOnRoom.id },
-  //     data: { isBanned: false },
-  //   });
-  // }
 
   async banUser(userId: number, roomId: number) {
+    // Check if the user is an owner
+    const userRoom = await this.prisma.userOnRooms.findUnique({
+      where: {
+        roomId_userId: {
+          roomId: roomId,
+          userId: userId,
+        },
+      },
+    });
+  
+    if (!userRoom) {
+      throw new Error('User is not part of the room');
+    }
+  
+    if (userRoom.role === 'OWNER') {
+      throw new Error('Cannot ban the owner of the room');
+    }
+
     // Check if the user is already banned
     const bannedUser = await this.prisma.bannedUser.findUnique({
       where: {
@@ -759,6 +759,11 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
         userId,
         roomId,
       },
+    });
+
+    // Remove user from the room
+    await this.prisma.userOnRooms.delete({
+      where: { id: userRoom.id },
     });
   
     return { success: true };
@@ -791,52 +796,26 @@ async addUsersToRoom(roomId: number, userIds: number[]) {
   
     return { success: true };
   }
-  
-  
-  
-  // async muteUser(userId: number, roomId: number, muteExpiresAt: number, client: Socket) {
-  //   const userOnRoom = await this.prisma.userOnRooms.findFirst({
-  //     where: {
-  //       roomId,
-  //       userId,
-  //     },
-  //   });
-  
-  //   if (!userOnRoom) throw new NotFoundException('User or room not found');
-  
-  //   // Here you can add logic to use the `client` object, if needed.
-  
-  //   // Update the user's mute status
-  //   await this.prisma.userOnRooms.update({
-  //     where: { id: userOnRoom.id },
-  //     data: { 
-  //       isMuted: true,
-  //       muteExpiresAt: muteExpiresAt ? new Date(muteExpiresAt) : null,
-  //     },
-  //   });
-  // }
-
-  // async unmuteUser(userId: number, roomId: number) {
-  //   const userOnRoom = await this.prisma.userOnRooms.findFirst({
-  //     where: {
-  //       roomId,
-  //       userId,
-  //     },
-  //   });
-  
-  //   if (!userOnRoom) throw new NotFoundException('User or room not found');
-  
-  //   // Update the user's mute status
-  //   await this.prisma.userOnRooms.update({
-  //     where: { id: userOnRoom.id },
-  //     data: { 
-  //       isMuted: false,
-  //       muteExpiresAt: null,
-  //     },
-  //   });
-  // }
 
   async muteUser(userId: number, roomId: number, muteExpiresAt?: Date) {
+    // Check if the user is an owner
+    const userRoom = await this.prisma.userOnRooms.findUnique({
+      where: {
+        roomId_userId: {
+          roomId: roomId,
+          userId: userId,
+        },
+      },
+    });
+  
+    if (!userRoom) {
+      throw new Error('User is not part of the room');
+    }
+  
+    if (userRoom.role === 'OWNER') {
+      throw new Error('Cannot ban the owner of the room');
+    }
+
     // Check if the user is already muted
     const mutedUser = await this.prisma.mutedUser.findUnique({
       where: {

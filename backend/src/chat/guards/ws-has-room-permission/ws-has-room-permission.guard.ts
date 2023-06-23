@@ -25,11 +25,11 @@ export class WsHasRoomPermissionGuard implements CanActivate {
     
     const userRoom = await this.roomsService.getUserRoom(userId, roomId);
 
-    if (!userRoom || userRoom.role !== role) {
+    // If user has the 'OWNER' role or the user role is the same as the required role
+    if (!userRoom || (userRoom.role !== role && userRoom.role !== 'OWNER')) {
       throw new WsException(`You don't have ${role} permissions in this room`);
     }
     
     return true;
-    
   }
 }

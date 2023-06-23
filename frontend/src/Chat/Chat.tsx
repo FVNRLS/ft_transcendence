@@ -95,7 +95,6 @@ const Chat = () => {
   };  
 
   const blockUser = (user_id: number) => {
-    console.log("Block User");
         socketRef.current?.emit('blockUser', { blockedId: user_id }, (response: any) => {
           if (response.success) {
             setIsUserBlocked(true);
@@ -104,18 +103,9 @@ const Chat = () => {
             console.error('Block user failed:', response.message);
           }
         });
-        
-    //   }
-    // }
-  }
+    }
   
   const unblockUser = (user_id: number) => {
-    // if (selectedRoom && selectedRoom.receivingUser) {
-      // const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser?.id);
-      // const otherUser = selectedRoom.receivingUser;
-
-      // if (otherUser) {
-        // socketRef.current?.emit('unblockUser', { blockedId: otherUser.id });
         socketRef.current?.emit('unblockUser', { blockedId: user_id }, (response: any) => {
           if (response.success) {
             setIsUserBlocked(false);
@@ -160,15 +150,16 @@ const Chat = () => {
     });
   
       socketRef.current?.on('getUserRooms', (rooms: Room[]) => {
+        if (!rooms) {
+          console.error("Received null or undefined 'rooms'.");
+          return;
+        }
+
         const directRooms2 = rooms.filter((room: Room) => room.roomType === 'DIRECT');
         setDirectRooms(directRooms2);
   
         const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
         setChannels(nonDirectRooms);
-        console.log("Direct Rooms");
-        console.log(directRooms2);
-        console.log("Non Direct Rooms");
-        console.log(nonDirectRooms);
       });
   
       socketRef.current?.on('joinedRoom', (newRoom: Room) => {
@@ -180,10 +171,6 @@ const Chat = () => {
       });
 
       socketRef.current?.on('roomUpdated', (updatedRoom: Room) => {
-        console.log("updatedRoom");
-        console.log(updatedRoom);
-        console.log("Old channels");
-        console.log(channels);
         const updateRooms = (prevRooms: Room[]) => {
           const roomIndex = prevRooms.findIndex(room => room.id === updatedRoom.id);
           if (roomIndex !== -1) {
@@ -202,38 +189,7 @@ const Chat = () => {
 
       });
       
-      // socketRef.current?.on('roomUpdated', (updatedRoom: Room) => {
-      //   console.log("roomUpdated");
-      //   console.log(updatedRoom);
-        
-      //   const updateRooms = (prevRooms: Room[]) => {
-      //     const roomIndex = prevRooms.findIndex(room => room.id === updatedRoom.id);
-          
-      //     if (roomIndex !== -1) {
-      //       // Use merge() instead of spreading properties
-      //       const newRoom = merg({}, prevRooms[roomIndex], updatedRoom);
-            
-      //       return [
-      //         ...prevRooms.slice(0, roomIndex),
-      //         newRoom,
-      //         ...prevRooms.slice(roomIndex + 1),
-      //       ];
-      //     }
-          
-      //     return prevRooms;
-      //   };
-        
-      //   console.log("setChannels");
-      //   setChannels(prev => updateRooms(prev));
-      //   setDirectRooms(prev => updateRooms(prev));
-      //   console.log(channels);
-      // });
-      
-      
-  
       socketRef.current?.on('newMessage', (newMessage: Message) => {
-        console.log("newMessage");
-        console.log(newMessage);
       
         // Define a helper function to find the room in an array of rooms
         const findRoomIndex = (rooms: Room[]) => rooms.findIndex(room => room.id === newMessage.roomId);
@@ -530,7 +486,7 @@ const Chat = () => {
               )}
 
               {/* First message */}
-              {selectedRoom && selectedRoom.messages.map((message, index) => (
+              {selectedRoom?.messages && selectedRoom.messages.map((message, index) => (
                 <div 
                   className={`message ${loggedInUser && loggedInUser.id === message.user.id ? "user-message" : "other-message"}`} 
                   key={index}

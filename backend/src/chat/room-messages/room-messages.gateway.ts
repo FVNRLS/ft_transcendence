@@ -32,43 +32,49 @@ export class MessagesGateway {
     private readonly prisma: PrismaService
     ) {}
 
-  @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
-  @SubscribeMessage('sendMessageToRoom')
-  async sendMessageToRoom(
-    @MessageBody() createMessageDto: CreateMessageDto,
-    @ConnectedSocket() client: Socket
-  ) {
-    const newMessage = await this.messagesService.create(createMessageDto, client);
-  
-    // Get the list of users who have blocked the author
-    const blockedUsers = await this.prisma.block.findMany({
-      where: { blockedId: client.data.userId },
-    });
-  
-    // Get the list of user ids from the block relation
-    const blockedUserIds = blockedUsers.map(block => block.blockerId);
-  
-    // Get the list of users in the room who haven't blocked the author
-    const recipients = await this.prisma.userOnRooms.findMany({
-      where: { 
-        roomId: createMessageDto.roomId,
-        NOT: { userId: { in: blockedUserIds } },
-      },
-    });
-
-    console.log("SENT MESSAGE:");
-    console.log(newMessage);
-  
-    // Emit the new message to each recipient
-    for (const recipient of recipients) {
-      const recipientSocketId = ChatAuthGateway.userToSocketIdMap[recipient.userId];
-      if (recipientSocketId && this.server.sockets.sockets.get(recipientSocketId)) {
-        this.server.to(recipientSocketId).emit('newMessage', newMessage);
+    @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
+    @SubscribeMessage('sendMessageToRoom')
+    async sendMessageToRoom(
+      @MessageBody() createMessageDto: CreateMessageDto,
+      @ConnectedSocket() client: Socket
+    ) {
+      try {
+        const newMessage = await this.messagesService.create(createMessageDto, client);
+      
+        // Get the list of users who have blocked the author
+        const blockedUsers = await this.prisma.block.findMany({
+          where: { blockedId: client.data.userId },
+        });
+      
+        // Get the list of user ids from the block relation
+        const blockedUserIds = blockedUsers.map(block => block.blockerId);
+      
+        // Get the list of users in the room who haven't blocked the author
+        const recipients = await this.prisma.userOnRooms.findMany({
+          where: { 
+            roomId: createMessageDto.roomId,
+            NOT: { userId: { in: blockedUserIds } },
+          },
+        });
+    
+        console.log("SENT MESSAGE:");
+        console.log(newMessage);
+      
+        // Emit the new message to each recipient
+        for (const recipient of recipients) {
+          const recipientSocketId = ChatAuthGateway.userToSocketIdMap[recipient.userId];
+          if (recipientSocketId && this.server.sockets.sockets.get(recipientSocketId)) {
+            this.server.to(recipientSocketId).emit('newMessage', newMessage);
+          }
+        }
+      
+        return newMessage;
+      } catch (error) {
+        console.log('Error:', error.message);
+        return {error: error.message};
       }
     }
-  
-    return newMessage;
-  }
+    
   
   
   

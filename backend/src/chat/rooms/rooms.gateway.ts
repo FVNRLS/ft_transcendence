@@ -15,6 +15,7 @@ import { ChatUserService } from './chat_user.service';
 import { ChatAuthGateway } from '../auth/chat_auth.gateway';
 import { RoomDetailsDto } from './entities/room.entity';
 import { KickDto, BanDto, MuteDto, UnbanDto, UnmuteDto } from './dto/room-action.dto'; // You will need to create these DTOs
+import { WsHasRoomPermissionGuard } from '../guards/ws-has-room-permission/ws-has-room-permission.guard';
 
 const app_ip = process.env.REACT_APP_IP;
 
@@ -25,6 +26,7 @@ const app_ip = process.env.REACT_APP_IP;
       credentials: true
   } 
 })
+@UseGuards(WsHasRoomPermissionGuard)
 export class RoomsGateway {
   @WebSocketServer() server: any;
   constructor(
@@ -135,7 +137,6 @@ export class RoomsGateway {
     }
   }
 
-  
 
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('findOneRoom')
@@ -211,7 +212,7 @@ export class RoomsGateway {
     return "Success";
   }
   
-  // @HasRoomPermission('OWNER')
+  @HasRoomPermission('ADMIN')
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('setUserRole')
   async setUserRole(
@@ -258,21 +259,29 @@ export class RoomsGateway {
   // import { WsIsUserAdminGuard } from '../guards/ws-is-user-admin-guard/ws-is-user-admin-guard.guard';
 
   @UseGuards(WsJwtAuthGuard)
+  @HasRoomPermission("ADMIN")
   @SubscribeMessage('kickUser')
   async kickUser(
     @MessageBody() kickDto: KickDto,
     @ConnectedSocket() client: Socket,
   ) {
     try {
+      console.log("User Kicked");
       await this.roomsService.kickUser(kickDto.userId, kickDto.roomId, client);
+  
+      // Emit the 'kickUser' event to everyone in the room
+      client.to(`room-${kickDto.roomId}`).emit('kickUser', { userId: kickDto.userId, roomId: kickDto.roomId });
+  
       return { success: true, message: 'User kicked successfully' };
     } catch (error) {
       console.log('Error:', error.message);
       return { success: false, error: error.message };
     }
   }
+  
 
   @UseGuards(WsJwtAuthGuard)
+  @HasRoomPermission("ADMIN")
   @SubscribeMessage('banUser')
   async banUser(
     @MessageBody() banDto: BanDto,
@@ -280,60 +289,79 @@ export class RoomsGateway {
   ) {
     try {
       await this.roomsService.banUser(banDto.userId, banDto.roomId);
+  
+      // Emit the 'kickUser' event to everyone in the room
+      client.to(`room-${banDto.roomId}`).emit('kickUser', { userId: banDto.userId, roomId: banDto.roomId });
+  
+      // Emit the 'banUser' event to everyone in the room
+      client.to(`room-${banDto.roomId}`).emit('banUser', { userId: banDto.userId, roomId: banDto.roomId });
+  
       return { success: true, message: 'User banned successfully' };
     } catch (error) {
       console.log('Error:', error.message);
       return { success: false, error: error.message };
     }
   }
-
-  @UseGuards(WsJwtAuthGuard)
-  @SubscribeMessage('unbanUser')
-  async unbanUser(
-    @MessageBody() unbanDto: UnbanDto,
-    @ConnectedSocket() client: Socket,
-  ) {
-    try {
-      await this.roomsService.unbanUser(unbanDto.userId, unbanDto.roomId);
-      return { success: true, message: 'User unbanned successfully' };
-    } catch (error) {
-      console.log('Error:', error.message);
-      return { success: false, error: error.message };
-    }
-  }
   
 
-  @UseGuards(WsJwtAuthGuard)
-  @SubscribeMessage('muteUser')
-  async muteUser(
-    @MessageBody() muteDto: MuteDto,
-    @ConnectedSocket() client: Socket,
-  ) {
-    try {
-      const muteExpiresAt = muteDto.muteExpiresAt ? new Date(muteDto.muteExpiresAt) : undefined;
-      await this.roomsService.muteUser(muteDto.userId, muteDto.roomId, muteExpiresAt);
-      return { success: true, message: 'User muted successfully' };
-    } catch (error) {
-      console.log('Error:', error.message);
-      return { success: false, error: error.message };
-    }
-  }
-  
+@UseGuards(WsJwtAuthGuard)
+@HasRoomPermission("ADMIN")
+@SubscribeMessage('unbanUser')
+async unbanUser(
+  @MessageBody() unbanDto: UnbanDto,
+  @ConnectedSocket() client: Socket,
+) {
+  try {
+    await this.roomsService.unbanUser(unbanDto.userId, unbanDto.roomId);
 
-  @UseGuards(WsJwtAuthGuard)
-  @SubscribeMessage('unmuteUser')
-  async unmuteUser(
-    @MessageBody() unmuteDto: UnmuteDto,
-    @ConnectedSocket() client: Socket,
-  ) {
-    try {
-      await this.roomsService.unmuteUser(unmuteDto.userId, unmuteDto.roomId);
-      return { success: true, message: 'User unmuted successfully' };
-    } catch (error) {
-      console.log('Error:', error.message);
-      return { success: false, error: error.message };
-    }
-  }
-  
+    // Emit the 'unbanUser' event to everyone in the room
+    client.to(`room-${unbanDto.roomId}`).emit('unbanUser', { userId: unbanDto.userId, roomId: unbanDto.roomId });
 
+    return { success: true, message: 'User unbanned successfully' };
+  } catch (error) {
+    console.log('Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+@UseGuards(WsJwtAuthGuard)
+@HasRoomPermission("ADMIN")
+@SubscribeMessage('muteUser')
+async muteUser(
+  @MessageBody() muteDto: MuteDto,
+  @ConnectedSocket() client: Socket,
+) {
+  try {
+    const muteExpiresAt = muteDto.muteExpiresAt ? new Date(muteDto.muteExpiresAt) : undefined;
+    await this.roomsService.muteUser(muteDto.userId, muteDto.roomId, muteExpiresAt);
+
+    // Emit the 'muteUser' event to everyone in the room
+    client.to(`room-${muteDto.roomId}`).emit('muteUser', { userId: muteDto.userId, roomId: muteDto.roomId, muteExpiresAt });
+
+    return { success: true, message: 'User muted successfully' };
+  } catch (error) {
+    console.log('Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+@UseGuards(WsJwtAuthGuard)
+@HasRoomPermission("ADMIN")
+@SubscribeMessage('unmuteUser')
+async unmuteUser(
+  @MessageBody() unmuteDto: UnmuteDto,
+  @ConnectedSocket() client: Socket,
+) {
+  try {
+    await this.roomsService.unmuteUser(unmuteDto.userId, unmuteDto.roomId);
+
+    // Emit the 'unmuteUser' event to everyone in the room
+    client.to(`room-${unmuteDto.roomId}`).emit('unmuteUser', { userId: unmuteDto.userId, roomId: unmuteDto.roomId });
+
+    return { success: true, message: 'User unmuted successfully' };
+  } catch (error) {
+    console.log('Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
 }
