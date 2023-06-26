@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
-import { RoomsService } from 'src/chat/rooms/rooms.service';
+import { RoomsService } from 'src/chat/rooms.service';
 
 @Injectable()
 export class WsHasRoomPermissionGuard implements CanActivate {

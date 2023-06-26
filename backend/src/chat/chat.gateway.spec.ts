@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RoomsGateway } from './rooms.gateway';
+import { RoomsGateway } from './chat.gateway';
 import { RoomsService } from './rooms.service';
 
 describe('RoomsGateway', () => {

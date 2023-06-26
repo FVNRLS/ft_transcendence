@@ -131,14 +131,15 @@ const Chat = () => {
 
     // Socket events and handlers
     const handleSocketEvents = () => {
-      socketRef.current?.on('connect', () => {
-        socketRef.current?.on('user_verified', () => {
-          socketRef.current?.emit('getCurrentUser');
-          socketRef.current?.emit('getUserRooms');
-          socketRef.current?.emit('getBlockedUsers');
+      // socketRef.current?.on('connect', () => {
+      //   socketRef.current?.on('user_verified', () => {
+      //     console.log("HandleConnection in Frontend");
+      //     // socketRef.current?.emit('getCurrentUser');
+      //     // socketRef.current?.emit('getUserRooms');
+      //     // socketRef.current?.emit('getBlockedUsers');
 
-        });
-      });
+      //   });
+      // });
   
       socketRef.current?.on('currentUser', (user: User) => {
         setLoggedInUser(user);
@@ -256,6 +257,41 @@ const Chat = () => {
       socketRef.current?.on('error', (error: any) => {
         console.error('Socket.IO error', error);
       });
+
+      socketRef.current.on('kickUser', (data) => {
+        // Update channels and directRooms to remove the kicked user
+        setChannels(prevRooms => prevRooms.map(room =>
+          room.id === data.roomId ? {...room, users: room.users.filter(user => user.id !== data.userId)} : room
+        ));
+      });
+  
+      socketRef.current.on('banUser', (data) => {
+        // Update channels and directRooms to remove the banned user
+        setChannels(prevRooms => prevRooms.map(room =>
+          room.id === data.roomId ? {...room, users: room.users.filter(user => user.id !== data.userId)} : room
+        ));
+      });
+  
+      socketRef.current.on('unbanUser', (data) => {
+        // Here we assume that the user is automatically re-added to the room once unbanned
+        // If this is not the case, you may want to remove this listener
+        // Or replace this part with an appropriate API call to get updated room information
+      });
+
+      socketRef.current.on('muteUser', (data) => {
+        console.log("UserMuted");
+        // Update channels and directRooms to mute the user
+        setChannels(prevRooms => prevRooms.map(room =>
+          room.id === data.roomId ? {...room, mutedUsers: [...room.mutedUsers, {userId: data.userId, muteExpiresAt: data.muteExpiresAt}]} : room
+        ));
+      });
+  
+      socketRef.current.on('unmuteUser', (data) => {
+        // Update channels and directRooms to unmute the user
+        setChannels(prevRooms => prevRooms.map(room =>
+          room.id === data.roomId ? {...room, mutedUsers: room.mutedUsers.filter(mutedUser => mutedUser.userId !== data.userId)} : room
+        ));
+      });
     };
 
     handleSocketEvents();
@@ -265,6 +301,11 @@ const Chat = () => {
       socketRef.current?.off('getUserRooms');
       socketRef.current?.off('newMessage');
       socketRef.current?.off('getBlockedUsers');
+      socketRef.current.off('kickUser');
+      socketRef.current.off('banUser');
+      socketRef.current.off('unbanUser');
+      socketRef.current.off('muteUser');
+      socketRef.current.off('unmuteUser');
       socketRef.current?.disconnect();
     };
 

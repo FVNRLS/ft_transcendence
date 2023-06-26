@@ -39,16 +39,6 @@ export class MessagesService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // async create(createMessageDto: CreateMessageDto, client: Socket) {
-  //   return await this.prisma.message.create({
-  //     data: {
-  //       userId: client.data.userId,
-  //       roomId: createMessageDto.roomId,
-  //       content: createMessageDto.content,
-  //     },
-  //   });
-  // }
-
   async create(createMessageDto: CreateMessageDto, client: Socket) {
     // Check if the user is muted in the room
     const isMuted = await this.prisma.mutedUser.findFirst({
@@ -109,30 +99,6 @@ export class MessagesService {
       take: limit,
     });
   }
-
-  // async blockUser(blockerId: number, blockedId: number) {
-  //   // Check if this block relation already exists
-  //   const existingBlock = await this.prisma.block.findFirst({
-  //     where: {
-  //       blockerId: blockerId,
-  //       blockedId: blockedId,
-  //     },
-  //   });
-
-  //   if (existingBlock) {
-  //     return { message: 'User already blocked.' };
-  //   }
-
-  //   // Create the block relation
-  //   const newBlock = await this.prisma.block.create({
-  //     data: {
-  //       blockerId: blockerId,
-  //       blockedId: blockedId,
-  //     },
-  //   });
-
-  //   return { message: 'User successfully blocked.', block: newBlock };
-  // }
 
   async blockUser(blockerId: number, blockedId: number) {
     // Check if this block relation already exists
@@ -196,18 +162,6 @@ export class MessagesService {
   
     return block !== null;
   }
-
-  // async getBlockedUsers(userId: number) {
-  //   const blockedUsers = await this.prisma.block.findMany({
-  //     where: { blockerId: userId },
-  //     include: { blocked: true },  // This line includes the details of the blocked users
-  //   });
-  
-  //   // We only need the details of the blocked users, so map to get those
-  //   const blockedUsersDetails = blockedUsers.map(block => block.blocked);
-  
-  //   return blockedUsersDetails;
-  // }
 
   async getBlockedUsers(userId: number): Promise<number[]> {
     const user = await this.prisma.user.findUnique({

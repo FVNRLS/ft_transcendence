@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { MessagesService } from 'src/chat/room-messages/room-messages.service';
+import { MessagesService } from 'src/chat/messages.service';
 
 @Injectable()
 export class WsIsUserAuthorOfMessageGuard implements CanActivate {

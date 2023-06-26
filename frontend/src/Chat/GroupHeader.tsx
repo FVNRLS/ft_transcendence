@@ -19,10 +19,6 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
 
   let currentUser = selectedRoom ? selectedRoom.users.find(user => user.id === loggedInUser?.id) : null;
 
-
-  console.log("loggeifInUSERRR");
-  console.log(currentUser);
-
   const handleMsgClick = (user: User, event: React.MouseEvent) => {
     event.stopPropagation();
     // Direct message user logic goes here
@@ -79,6 +75,7 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
     }
   };
 
+
   return (
     <>
       {selectedRoom && 
@@ -97,13 +94,13 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
                       <li 
                         key={index} 
                         onClick={(event) => {event.stopPropagation(); setSelectedUser(user);}}
-                        className={selectedUser === user ? 'selected' : ''}
+                        className={selectedUser?.id === user?.id ? 'selected' : ''}
                       >
                         <div>
                           {user.username}
                           <span className="role-display">{user.role}</span>
                         </div>
-                        {selectedUser === user &&
+                        {selectedUser?.id === user?.id &&
                           <div className="user-actions">
                             <button onClick={(event) => handleMsgClick(user, event)}>Send Message</button>
                             {!isUserBlocked 

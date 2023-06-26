@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { RoomsService } from 'src/chat/rooms/rooms.service';
+import { RoomsService } from 'src/chat/rooms.service';
 
 @Injectable()
 export class WsIsUserInRoomGuard implements CanActivate {
