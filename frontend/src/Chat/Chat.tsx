@@ -161,6 +161,8 @@ const Chat = () => {
   
         const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
         setChannels(nonDirectRooms);
+
+        console.log(nonDirectRooms);
       });
   
       socketRef.current?.on('joinedRoom', (newRoom: Room) => {
@@ -265,31 +267,45 @@ const Chat = () => {
         ));
       });
   
+      // socketRef.current.on('banUser', (data) => {
+      //   // Update channels and directRooms to remove the banned user
+      //   setChannels(prevRooms => prevRooms.map(room =>
+      //     room.id === data.roomId ? {...room, users: room.users.filter(user => user.id !== data.userId)} : room
+      //   ));
+      // });
+
       socketRef.current.on('banUser', (data) => {
         // Update channels and directRooms to remove the banned user
         setChannels(prevRooms => prevRooms.map(room =>
-          room.id === data.roomId ? {...room, users: room.users.filter(user => user.id !== data.userId)} : room
+          room.id === data.roomId ? {
+            ...room,
+            users: room.users.filter(user => user.id !== data.userId),
+            bannedUsers: [...room.bannedUsers, {id: data.userId, bannedAt: data.bannedAt}]  // Add user to bannedUsers
+          } : room
         ));
       });
+      
   
       socketRef.current.on('unbanUser', (data) => {
-        // Here we assume that the user is automatically re-added to the room once unbanned
-        // If this is not the case, you may want to remove this listener
-        // Or replace this part with an appropriate API call to get updated room information
+        // Update channels to remove the unbanned user from the list of banned users
+        setChannels(prevRooms => prevRooms.map(room =>
+          room.id === data.roomId ? {...room, bannedUsers: room.bannedUsers.filter(user => user.id !== data.userId)} : room
+        ));
       });
+      
 
       socketRef.current.on('muteUser', (data) => {
         console.log("UserMuted");
         // Update channels and directRooms to mute the user
         setChannels(prevRooms => prevRooms.map(room =>
-          room.id === data.roomId ? {...room, mutedUsers: [...room.mutedUsers, {userId: data.userId, muteExpiresAt: data.muteExpiresAt}]} : room
+          room.id === data.roomId ? {...room, mutedUsers: [...room.mutedUsers, {id: data.userId, muteExpiresAt: data.muteExpiresAt}]} : room
         ));
       });
   
       socketRef.current.on('unmuteUser', (data) => {
         // Update channels and directRooms to unmute the user
         setChannels(prevRooms => prevRooms.map(room =>
-          room.id === data.roomId ? {...room, mutedUsers: room.mutedUsers.filter(mutedUser => mutedUser.userId !== data.userId)} : room
+          room.id === data.roomId ? {...room, mutedUsers: room.mutedUsers.filter(mutedUser => mutedUser.id !== data.userId)} : room
         ));
       });
     };

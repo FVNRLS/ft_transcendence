@@ -357,13 +357,13 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      await this.roomsService.banUser(banDto.userId, banDto.roomId);
+      const bannedUser = await this.roomsService.banUser(banDto.userId, banDto.roomId);
   
       // Emit the 'kickUser' event to everyone in the room
       this.server.to(`room-${banDto.roomId}`).emit('kickUser', { userId: banDto.userId, roomId: banDto.roomId });
   
       // Emit the 'banUser' event to everyone in the room
-      this.server.to(`room-${banDto.roomId}`).emit('banUser', { userId: banDto.userId, roomId: banDto.roomId });
+      this.server.to(`room-${banDto.roomId}`).emit('banUser', { userId: banDto.userId, roomId: banDto.roomId, bannedAt: bannedUser.bannedAt});
   
       return { success: true, message: 'User banned successfully' };
     } catch (error) {

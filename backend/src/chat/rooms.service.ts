@@ -620,18 +620,41 @@ export class RoomsService {
             roomName: true,
             roomType: true,
             hashedPassword: true,
+            // bannedUsers: {
+            //   select: {
+            //     userId: true,
+            //     bannedAt: true,
+            //   }
+            // },
+            // mutedUsers: {
+            //   select: {
+            //     userId: true,
+            //     muteExpiresAt: true,
+            //   }
+            // },
             bannedUsers: {
               select: {
-                userId: true,
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                  },
+                },
                 bannedAt: true,
-              }
+              },
             },
             mutedUsers: {
               select: {
-                userId: true,
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                  },
+                },
                 muteExpiresAt: true,
-              }
+              },
             },
+            
             // Include users in each room
             userOnRooms: {
               select: {
@@ -678,8 +701,8 @@ export class RoomsService {
       hasPassword: userRoom.room.hashedPassword !== null,
       users: userRoom.room.userOnRooms.map(ur => ({...ur.user, role: ur.role})), // Return user with role
       messages: userRoom.room.messages,
-      bannedUsers: userRoom.room.bannedUsers,
-      mutedUsers: userRoom.room.mutedUsers,
+      bannedUsers: userRoom.room.bannedUsers.map(ur => ({...ur.user, bannedAt: ur.bannedAt})), 
+      mutedUsers: userRoom.room.mutedUsers.map(ur => ({...ur.user, bannedAt: ur.muteExpiresAt})),
     }));
   }
   
@@ -754,10 +777,13 @@ export class RoomsService {
     }
   
     // Add user to BannedUser table
-    await this.prisma.bannedUser.create({
+    const createdBannedUser = await this.prisma.bannedUser.create({
       data: {
         userId,
         roomId,
+      },
+      select: {
+        bannedAt: true,
       },
     });
 
@@ -766,7 +792,7 @@ export class RoomsService {
       where: { id: userRoom.id },
     });
   
-    return { success: true };
+    return createdBannedUser;
   }
   
   async unbanUser(userId: number, roomId: number) {
