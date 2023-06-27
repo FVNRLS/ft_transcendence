@@ -47,7 +47,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {}
 
     async handleConnection(@ConnectedSocket() client: Socket) {
-      console.log("HandleConnection");
       try {
         const cookie = client.handshake.headers.cookie;
         if (!cookie) {
@@ -201,8 +200,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (socketId && this.server.sockets.sockets.get(socketId)) {
           const roomName = `room-${newRoom.id}`;
           this.server.sockets.sockets.get(socketId).join(roomName);
-          console.log("JOINED ROOM");
-          console.log(newRoom);
           this.server.to(socketId).emit('joinedRoom', newRoom);
         }
       });
@@ -278,9 +275,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     client.emit('getUserRooms', userRooms);
 
-    console.log("USER ROOMS");
-    console.log(userRooms);
-
     return "Success";
   }
   
@@ -303,8 +297,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('updateRoomPassword')
   async handleUpdateRoomPassword(@ConnectedSocket() client: Socket, @MessageBody() payload: { roomId: number, newPassword: string }) {
     try {
-      console.log("Hello");
-      console.log(payload);
       const updatedRoom = await this.roomsService.updateRoomPassword(payload.roomId, payload.newPassword);
       client.emit('roomUpdated', { id: updatedRoom.id, roomType: updatedRoom.roomType });
       return { success: true, message: 'Room password has been updated.' };
@@ -336,7 +328,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      console.log("User Kicked");
       await this.roomsService.kickUser(kickDto.userId, kickDto.roomId, client);
   
       // Emit the 'kickUser' event to everyone in the room
@@ -432,118 +423,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { success: false, error: error.message };
     }
   }
-  
-
-//   @UseGuards(WsJwtAuthGuard)
-//   @HasRoomPermission("ADMIN")
-//   @SubscribeMessage('kickUser')
-//   async kickUser(
-//     @MessageBody() kickDto: KickDto,
-//     @ConnectedSocket() client: Socket,
-//   ) {
-//     try {
-//       console.log("User Kicked");
-//       await this.roomsService.kickUser(kickDto.userId, kickDto.roomId, client);
-  
-//       // Emit the 'kickUser' event to everyone in the room
-//       client.to(`room-${kickDto.roomId}`).emit('kickUser', { userId: kickDto.userId, roomId: kickDto.roomId });
-  
-//       return { success: true, message: 'User kicked successfully' };
-//     } catch (error) {
-//       console.log('Error:', error.message);
-//       return { success: false, error: error.message };
-//     }
-//   }
-  
-
-//   @UseGuards(WsJwtAuthGuard)
-//   @HasRoomPermission("ADMIN")
-//   @SubscribeMessage('banUser')
-//   async banUser(
-//     @MessageBody() banDto: BanDto,
-//     @ConnectedSocket() client: Socket,
-//   ) {
-//     try {
-//       await this.roomsService.banUser(banDto.userId, banDto.roomId);
-  
-//       // Emit the 'kickUser' event to everyone in the room
-//       client.to(`room-${banDto.roomId}`).emit('kickUser', { userId: banDto.userId, roomId: banDto.roomId });
-  
-//       // Emit the 'banUser' event to everyone in the room
-//       client.to(`room-${banDto.roomId}`).emit('banUser', { userId: banDto.userId, roomId: banDto.roomId });
-  
-//       return { success: true, message: 'User banned successfully' };
-//     } catch (error) {
-//       console.log('Error:', error.message);
-//       return { success: false, error: error.message };
-//     }
-//   }
-  
-
-  
-// @UseGuards(WsJwtAuthGuard)
-// @HasRoomPermission("ADMIN")
-// @SubscribeMessage('unbanUser')
-// async unbanUser(
-//   @MessageBody() unbanDto: UnbanDto,
-//   @ConnectedSocket() client: Socket,
-// ) {
-//   try {
-//     await this.roomsService.unbanUser(unbanDto.userId, unbanDto.roomId);
-
-//     // Emit the 'unbanUser' event to everyone in the room
-//     client.to(`room-${unbanDto.roomId}`).emit('unbanUser', { userId: unbanDto.userId, roomId: unbanDto.roomId });
-
-//     return { success: true, message: 'User unbanned successfully' };
-//   } catch (error) {
-//     console.log('Error:', error.message);
-//     return { success: false, error: error.message };
-//   }
-// }
-
-// @UseGuards(WsJwtAuthGuard)
-// @HasRoomPermission("ADMIN")
-// @SubscribeMessage('muteUser')
-// async muteUser(
-//   @MessageBody() muteDto: MuteDto,
-//   @ConnectedSocket() client: Socket,
-// ) {
-//   console.log("UserMuted");
-//   try {
-//     const muteExpiresAt = muteDto.muteExpiresAt ? new Date(muteDto.muteExpiresAt) : undefined;
-//     await this.roomsService.muteUser(muteDto.userId, muteDto.roomId, muteExpiresAt);
-
-//     // Emit the 'muteUser' event to everyone in the room
-//     console.log(`room-${muteDto.roomId}`);
-//     // Emit the 'muteUser' event to everyone in the room
-//     this.server.to(`room-${muteDto.roomId}`).emit('muteUser', { userId: muteDto.userId, roomId: muteDto.roomId, muteExpiresAt });
-
-//     return { success: true, message: 'User muted successfully' };
-//   } catch (error) {
-//     console.log('Error:', error.message);
-//     return { success: false, error: error.message };
-//   }
-// }
-
-// @UseGuards(WsJwtAuthGuard)
-// @HasRoomPermission("ADMIN")
-// @SubscribeMessage('unmuteUser')
-// async unmuteUser(
-//   @MessageBody() unmuteDto: UnmuteDto,
-//   @ConnectedSocket() client: Socket,
-// ) {
-//   try {
-//     await this.roomsService.unmuteUser(unmuteDto.userId, unmuteDto.roomId);
-
-//     // Emit the 'unmuteUser' event to everyone in the room
-//     client.to(`room-${unmuteDto.roomId}`).emit('unmuteUser', { userId: unmuteDto.userId, roomId: unmuteDto.roomId });
-
-//     return { success: true, message: 'User unmuted successfully' };
-//   } catch (error) {
-//     console.log('Error:', error.message);
-//     return { success: false, error: error.message };
-//   }
-// }
 
 //Block/Unblock
 
@@ -610,9 +489,6 @@ async sendMessageToRoom(
         NOT: { userId: { in: blockedUserIds } },
       },
     });
-
-    console.log("SENT MESSAGE:");
-    console.log(newMessage);
   
     // Emit the new message to each recipient
     for (const recipient of recipients) {

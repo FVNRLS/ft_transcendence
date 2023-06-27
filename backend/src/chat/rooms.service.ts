@@ -10,7 +10,6 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 
 
-
 @Injectable()
 export class RoomsService {
   private readonly userSelection: Prisma.UserSelect = {
@@ -25,21 +24,6 @@ export class RoomsService {
     createdAt: true,
     content: true,
   };
-
-
-  // private readonly roomSelection: Prisma.RoomSelect = {
-  //   id: true,
-  //   roomName: true,
-  //   roomType: true,
-  //   userOnRooms: { select: { user: { select: this.userSelection } } },
-  //   messages: {
-  //     select: this.messageSelection,
-  //     orderBy: {
-  //       createdAt: 'asc',
-  //     },
-  //     take: 100,
-  //   },
-  // };
 
   constructor(
     private readonly prisma: PrismaService,
@@ -93,8 +77,6 @@ export class RoomsService {
         },
       },
     });
-    
-    // this.setUserRole(client_id, room.id, UserRole.OWNER);
     
     // Fetch the room with its related data
     const newRoom = await this.prisma.room.findUnique({
@@ -167,13 +149,9 @@ export class RoomsService {
 }
 
   async createDirectRoom(createRoomDto: CreateRoomDto, userId: number) {
-    console.log("Create Direct Room");
-
     const user1Id = createRoomDto.members[0].id;
-    // const client_id = createRoomDto.members[createRoomDto.members.length - 1].id;
     const client_id = userId;
 
-    console.log(client_id);
     // Check if a direct room already exists between the two users
     const existingRoom = await this.prisma.room.findFirst({
       where: {
@@ -202,7 +180,6 @@ export class RoomsService {
     
     
 
-    console.log(existingRoom);
     if (existingRoom) {
       console.log("Room already exists");
       return null;
@@ -272,12 +249,6 @@ export class RoomsService {
       receivingUser,
     };
   }
-  
-  
-  
-
-
-  
 
   async findAll() {
     return await this.prisma.room.findMany();
@@ -468,7 +439,6 @@ export class RoomsService {
   
 
   async setUserRole(userId: number, roomId: number, role: UserRole) {
-    console.log(`userId: ${userId}, roomId: ${roomId}, role: ${role}`);
     const userRoom = await this.prisma.userOnRooms.findUnique({
       where: {
         roomId_userId: {
@@ -620,18 +590,6 @@ export class RoomsService {
             roomName: true,
             roomType: true,
             hashedPassword: true,
-            // bannedUsers: {
-            //   select: {
-            //     userId: true,
-            //     bannedAt: true,
-            //   }
-            // },
-            // mutedUsers: {
-            //   select: {
-            //     userId: true,
-            //     muteExpiresAt: true,
-            //   }
-            // },
             bannedUsers: {
               select: {
                 user: {
@@ -689,9 +647,6 @@ export class RoomsService {
         },
       },
     });
-  
-    console.log("USER GROUP ROOMS");
-    console.log(userRooms);
   
     // Format the returned data for Group rooms
     return userRooms.map(userRoom => ({
