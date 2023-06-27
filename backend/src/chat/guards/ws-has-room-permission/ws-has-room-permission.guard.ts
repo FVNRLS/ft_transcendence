@@ -22,6 +22,10 @@ export class WsHasRoomPermissionGuard implements CanActivate {
     const client = context.switchToWs().getClient();
     const roomId = context.switchToWs().getData().roomId;
     const userId = client.data.userId;
+
+    if (!userId || !roomId) {
+      throw new Error('Both userId and roomId must be provided');
+    }
     
     const userRoom = await this.roomsService.getUserRoom(userId, roomId);
 

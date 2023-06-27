@@ -410,6 +410,9 @@ export class RoomsService {
   }
 
   async getUserRoom(userId: number, roomId: number) {
+    if (!userId || !roomId) {
+      throw new Error('Both userId and roomId must be provided');
+    }
     return await this.prisma.userOnRooms.findUnique({
       where: { roomId_userId: { roomId, userId } }
     });
@@ -664,10 +667,13 @@ export class RoomsService {
       roomName: userRoom.room.roomName,
       roomType: userRoom.room.roomType,
       hasPassword: userRoom.room.hashedPassword !== null,
-      users: userRoom.room.userOnRooms.map(ur => ({...ur.user, role: ur.role})), // Return user with role
+      // users: userRoom.room.userOnRooms.map(ur => ({...ur.user, role: ur.role})), // Return user with role
+      users: userRoom.room.userOnRooms,
       messages: userRoom.room.messages,
-      bannedUsers: userRoom.room.bannedUsers.map(ur => ({...ur.user, bannedAt: ur.bannedAt})), 
-      mutedUsers: userRoom.room.mutedUsers.map(ur => ({...ur.user, bannedAt: ur.muteExpiresAt})),
+      // bannedUsers: userRoom.room.bannedUsers.map(ur => ({...ur.user, bannedAt: ur.bannedAt})), 
+      bannedUsers: userRoom.room.bannedUsers,
+      // mutedUsers: userRoom.room.mutedUsers.map(ur => ({...ur.user, bannedAt: ur.muteExpiresAt})),
+      mutedUsers: userRoom.room.mutedUsers,
     }));
   }
   
@@ -761,6 +767,9 @@ export class RoomsService {
   }
   
   async unbanUser(userId: number, roomId: number) {
+    if (!userId || !roomId) {
+      throw new Error('Both userId and roomId must be provided');
+    }
     // Check if the user is banned
     const bannedUser = await this.prisma.bannedUser.findUnique({
       where: {
@@ -789,6 +798,9 @@ export class RoomsService {
   }
 
   async muteUser(userId: number, roomId: number, muteExpiresAt?: Date) {
+    if (!userId || !roomId) {
+      throw new Error('Both userId and roomId must be provided');
+    }
     // Check if the user is an owner
     const userRoom = await this.prisma.userOnRooms.findUnique({
       where: {
@@ -835,6 +847,9 @@ export class RoomsService {
   
   
   async unmuteUser(userId: number, roomId: number) {
+    if (!userId || !roomId) {
+      throw new Error('Both userId and roomId must be provided');
+    }
     // Check if the user is muted
     const mutedUser = await this.prisma.mutedUser.findUnique({
       where: {

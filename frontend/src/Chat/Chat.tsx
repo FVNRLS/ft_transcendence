@@ -15,12 +15,23 @@ import GroupHeader from './GroupHeader';
 import axios from 'axios';
 
 
-// Defining interface for User and Room
+// // Defining interface for User and Room
+// export interface User {
+//   id: number;
+//   username: string;
+//   role: string;
+// }
+
 export interface User {
   id: number;
   username: string;
+}
+
+export interface RoomUser {
+  user: User;
   role: string;
 }
+
 
 interface Message {
   id: number;
@@ -37,6 +48,28 @@ interface userPic {
   username: string
 }
 
+interface BannedUser {
+  user: User;
+  bannedAt: string;
+}
+
+interface MutedUser {
+  user: User;
+  muteExpiresAt: string | null;
+}
+
+
+// export interface Room {
+//   id: number;
+//   roomName: string;
+//   roomType: 'PUBLIC' | 'PRIVATE' | 'PASSWORD' | 'DIRECT';
+//   password?: string;
+//   userId: number;
+//   users: User[];
+//   clientUser: User;
+//   receivingUser: User;
+//   messages: Message[]; // Adding the messages array to the Room interface
+// }
 
 export interface Room {
   id: number;
@@ -44,10 +77,12 @@ export interface Room {
   roomType: 'PUBLIC' | 'PRIVATE' | 'PASSWORD' | 'DIRECT';
   password?: string;
   userId: number;
-  users: User[];
   clientUser: User;
   receivingUser: User;
   messages: Message[]; // Adding the messages array to the Room interface
+  users: RoomUser[];
+  bannedUsers: BannedUser[];
+  mutedUsers: MutedUser[];
 }
 
 // Chat component
@@ -114,9 +149,6 @@ const Chat = () => {
             console.error('Unblock user failed:', response.message);
           }
         });
-        
-      // }
-    // }
   }
 
   // UseEffect hook for initializing socket connection, fetching user and rooms data
@@ -131,15 +163,6 @@ const Chat = () => {
 
     // Socket events and handlers
     const handleSocketEvents = () => {
-      // socketRef.current?.on('connect', () => {
-      //   socketRef.current?.on('user_verified', () => {
-      //     console.log("HandleConnection in Frontend");
-      //     // socketRef.current?.emit('getCurrentUser');
-      //     // socketRef.current?.emit('getUserRooms');
-      //     // socketRef.current?.emit('getBlockedUsers');
-
-      //   });
-      // });
   
       socketRef.current?.on('currentUser', (user: User) => {
         setLoggedInUser(user);
@@ -162,7 +185,6 @@ const Chat = () => {
         const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
         setChannels(nonDirectRooms);
 
-        console.log(nonDirectRooms);
       });
   
       socketRef.current?.on('joinedRoom', (newRoom: Room) => {
@@ -263,24 +285,23 @@ const Chat = () => {
       socketRef.current.on('kickUser', (data) => {
         // Update channels and directRooms to remove the kicked user
         setChannels(prevRooms => prevRooms.map(room =>
-          room.id === data.roomId ? {...room, users: room.users.filter(user => user.id !== data.userId)} : room
+          room.id === data.roomId ? {...room, users: room.users.filter(user => user.user.id !== data.userId)} : room
         ));
       });
-  
-      // socketRef.current.on('banUser', (data) => {
-      //   // Update channels and directRooms to remove the banned user
-      //   setChannels(prevRooms => prevRooms.map(room =>
-      //     room.id === data.roomId ? {...room, users: room.users.filter(user => user.id !== data.userId)} : room
-      //   ));
-      // });
 
       socketRef.current.on('banUser', (data) => {
         // Update channels and directRooms to remove the banned user
         setChannels(prevRooms => prevRooms.map(room =>
           room.id === data.roomId ? {
             ...room,
-            users: room.users.filter(user => user.id !== data.userId),
-            bannedUsers: [...room.bannedUsers, {id: data.userId, bannedAt: data.bannedAt}]  // Add user to bannedUsers
+            users: room.users.filter(user => user.user.id !== data.userId),
+            bannedUsers: [
+              ...room.bannedUsers, 
+              {
+                user: {id: data.userId, username: data.username}, 
+                bannedAt: data.bannedAt
+              }
+            ]  // Add user to bannedUsers
           } : room
         ));
       });
@@ -289,25 +310,38 @@ const Chat = () => {
       socketRef.current.on('unbanUser', (data) => {
         // Update channels to remove the unbanned user from the list of banned users
         setChannels(prevRooms => prevRooms.map(room =>
-          room.id === data.roomId ? {...room, bannedUsers: room.bannedUsers.filter(user => user.id !== data.userId)} : room
+          room.id === data.roomId ? {
+            ...room, 
+            bannedUsers: room.bannedUsers.filter(user => user.user.id !== data.userId)} : room
         ));
       });
       
 
       socketRef.current.on('muteUser', (data) => {
-        console.log("UserMuted");
         // Update channels and directRooms to mute the user
         setChannels(prevRooms => prevRooms.map(room =>
-          room.id === data.roomId ? {...room, mutedUsers: [...room.mutedUsers, {id: data.userId, muteExpiresAt: data.muteExpiresAt}]} : room
+          room.id === data.roomId ? {
+            ...room,
+            mutedUsers: [
+              ...room.mutedUsers,
+              {
+                user: {id: data.userId, username: data.username}, // assuming `data` contains the `username`
+                muteExpiresAt: data.muteExpiresAt
+              }
+            ]
+          } : room
         ));
       });
-  
+
       socketRef.current.on('unmuteUser', (data) => {
         // Update channels and directRooms to unmute the user
         setChannels(prevRooms => prevRooms.map(room =>
-          room.id === data.roomId ? {...room, mutedUsers: room.mutedUsers.filter(mutedUser => mutedUser.id !== data.userId)} : room
+          room.id === data.roomId ? {
+            ...room, 
+            mutedUsers: room.mutedUsers.filter(mutedUser => mutedUser.user.id !== data.userId)
+          } : room
         ));
-      });
+      });      
     };
 
     handleSocketEvents();

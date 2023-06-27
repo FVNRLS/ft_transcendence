@@ -187,7 +187,8 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   updateRoomData(newRoom: any) {
     return {
       ...newRoom,
-      users: newRoom.userOnRooms.map(ur => ur.user),
+      // users: newRoom.userOnRooms.map(ur => ur.user),
+      users: newRoom.userOnRooms,
       messages: newRoom.messages,
     };
   }
@@ -205,7 +206,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
     }
   }
-
 
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('findOneRoom')
