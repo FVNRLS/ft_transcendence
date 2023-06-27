@@ -84,15 +84,25 @@ export class RoomsService {
       include: {
         bannedUsers: {
           select: {
-            userId: true,
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
             bannedAt: true,
-          }
+          },
         },
         mutedUsers: {
           select: {
-            userId: true,
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
             muteExpiresAt: true,
-          }
+          },
         },
         userOnRooms: {
           select: {
