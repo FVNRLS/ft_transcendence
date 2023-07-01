@@ -173,6 +173,23 @@
 	cursor: pointer;
 }
 
+.disabled {
+	background-color: #ddd;
+	color: #666;
+  }
+  
+  .info-message {
+	
+	position: absolute;
+	top: 90%;
+	left: 40%;
+	transform: translateX(-50%);
+	text-decoration: #ddd;
+	color: grey;
+	/* Other rules... */
+  }
+  
+
 .invis {
 	opacity: 1;
 	animation: fade .5s infinite alternate;

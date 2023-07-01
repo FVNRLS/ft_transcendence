@@ -41,6 +41,7 @@ services:
     networks:
     - internal
     restart: unless-stopped
+    #init: true
 
   nest_js:
     container_name: nest_js
@@ -82,6 +83,7 @@ services:
     depends_on:
     - postgres
     restart: unless-stopped
+    #init: true
   
   react_js:
     container_name: react_js
@@ -104,3 +106,4 @@ services:
     depends_on:
     - nest_js
     restart: unless-stopped
+    #init: true

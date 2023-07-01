@@ -45,7 +45,6 @@ const Game = () => {
 	  }
 	  
 	const [ready, setReady] = useState(false);
-	const [startingPlayer, setStartingPlayer] = useState(0);
 	const [socket, setSocket] = useState<Socket | null>(null);
 	
 	const [ballPos, setBallPos] = useState({x:(1280 / 2 - 15), y: (720 / 2) - 15});
@@ -95,6 +94,7 @@ const Game = () => {
 
 	const leftPlayerRef = useRef(null);
 	const rightPlayerRef = useRef(null);
+
 
 	useEffect(() => {
 		const handleResize = () => {
@@ -211,12 +211,13 @@ const Game = () => {
 			// socket?.emit('move', localState);
 	};
 
-	const handleSpeed = () => {
-		if (gameState.ballSpeed === 3)
-			setBallSpeed(9);
-		else
-			setBallSpeed(3);
-	};
+  const handleSpeed = () => {
+      if (gameState.ballSpeed === 3)
+        setBallSpeed(9);
+      else
+        setBallSpeed(3);
+
+  };
 
 	const respawnBall = () => {
 		setBallPos({x: (window.innerHeight / 2 - 15), y: (window.innerWidth / 2) - 15});
@@ -250,6 +251,9 @@ const Game = () => {
 			<Header />
 			<div className='container' onMouseMove={handleMouseMove}>
 				{!socket && <button className='connect-btn' onClick={connectToSocket}>Connect</button>}
+			<div className="info-message">
+       			Only the first player, who joined, can change the game settings.
+    		</div>
 				{!ready && socket && <button className='connect-btn' onClick={() => {setReady(true); setLocalState(state => ({...state, ready: true}));}}>READY</button>}
 				<div className='game-bg' style={{opacity: bgStyle.opacity, background: gameState.bgColor}}>
 					{ended && <div className='end'>Match ended<br />{gameState.scores[0]} | {gameState.scores[1]}</div>}
@@ -261,12 +265,14 @@ const Game = () => {
 					{!ended && <div className='right-player' ref={rightPlayerRef} style={{ top: gameState.paddles[1] }} />}
 					{ready && !ended && <div className={ballClasses} style={{ left: gameState.ball.x, top: gameState.ball.y }}/>}
 				</div>
+
 				<div className='powerup-cont'>
 					<FontAwesomeIcon className="pup" onClick={handleSpeed} icon={faRocket} size="4x" color='white'/>
 					<FontAwesomeIcon className="pup" onClick={changeBg} icon={faSprayCan} size="4x" color='white'/>
 					<FontAwesomeIcon className="pup" onClick={setInvis} icon={faEye} size="4x" color='white'/>
 					<FontAwesomeIcon className="pup" onClick={respawnBall} icon={faRotateRight} size="4x" color='white'/>
 				</div>
+
 			</div>
 		</div>
 	);
