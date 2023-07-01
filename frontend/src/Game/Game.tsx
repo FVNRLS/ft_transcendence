@@ -31,24 +31,21 @@ const Game = () => {
 	}, [navigate, session]);
 
 	function generateRandomAngle() {
-		const minAngle = 15; // minimum angle in degrees
-		const maxAngle = 75; // maximum angle in degrees
+		const minAngle = 15;
+		const maxAngle = 75;
 	  
-		// Convert the angles to radians
 		const minAngleRad = minAngle * (Math.PI / 180);
 		const maxAngleRad = maxAngle * (Math.PI / 180);
 	  
-		// Generate a random number between -1 and 1
 		const randomSign = Math.random() < 0.5 ? -1 : 1;
 	  
-		// Generate a random number between minAngleRad and maxAngleRad
 		const randomAngle = Math.random() * (maxAngleRad - minAngleRad) + minAngleRad;
 	  
-		// Return the angle, adjusting its sign randomly
 		return randomSign * randomAngle;
 	  }
 	  
 	const [ready, setReady] = useState(false);
+	const [startingPlayer, setStartingPlayer] = useState(0);
 	const [socket, setSocket] = useState<Socket | null>(null);
 	
 	const [ballPos, setBallPos] = useState({x:(1280 / 2 - 15), y: (720 / 2) - 15});
@@ -99,18 +96,26 @@ const Game = () => {
 	const leftPlayerRef = useRef(null);
 	const rightPlayerRef = useRef(null);
 
-  	useEffect(() => {
+	useEffect(() => {
 		const handleResize = () => {
 		  setScreenWidth(window.innerWidth);
 		  setScreenHeight(window.innerHeight);
+	  
+		  // calculate the ratio of the ball's current position to the total width and height of the game area
+		  const ballXRatio = ballPos.x / 1280;
+		  const ballYRatio = ballPos.y / 720;
+	  
+		  // multiply the new dimensions of the game area by these ratios to get the new position of the ball
+		  setBallPos({ x: ballXRatio * window.innerWidth, y: ballYRatio * window.innerHeight });
 		};
-	
+	  
 		window.addEventListener('resize', handleResize);
-	
+	  
 		return () => {
 		  window.removeEventListener('resize', handleResize);
 		};
-	}, []);
+	  }, [ballPos]);
+	  
 
 	useEffect(() => {
 		socket?.emit('move', localState);
@@ -134,7 +139,7 @@ const Game = () => {
 	}, [ballPos, ballAngle, scoreLeft, scoreRight, cursorY, ballSpeed, bgColor, invisibility])
 	
   useEffect(() => {
-		if (gameState.scores[0] < 100 && gameState.scores[1] < 100)
+		if (gameState.scores[0] < 10 && gameState.scores[1] < 10)
 		{
 			setEnded(false);
 			const newBallX = gameState.ball.x + Math.cos(gameState.ballAngle) * gameState.ballSpeed;
@@ -158,7 +163,7 @@ const Game = () => {
 				) {
 					const relY = leftPlayerBar.top + 125 - gameState.ball.y;
 					const normalizedY = relY / 125;
-					const bounceAngle = normalizedY * (5 * Math.PI / 12) + Math.PI;
+					const bounceAngle = normalizedY * (5 * Math.PI / 12) - Math.PI;
 					console.log("bounce from left:", bounceAngle);
 					setBallAngle(bounceAngle);
 				}
@@ -175,24 +180,24 @@ const Game = () => {
 					console.log("bounce from right:", bounceAngle);
 					setBallAngle(bounceAngle);
 				}
-			}
-			if (newBallX < 0 || newBallX > 1280 - 30) {
-				if (newBallX < 0) {
-					setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
-					setBallAngle(generateRandomAngle());
-					setScoreRight(gameState.scores[1] + 1);
+				if (newBallX < 0 || newBallX > 1280 - 30) {
+					if (newBallX < 0) {
+						setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
+						setBallAngle(generateRandomAngle());
+						setScoreRight(gameState.scores[1] + 1);
+					}
+					else
+					{
+						setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
+						setBallAngle(generateRandomAngle());
+						setScoreLeft(gameState.scores[0] + 1);
+					}
 				}
-				else
-				{
-					setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
-					setBallAngle(generateRandomAngle());
-					setScoreLeft(gameState.scores[0] + 1);
+		
+				if (newBallY < 0 || newBallY > 720 - 30) {
+					console.log("bounce from top/bottom:", ballAngle);
+					setBallAngle(-gameState.ballAngle);
 				}
-			}
-	
-			if (newBallY < 0 || newBallY > 720 - 30) {
-				console.log("bounce from top/bottom:", ballAngle);
-				setBallAngle(-gameState.ballAngle);
 			}
 		}
 		else
@@ -214,7 +219,7 @@ const Game = () => {
 	};
 
 	const respawnBall = () => {
-		setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
+		setBallPos({x: (window.innerHeight / 2 - 15), y: (window.innerWidth / 2) - 15});
 		setBallAngle(generateRandomAngle());
 	}
 
