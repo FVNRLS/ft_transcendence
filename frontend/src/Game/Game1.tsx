@@ -30,29 +30,12 @@ const Game = () => {
 		navigate('/not-logged');
 	}, [navigate, session]);
 
-	function generateRandomAngle() {
-		const minAngle = 15; // minimum angle in degrees
-		const maxAngle = 75; // maximum angle in degrees
-	  
-		// Convert the angles to radians
-		const minAngleRad = minAngle * (Math.PI / 180);
-		const maxAngleRad = maxAngle * (Math.PI / 180);
-	  
-		// Generate a random number between -1 and 1
-		const randomSign = Math.random() < 0.5 ? -1 : 1;
-	  
-		// Generate a random number between minAngleRad and maxAngleRad
-		const randomAngle = Math.random() * (maxAngleRad - minAngleRad) + minAngleRad;
-	  
-		// Return the angle, adjusting its sign randomly
-		return randomSign * randomAngle;
-	  }
-	  
+
 	const [ready, setReady] = useState(false);
 	const [socket, setSocket] = useState<Socket | null>(null);
 	
 	const [ballPos, setBallPos] = useState({x:(1280 / 2 - 15), y: (720 / 2) - 15});
-	const [ballAngle, setBallAngle] = useState(generateRandomAngle());
+	const [ballAngle, setBallAngle] = useState(Math.random() * Math.PI * 2);
 	const [cursorY, setCursorY] = useState(0);
 	const [scoreLeft, setScoreLeft] = useState(0);
 	const [scoreRight, setScoreRight] = useState(0);
@@ -65,7 +48,7 @@ const Game = () => {
 
 	const [gameState, setGameState] = useState<serverState>({
 		ball: { x:(1280 / 2 - 15), y: (720 / 2) - 15},
-		ballAngle: generateRandomAngle(),
+		ballAngle: Math.random() * Math.PI * 2,
 		ballSpeed: 3,
 		paddles: [720 / 2 - 125, 720 / 2 - 125],
 		scores: [0, 0],
@@ -75,7 +58,7 @@ const Game = () => {
 	});
 	const [localState, setLocalState] = useState({
 		ball: {x: (1280 / 2 - 15), y: (720 / 2) - 15},
-		ballAngle: generateRandomAngle(),
+		ballAngle: Math.random() * Math.PI * 2,
 		ballSpeed: 3,
 		cursorY: 0,
 		scores: [0, 0],
@@ -83,7 +66,6 @@ const Game = () => {
 		invisibility: false,
 		bgColor: bgColor
 	});
-
 
 	const connectToSocket = () => {
 		const newSocket = io(`http://${app_ip}:5005`, { transports: ['websocket'],
@@ -134,7 +116,7 @@ const Game = () => {
 	}, [ballPos, ballAngle, scoreLeft, scoreRight, cursorY, ballSpeed, bgColor, invisibility])
 	
   useEffect(() => {
-		if (gameState.scores[0] < 100 && gameState.scores[1] < 100)
+		if (gameState.scores[0] < 10 && gameState.scores[1] < 10)
 		{
 			setEnded(false);
 			const newBallX = gameState.ball.x + Math.cos(gameState.ballAngle) * gameState.ballSpeed;
@@ -151,15 +133,16 @@ const Game = () => {
 				const rightPlayerBar = (rightPlayer as HTMLElement).getBoundingClientRect();
 
 				if (
+					(
 					newBallX <= (50) &&
 					newBallY >= (leftPlayerBar.top - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 + 5)) &&
 					newBallY <= (leftPlayerBar.bottom - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2)) &&
-					newBallX > (0)
+					 newBallX > (0)
+					)
 				) {
 					const relY = leftPlayerBar.top + 125 - gameState.ball.y;
 					const normalizedY = relY / 125;
-					const bounceAngle = normalizedY * (5 * Math.PI / 12) + Math.PI;
-					console.log("bounce from left:", bounceAngle);
+					const bounceAngle = normalizedY * (5 * Math.PI / 12);
 					setBallAngle(bounceAngle);
 				}
 	
@@ -172,26 +155,11 @@ const Game = () => {
 					const relY = rightPlayerBar.top + 125 - gameState.ball.y;
 					const normalizedY = relY / 125;
 					const bounceAngle = normalizedY * (5 * Math.PI / 12);
-					console.log("bounce from right:", bounceAngle);
 					setBallAngle(bounceAngle);
-				}
-			}
-			if (newBallX < 0 || newBallX > 1280 - 30) {
-				if (newBallX < 0) {
-					setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
-					setBallAngle(generateRandomAngle());
-					setScoreRight(gameState.scores[1] + 1);
-				}
-				else
-				{
-					setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
-					setBallAngle(generateRandomAngle());
-					setScoreLeft(gameState.scores[0] + 1);
 				}
 			}
 	
 			if (newBallY < 0 || newBallY > 720 - 30) {
-				console.log("bounce from top/bottom:", ballAngle);
 				setBallAngle(-gameState.ballAngle);
 			}
 		}
@@ -200,7 +168,7 @@ const Game = () => {
 	}, [gameState, screenHeight,
 		screenWidth, ready]);
 
-	const handleMouseMove = (event:any) => {
+const handleMouseMove = (event:any) => {
 			if ((event.clientY - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 + 125) > 0) && (event.clientY - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 - 125) <= 720))
 				setCursorY(event.clientY - (screenHeight * 0.1 + (screenHeight * 0.9 - 720) / 2 + 125));
 			// socket?.emit('move', localState);
@@ -215,7 +183,7 @@ const Game = () => {
 
 	const respawnBall = () => {
 		setBallPos({x: (1280 / 2 - 15), y: (720 / 2) - 15});
-		setBallAngle(generateRandomAngle());
+		setBallAngle(Math.random() * Math.PI * 2);
 	}
 
 	const changeBg = () => {
@@ -240,9 +208,13 @@ const Game = () => {
 	
 	const ballClasses = gameState.invisibility ? 'ball invis' : 'ball';
 
+	<canvas id="myCanvas" width="200" height="100" style="border:1px solid #000000;">
+	</canvas>
+	
 	return (
 		<div>
 			<Header />
+
 			<div className='container' onMouseMove={handleMouseMove}>
 				{!socket && <button className='connect-btn' onClick={connectToSocket}>Connect</button>}
 				{!ready && socket && <button className='connect-btn' onClick={() => {setReady(true); setLocalState(state => ({...state, ready: true}));}}>READY</button>}
@@ -266,5 +238,4 @@ const Game = () => {
 		</div>
 	);
 }
-
 export default Game;
