@@ -4,14 +4,15 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Socket } from 'socket.io';
 import { SecurityService } from 'src/security/security.service';
-import { Prisma, RoomType, User, UserRole } from '@prisma/client';
+import { Prisma, RoomType, User, UserRole, UserOnRooms } from '@prisma/client';
 import * as argon2 from "argon2";
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BaseRoomService } from './base-room.service';
 
 
 
 @Injectable()
-export class RoomsService {
+export class RoomsService extends BaseRoomService {
   private readonly userSelection: Prisma.UserSelect = {
     id: true,
     username: true,
@@ -29,7 +30,7 @@ export class RoomsService {
     private readonly prisma: PrismaService,
     private securityService: SecurityService,
     ) {
-
+      super(prisma.room);
     }
 
 
@@ -128,36 +129,6 @@ export class RoomsService {
     return newRoom;
   }
 
-  async addUsersToRoom(roomId: number, userIds: number[]) {
-    // Add users to the room in the database
-    if (roomId) {
-      for (let userId of userIds) {
-        if (userId) {
-          // Check if the user is already in the room
-          const existingEntry = await this.prisma.userOnRooms.findUnique({
-            where: {
-              roomId_userId: {
-                roomId: roomId,
-                userId: userId,
-              },
-            },
-          });
-
-          // If the user is not in the room, add them
-          if (!existingEntry) {
-            await this.prisma.userOnRooms.create({
-              data: {
-                roomId: roomId,
-                userId: userId,
-                role: UserRole.MEMBER, // you can change the role based on your need
-              },
-            });
-          }
-        }
-      }
-    }
-}
-
   async createDirectRoom(createRoomDto: CreateRoomDto, userId: number) {
     const user1Id = createRoomDto.members[0].id;
     const client_id = userId;
@@ -200,17 +171,22 @@ export class RoomsService {
         roomName: createRoomDto.roomName,
         roomType: createRoomDto.roomType,
         userId: client_id,
+        userOnRooms: {
+          create: [
+            // Set client as owner
+            {
+              userId: client_id,
+            },
+            // Add other members
+            ...createRoomDto.members
+              .filter(member => member.id !== client_id)
+              .map(member => ({
+                userId: member.id,
+              })),
+          ],
+        },
       },
     });
-    
-    const userIds = createRoomDto.members.map(member => member.id);
-    if (!userIds) {
-      console.log("USERIDS IS NULL");
-    } else {
-      await this.addUsersToRoom(room.id, userIds);
-    }
-    
-    this.setUserRole(client_id, room.id, UserRole.OWNER);
     
     // Fetch the room with its related data
     const newRoom = await this.prisma.room.findUnique({
@@ -303,21 +279,6 @@ export class RoomsService {
         salt:           salt,
         userId:         updateRoomDto.userId,
       },
-    });
-  }
-
-  async remove(roomId: number, client: Socket) {
-    const room = await this.prisma.room.findUnique({
-      where: { id: roomId },
-    });
-    if (!room) {
-      throw new Error(`No room found for id ${roomId}`);
-    }
-    if (room.userId !== client.data.userId) {
-      throw new Error('You are not authorized to delete this room');
-    }
-    return this.prisma.room.delete({
-      where: { id: roomId },
     });
   }
 
@@ -876,4 +837,14 @@ export class RoomsService {
   
     return { success: true };
   }
+
+  async findUsersInRoomWithoutBlock(roomId: number, blockedUserIds: number[]): Promise<UserOnRooms[]> {
+    return this.prisma.userOnRooms.findMany({
+      where: {
+        roomId: roomId,
+        NOT: { userId: { in: blockedUserIds } },
+      },
+    });
+  }
+
 }

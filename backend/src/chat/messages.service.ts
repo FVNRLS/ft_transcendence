@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { CreateMessageDto } from './dto/create-room-message.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-room-message.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Socket } from 'socket.io';
@@ -99,78 +99,4 @@ export class MessagesService {
       take: limit,
     });
   }
-
-  async blockUser(blockerId: number, blockedId: number) {
-    // Check if this block relation already exists
-    const existingBlock = await this.prisma.block.findFirst({
-      where: {
-        blockerId: blockerId,
-        blockedId: blockedId,
-      },
-    });
-  
-    if (existingBlock) {
-      return { success: true, message: 'User already blocked.' };
-    }
-  
-    // Check if blockedId is defined
-    if (blockedId === undefined) {
-      throw new Error('BlockedId is undefined');
-    }
-  
-    // Create the block relation
-    const newBlock = await this.prisma.block.create({
-      data: {
-        blockerId: blockerId,
-        blockedId: blockedId,
-      },
-    });
-  
-    return { success: true, message: 'User successfully blocked.', block: newBlock };
-  }
-  
-  async unblockUser(blockerId: number, blockedId: number) {
-    // Check if this block relation exists
-    const existingBlock = await this.prisma.block.findFirst({
-      where: {
-        blockerId: blockerId,
-        blockedId: blockedId,
-      },
-    });
-  
-    if (!existingBlock) {
-      return { success: true, message: 'Block relation does not exist.' };
-    }
-  
-    // Delete the block relation
-    await this.prisma.block.delete({
-      where: {
-        id: existingBlock.id,
-      },
-    });
-  
-    return { success: true, message: 'User successfully unblocked.' };
-  }
-
-  async isBlocked(blockerId: number, blockedId: number): Promise<boolean> {
-    const block = await this.prisma.block.findFirst({
-      where: {
-        blockerId: blockerId,
-        blockedId: blockedId,
-      },
-    });
-  
-    return block !== null;
-  }
-
-  async getBlockedUsers(userId: number): Promise<number[]> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { blockedUsers: true },
-    });
-  
-    if (!user) throw new NotFoundException(`User with ID ${userId} not found`);
-  
-    return user.blockedUsers.map(block => block.blockedId);
-  }  
 }

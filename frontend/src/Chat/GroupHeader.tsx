@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Room, User } from './Chat';  // Import interfaces from Chat component
+import { Room, User, BlockedUser } from './Chat';  // Import interfaces from Chat component
 import { Socket } from 'socket.io-client';
 
 interface ChatHeaderProps {
   selectedRoom: Room | null;
   loggedInUser: User | null;
   isChatHeaderClicked: boolean;
-  blockedUsers: number[];
+  blockedUsers: BlockedUser[];
   socketRef: React.MutableRefObject<Socket | null>;
   blockUser: (user_id: number) => void;
   unblockUser: (user_id: number) => void;
@@ -113,7 +113,9 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
                       )}
                     )
                     : selectedRoom.users.map((user, index) => {
-                      const isUserBlocked = blockedUsers.includes(user.user.id);
+                      const isUserBlocked = blockedUsers.some(blockedUser => blockedUser.blockedId === user.user.id);
+                      const isUserMuted = selectedRoom.mutedUsers.some(mutedUser => mutedUser.user.id === user.user.id);
+                      const isUserBanned = selectedRoom.bannedUsers.some(bannedUser => bannedUser.user.id === user.user.id)
                       return (
                         <li 
                           key={index} 
@@ -133,11 +135,11 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
                               }
                               {currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'OWNER') &&
                                 <>
-                                  {!selectedRoom.mutedUsers.some(mutedUser => mutedUser.user.id === user.user.id) 
+                                  {!isUserMuted 
                                     ? <button onClick={(event) => {event.stopPropagation(); handleMuteUser(user.user)}}>Mute User</button>
                                     : <button onClick={(event) => {event.stopPropagation(); handleUnmuteUser(user.user)}}>Unmute User</button>
                                   }
-                                  {!selectedRoom.bannedUsers.some(bannedUser => bannedUser.user.id === user.user.id)
+                                  {!isUserBanned
                                     ? <button onClick={(event) => {event.stopPropagation(); handleBanUser(user.user)}}>Ban User</button>
                                     : <button onClick={(event) => {event.stopPropagation(); handleUnbanUser(user.user)}}>Unban User</button>
                                   }

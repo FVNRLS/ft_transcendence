@@ -29,7 +29,9 @@ model User {
   ratings             Rating[]
   friends             Friend[]
   messages            Message[]
+  directMessages      DirectMessage[]
   userrooms           UserOnRooms[]
+  directRooms         DirectRoomUser[]
   bannedInRooms       BannedUser[]
   mutedInRooms        MutedUser[]
   blockedUsers        Block[] @relation("BlockBlocker")
@@ -104,6 +106,23 @@ model Friend {
   @@map("friends")
 }
 
+model DirectRoom {
+  id              Int @id @default(autoincrement())
+  users           DirectRoomUser[]
+  directMessages  DirectMessage[]
+  @@map("direct_rooms")
+}
+
+model DirectRoomUser {
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id])
+  directRoomId Int
+  directRoom DirectRoom   @relation(fields: [directRoomId], references: [id])
+  
+  @@id([userId, directRoomId])
+  @@map("direct_room_users")
+}
+
 model Room {          
   id                    Int       @id @default(autoincrement())
   roomName              String
@@ -123,14 +142,14 @@ model Room {
 model UserOnRooms {
   id           Int      @id @default(autoincrement())
   roomId       Int
-  room         Room     @relation(fields: [roomId], references: [id])
+  room         Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   userId       Int
   user         User     @relation(fields: [userId], references: [id])
   role         UserRole @default(MEMBER)
   muteExpiresAt DateTime?
 
   @@unique([roomId, userId])
-  @@map("useronrooms")
+  @@map("user_on_rooms")
 }
 
 model BannedUser {
@@ -139,10 +158,11 @@ model BannedUser {
   roomId  Int
   bannedAt DateTime @default(now())
 
-  room    Room   @relation(fields: [roomId], references: [id])
+  room    Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
   user    User   @relation(fields: [userId], references: [id])
 
   @@unique([userId, roomId])
+  @@map("banned_users")
 }
 
 model MutedUser {
@@ -150,9 +170,10 @@ model MutedUser {
   roomId Int
   muteExpiresAt DateTime?
   user   User   @relation(fields: [userId], references: [id])
-  room   Room   @relation(fields: [roomId], references: [id])
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@id([userId, roomId])
+  @@map("muted_users")
 }
 
 
@@ -176,9 +197,22 @@ model Message {
   userId                 Int
   user                   User      @relation(fields: [userId], references: [id])
   roomId                 Int?
-  room                   Room?     @relation(fields: [roomId], references: [id])
+  room                   Room?     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   createdAt              DateTime  @default(now())
   content                String
   
   @@map("messages")
+}
+
+model DirectMessage {
+  id                     Int       @id @default(autoincrement())
+  userId                 Int
+  user                   User      @relation(fields: [userId], references: [id])
+  directRoomId           Int?
+  directRoom             DirectRoom? @relation(fields: [directRoomId], references: [id], onDelete: Cascade)
+  createdAt              DateTime  @default(now())
+  content                String
+
+  @@map("direct_messages")
+
 }

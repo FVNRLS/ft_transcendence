@@ -85,6 +85,14 @@ export interface Room {
   mutedUsers: MutedUser[];
 }
 
+export type BlockedUser = {
+  id: number;
+  blockerId: number;
+  blockedId: number;
+  createdAt: string;
+};
+
+
 // Chat component
 const Chat = () => {
 
@@ -105,7 +113,8 @@ const Chat = () => {
   const [newDirectOpened, setNewDirectOpened] = useState(false);
   const [newChannelOpened, setNewChannelOpened] = useState(false);
   const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);
-  const [blockedUsers, setBlockedUsers] = useState<number[]>([]);
+  const [isUserMuted, setIsUserMuted] = useState<boolean>(false);
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [isChatHeaderClicked, setIsChatHeaderClicked] = useState(false);
   const [profPic, setProfPic] = useState('');
   const [userPics, setUserPics] = useState<userPic[]>([]);
@@ -368,13 +377,16 @@ const Chat = () => {
     }
   }, [selectedRoom?.messages]);
 
+  
+  //Only for direct rooms
   useEffect(() => {
     if (selectedRoom && loggedInUser) {
       // const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser.id);
       const otherUser = selectedRoom.receivingUser;
 
       if (otherUser) {
-        setIsUserBlocked(blockedUsers.includes(otherUser.id));
+        const isUserBlocked = blockedUsers.some(blockedUser => blockedUser.blockedId === otherUser.id);
+        setIsUserBlocked(isUserBlocked);
       }
     }
   }, [selectedRoom, loggedInUser, blockedUsers]);
