@@ -1,8 +1,8 @@
 import React from 'react';
-import { Room, User } from './Chat';  // Import interfaces from Chat component
+import { DirectRoom, User } from './Chat';  // Import interfaces from Chat component
 
 interface ChatHeaderProps {
-  selectedRoom: Room | null;
+  selectedDirectRoom: DirectRoom | null;
   isChatHeaderClicked: boolean;
   isUserBlocked: boolean;
   loggedInUser: User | null;
@@ -12,38 +12,36 @@ interface ChatHeaderProps {
 }
 
 
-
-
-const DirectMessagesHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, isChatHeaderClicked, isUserBlocked, loggedInUser, blockUser, unblockUser, setIsChatHeaderClicked }) => {
+const DirectMessagesHeader: React.FC<ChatHeaderProps> = ({ selectedDirectRoom, isChatHeaderClicked, isUserBlocked, loggedInUser, blockUser, unblockUser, setIsChatHeaderClicked }) => {
 
     const handleBlockUserClick = () => {
-        if (selectedRoom && selectedRoom.receivingUser) {
-            const otherUser = selectedRoom.receivingUser;
+        if (selectedDirectRoom && selectedDirectRoom.receivingUser) {
+            const otherUser = selectedDirectRoom.receivingUser;
 
             if (otherUser) {
-                blockUser(otherUser?.id);
+                blockUser(otherUser?.user.id);
             }
         }
       };
 
       const handleUnblockUserClick = () => {
-        if (selectedRoom && selectedRoom.receivingUser) {
-            const otherUser = selectedRoom.receivingUser;
+        if (selectedDirectRoom && selectedDirectRoom.receivingUser) {
+            const otherUser = selectedDirectRoom.receivingUser;
 
             if (otherUser) {
-                unblockUser(otherUser?.id);
+                unblockUser(otherUser?.user.id);
             }
         }
       };
   return (
     <>
-      {selectedRoom && 
+      {selectedDirectRoom && 
         <div 
           className="chat-header" 
-          onClick={selectedRoom.roomType === 'DIRECT' ? () => {
+          onClick={() => {
             setIsChatHeaderClicked(!isChatHeaderClicked);
-            } : undefined}>
-          {selectedRoom.roomType === 'DIRECT' ? <h2>{selectedRoom.receivingUser.username}</h2> : <h2>{selectedRoom.roomName}</h2>}
+            }}>
+          {<h2>{selectedDirectRoom.receivingUser.user.username}</h2>}
           {/* Block/Unblock Modal */}
           {isChatHeaderClicked && (
             <div className="block-menu">

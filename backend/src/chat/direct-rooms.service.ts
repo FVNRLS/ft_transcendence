@@ -166,9 +166,22 @@ export class DirectRoomsService extends BaseRoomService {
                             };
                         }),
                     },
+                    select: {
+                        id: true,
+                        content: true,
+                        createdAt: true,
+                        userId: true,
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                            }
+                        }
+                    },
                 },
             },
         });
+        
     
         // Format the returned data for Direct rooms
         return userDirectRooms.map(userDirectRoom => {

@@ -9,7 +9,7 @@ import { Socket } from 'socket.io-client';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import NewChannelCreation from './NewChannelCreation';
-import NewDirectMessageCreation from './NewDirectMessageCreation';
+import NewDirectMessageCreation from './NewDirectRoomCreation';
 import DirectMessagesHeader from './DirectMessagesHeader';
 import GroupHeader from './GroupHeader';
 import axios from 'axios';
@@ -43,6 +43,16 @@ interface Message {
   content: string;
 }
 
+interface DirectMessage {
+  id: number;
+  // userId: number;
+  user: User;  // Add this line to include User in Message
+  username: string;
+  directRoomId: number;
+  createdAt: Date;
+  content: string;
+}
+
 interface userPic {
   pic: string,
   username: string
@@ -59,18 +69,6 @@ interface MutedUser {
 }
 
 
-// export interface Room {
-//   id: number;
-//   roomName: string;
-//   roomType: 'PUBLIC' | 'PRIVATE' | 'PASSWORD' | 'DIRECT';
-//   password?: string;
-//   userId: number;
-//   users: User[];
-//   clientUser: User;
-//   receivingUser: User;
-//   messages: Message[]; // Adding the messages array to the Room interface
-// }
-
 export interface Room {
   id: number;
   roomName: string;
@@ -83,6 +81,14 @@ export interface Room {
   users: RoomUser[];
   bannedUsers: BannedUser[];
   mutedUsers: MutedUser[];
+}
+
+export interface DirectRoom {
+  id: number;
+  clientUser: User;
+  receivingUser: User;
+  directMessages: DirectMessage[]; // Adding the messages array to the Room interface
+  users: RoomUser[];
 }
 
 export type BlockedUser = {
@@ -106,14 +112,14 @@ const Chat = () => {
 
   // State variables for channels, direct messages, logged-in user, sidebar status, group chat and direct message usernames
   const [channels, setChannels] = useState<Room[]>([]);
-  const [directRooms, setDirectRooms] = useState<Room[]>([]);
+  const [directRooms, setDirectRooms] = useState<DirectRoom[]>([]);
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [selectedDirectRoom, setSelectedDirectRoom] = useState<DirectRoom | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [newDirectOpened, setNewDirectOpened] = useState(false);
   const [newChannelOpened, setNewChannelOpened] = useState(false);
   const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);
-  const [isUserMuted, setIsUserMuted] = useState<boolean>(false);
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [isChatHeaderClicked, setIsChatHeaderClicked] = useState(false);
   const [profPic, setProfPic] = useState('');
@@ -132,6 +138,23 @@ const Chat = () => {
   
       // Emit the 'sendMessageToRoom' event
       socketRef.current?.emit('sendMessageToRoom', messageData);
+  
+      // Clear the input field
+      setMessageInput("");
+    }
+  };
+
+  const handleSendDirectMessage = () => {
+    if (selectedDirectRoom && messageInput.trim().length > 0) {
+      
+      // Prepare the message data
+      const messageData: Partial<Message> = {
+        roomId: selectedDirectRoom.id,
+        content: messageInput.trim(),
+      };
+
+      // Emit the 'sendMessageToRoom' event
+      socketRef.current?.emit('sendMessageToDirectRoom', messageData);
   
       // Clear the input field
       setMessageInput("");
@@ -187,20 +210,31 @@ const Chat = () => {
           console.error("Received null or undefined 'rooms'.");
           return;
         }
-
-        const directRooms2 = rooms.filter((room: Room) => room.roomType === 'DIRECT');
-        setDirectRooms(directRooms2);
   
         const nonDirectRooms = rooms.filter((room: Room) => room.roomType !== 'DIRECT');
         setChannels(nonDirectRooms);
 
       });
+
+      socketRef.current?.on('getUserDirectRooms', (directRooms: DirectRoom[]) => {
+        if (!directRooms) {
+          console.error("Received null or undefined 'directRooms'.");
+          return;
+        }
+
+        setDirectRooms(directRooms);
+
+      });
   
       socketRef.current?.on('joinedRoom', (newRoom: Room) => {
-        if(newRoom.roomType === 'DIRECT' && newRoom.users) {
-          setDirectRooms((prevRooms) => [...prevRooms, newRoom]);
-        } else if (newRoom.users) {
+        if (newRoom.users) {
           setChannels((prevRooms) => [...prevRooms, newRoom]);
+        }
+      });
+
+      socketRef.current?.on('joinedDirectRoom', (newRoom: DirectRoom) => {
+        if(newRoom.users) {
+          setDirectRooms((prevRooms) => [...prevRooms, newRoom]);
         }
       });
 
@@ -248,13 +282,39 @@ const Chat = () => {
           return prev;
         });
       
+          // If the room is currently selected, update selectedRoom as well
+          if (selectedRoom && selectedRoom.id === newMessage.roomId) {
+            setSelectedRoom(prev => {
+              // If this is the currently selected room, update it
+              if (prev && prev.id === newMessage.roomId) {
+                return { 
+                  ...prev, 
+                  messages: [...prev.messages, newMessage] 
+                };
+              }
+              // If not, return the state as it is
+              return prev;
+            });
+          }
+      });
+
+      socketRef.current?.on('newDirectMessage', (newMessage: DirectMessage) => {      
+        // Define a helper function to find the room in an array of rooms
+        const findRoomIndex = (directRooms: DirectRoom[]) => directRooms.findIndex(room => room.id === newMessage.directRoomId);
+
+
+        console.log("newDirectMessage");
+        console.log(newMessage);
+        console.log(directRooms);
+  
+      
         // Update the directRooms state
         setDirectRooms(prev => {
           let roomIndex = findRoomIndex(prev);
           // If room is found in directRooms
           if (roomIndex !== -1) {
             const updatedRoom = { ...prev[roomIndex] };
-            updatedRoom.messages.push(newMessage);
+            updatedRoom.directMessages.push(newMessage);
       
             // Update the state and return
             return [
@@ -268,13 +328,13 @@ const Chat = () => {
         });
       
           // If the room is currently selected, update selectedRoom as well
-          if (selectedRoom && selectedRoom.id === newMessage.roomId) {
-            setSelectedRoom(prev => {
+          if (selectedDirectRoom && selectedDirectRoom.id === newMessage.directRoomId) {
+            setSelectedDirectRoom(prev => {
               // If this is the currently selected room, update it
-              if (prev && prev.id === newMessage.roomId) {
+              if (prev && prev.id === newMessage.directRoomId) {
                 return { 
                   ...prev, 
-                  messages: [...prev.messages, newMessage] 
+                  directMessages: [...prev.directMessages, newMessage] 
                 };
               }
               // If not, return the state as it is
@@ -358,7 +418,9 @@ const Chat = () => {
     // Clean up on unmount
     return () => {
       socketRef.current?.off('getUserRooms');
+      socketRef.current?.off('getUserDirectRooms');
       socketRef.current?.off('newMessage');
+      socketRef.current?.off('newDirectMessage');
       socketRef.current?.off('getBlockedUsers');
       socketRef.current.off('kickUser');
       socketRef.current.off('banUser');
@@ -368,47 +430,52 @@ const Chat = () => {
       socketRef.current?.disconnect();
     };
 
-  }, [navigate, session, selectedRoom]);
+  }, [navigate, session, selectedRoom, selectedDirectRoom]);
 
   useEffect(() => {
     // Scroll to the bottom when a new message appears
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
-  }, [selectedRoom?.messages]);
+  }, [selectedRoom, selectedDirectRoom]);
+
 
   
   //Only for direct rooms
   useEffect(() => {
-    if (selectedRoom && loggedInUser) {
+    if (selectedDirectRoom && loggedInUser) {
       // const otherUser = selectedRoom.users.find(user => user.id !== loggedInUser.id);
-      const otherUser = selectedRoom.receivingUser;
+      const otherUser = selectedDirectRoom.receivingUser;
 
       if (otherUser) {
-        const isUserBlocked = blockedUsers.some(blockedUser => blockedUser.blockedId === otherUser.id);
+        const isUserBlocked = blockedUsers.some(blockedUser => blockedUser.blockedId === otherUser.user.id);
         setIsUserBlocked(isUserBlocked);
       }
     }
-  }, [selectedRoom, loggedInUser, blockedUsers]);
+  }, [selectedDirectRoom, loggedInUser, blockedUsers]);
 
   useEffect(() => {
     const currentRoomType = selectedRoom?.roomType; // or whatever the key for the room type is
     const currentRoomId = selectedRoom?.id;
     if (currentRoomType && currentRoomId) {
-      if (currentRoomType !== "DIRECT") {
         const updatedRoom = channels.find((room) => room.id === currentRoomId);
         if (updatedRoom && JSON.stringify(updatedRoom) !== JSON.stringify(selectedRoom)) {
           setSelectedRoom(updatedRoom);
         }
-      } else {
-        // assuming "PRIVATE" and "DIRECT" are the other possible room types
-        const updatedRoom = directRooms.find((room) => room.id === currentRoomId);
-        if (updatedRoom && JSON.stringify(updatedRoom) !== JSON.stringify(selectedRoom)) {
-          setSelectedRoom(updatedRoom);
-        }
-      }
     }
-  }, [channels, directRooms]);
+  }, [channels]);
+
+  useEffect(() => {
+    const currentRoomId = selectedDirectRoom?.id;
+    if (currentRoomId) {
+        const updatedRoom = directRooms.find((room) => room.id === currentRoomId);
+        if (updatedRoom && JSON.stringify(updatedRoom) !== JSON.stringify(selectedDirectRoom)) {
+          console.log("UpdatedRoom");
+          console.log(updatedRoom);
+          setSelectedDirectRoom(updatedRoom);
+        }
+    }
+  }, [directRooms]);
   
   useEffect(() => {
     const getProfPic = async () => {
@@ -452,25 +519,58 @@ const Chat = () => {
       getUserPics();
   });
   
-  const handleKeyPress = (event:any) => {
-    if (event.key === 'Enter') {
-      handleSendMessage();
+  
+  const handleSendClick = () => {
+      if (selectedRoom) {
+        handleSendMessage();
+      } else if (selectedDirectRoom) {
+        handleSendDirectMessage();
+      }
+  };
+  
+  
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) { // added check for shift key so that user can make newlines
+      event.preventDefault(); // prevents from making a newline
+      handleSendClick();
     }
   };
+  
 
   const openNewDirect = () => {
     setSelectedRoom(null);
+    setSelectedDirectRoom(null);
     setNewChannelOpened(false);
     setNewDirectOpened(true);
     setIsChatHeaderClicked(false)
   }
 
   const openNewChannel = () => {
+    setSelectedDirectRoom(null);
     setSelectedRoom(null);
     setNewDirectOpened(false);
     setNewChannelOpened(true);
     setIsChatHeaderClicked(false)
   }
+
+  const renderMessage = (message, index) => {
+    return (
+      <div 
+        className={`message ${loggedInUser && loggedInUser.id === message.user.id ? "user-message" : "other-message"}`} 
+        key={index}
+      >
+        {!(loggedInUser && loggedInUser.id === message.user.id) && <img src={userPics.find((user) => user.username === message.user.username)?.pic} alt="Profile" />}
+        <div className={(loggedInUser && loggedInUser.id === message.user.id) ? "message-content user-message-content" : "message-content"}>
+          <p>{message.content}</p>
+          <span className="message-time">{new Date(message.createdAt).toLocaleTimeString(undefined, {
+              hour: 'numeric',
+              minute: 'numeric',
+          })}</span>
+        </div>
+      </div>
+    );
+  };
+  
 
   // Return JSX for the chat page
   return (
@@ -501,7 +601,7 @@ const Chat = () => {
                     <ul>
                       {channels.map((channel, index) => (
                         <li key={index}>
-                          <button onClick={() => {setNewChannelOpened(false); setNewDirectOpened(false); setSelectedRoom(channel); setIsChatHeaderClicked(false)}}>{channel.roomName}</button>
+                          <button onClick={() => {setNewChannelOpened(false); setNewDirectOpened(false); setSelectedRoom(channel); setSelectedDirectRoom(null); setIsChatHeaderClicked(false)}}>{channel.roomName}</button>
                         </li>
                       ))}
                     </ul>
@@ -517,14 +617,15 @@ const Chat = () => {
                   <div className="direct-messages" style={{ maxHeight: '10vh', overflowY: 'auto' }}>
                     <ul>
                       {directRooms.map((dm, index) => {
-                        let otherUsername = dm.receivingUser.username;
+                        let otherUsername = dm.receivingUser.user.username;
 
                         return (
                           <li key={index}>
                             <button onClick={() => {
                               setNewChannelOpened(false); 
                               setNewDirectOpened(false); 
-                              setSelectedRoom(dm); 
+                              setSelectedRoom(null);
+                              setSelectedDirectRoom(dm); 
                               setIsChatHeaderClicked(false)
                             }}>
                               {otherUsername}
@@ -542,10 +643,10 @@ const Chat = () => {
           {/* Chat Section */}
           <div className="chat">
             {/* Chat Header */}
-            {selectedRoom && selectedRoom.roomType === 'DIRECT' &&
+            {selectedDirectRoom &&
               // Inside the Chat component's return statement
               <DirectMessagesHeader
-                selectedRoom={selectedRoom}
+                selectedDirectRoom={selectedDirectRoom}
                 isChatHeaderClicked={isChatHeaderClicked}
                 isUserBlocked={isUserBlocked}
                 loggedInUser={loggedInUser}
@@ -590,25 +691,16 @@ const Chat = () => {
 
               {/* First message */}
               {selectedRoom?.messages && selectedRoom.messages.map((message, index) => (
-                <div 
-                  className={`message ${loggedInUser && loggedInUser.id === message.user.id ? "user-message" : "other-message"}`} 
-                  key={index}
-                >
-                  {!(loggedInUser && loggedInUser.id === message.user.id) && <img src={userPics.find((user) => user.username === message.user.username)?.pic} alt="Profile" />}
-                  <div className={(loggedInUser && loggedInUser.id === message.user.id) ? "message-content user-message-content" : "message-content"}>
-                    <p>{message.content}</p>
-                    <span className="message-time">{new Date(message.createdAt).toLocaleTimeString(undefined, {
-                        hour: 'numeric',
-                        minute: 'numeric',
-                        })}</span>
-                  </div>
-                </div>
+                renderMessage(message, index)
+              ))}
+              {selectedDirectRoom?.directMessages && selectedDirectRoom.directMessages.map((message, index) => (
+                renderMessage(message, index)
               ))}
             </div>
             {/* Message Input */}
             <div className="message-input">
               <input type="text" placeholder="Type a message..." value={messageInput} onKeyDown={handleKeyPress} onChange={e => setMessageInput(e.target.value)} />
-              <button onClick={handleSendMessage}>Send</button>
+              {<button onClick={handleSendClick}>Send</button>}
             </div>
           </div>
         </div>

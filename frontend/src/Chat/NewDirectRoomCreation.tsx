@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { Socket } from 'socket.io-client';
 
 interface ChatDetails {
-  roomType: 'DIRECT';
-  roomName: string;
-  members: { id: number }[];
+  // roomType: 'DIRECT';
+  // roomName: string;
+  receivingUserId: number;
 }
 
-interface NewDirectMessageState {
+interface NewDirectRoomState {
   username: string;
-  roomType: 'DIRECT';
+  // roomType: 'DIRECT';
 }
 
 type NewDirectMessageCreationProps = {
@@ -18,27 +18,25 @@ type NewDirectMessageCreationProps = {
 };
 
 const NewDirectMessageCreation: React.FC<NewDirectMessageCreationProps> = ({ setNewDirectOpened, socketRef }) => {
-  const [newDirectMessage, setNewDirectMessage] = useState<NewDirectMessageState>({
+  const [newDirectRoom, setNewDirectRoom] = useState<NewDirectRoomState>({
     username: '',
-    roomType: 'DIRECT',
   });
 
-  const createNewDirectChat = (newDirectMessageState: NewDirectMessageState) => {
+  const createNewDirectChat = (newDirectMessageState: NewDirectRoomState) => {
     let chatDetails = {
-      roomType: newDirectMessageState.roomType,
       roomName: newDirectMessageState.username,
       members: [] as { id: number }[]
     };
 
-    if (newDirectMessage.username) {
+    if (newDirectRoom.username) {
         socketRef.current?.emit('getUserIdByUsername', { username: newDirectMessageState.username }, handleDirectChatCreation(chatDetails));
     }
   };
 
   const handleDirectChatCreation = (chatDetails: ChatDetails) => (response: { userId: number | null }) => {
     if (response.userId) {
-      chatDetails.members.push({ id: response.userId });
-      socketRef.current?.emit('createRoom', chatDetails);
+      chatDetails.receivingUserId = response.userId;
+      socketRef.current?.emit('createDirectRoom', chatDetails);
     } else {
       console.log('User does not exist');
     }
@@ -47,8 +45,8 @@ const NewDirectMessageCreation: React.FC<NewDirectMessageCreationProps> = ({ set
   return (
     <div className="new-chat-create new-chat-create-direct">
       <h3>Create Direct Message</h3>
-      <input type="text" placeholder="Username" value={newDirectMessage.username} onChange={e => setNewDirectMessage({ ...newDirectMessage, username: e.target.value })} />
-      <button onClick={() => createNewDirectChat(newDirectMessage)}>Create Direct Message</button>
+      <input type="text" placeholder="Username" value={newDirectRoom.username} onChange={e => setNewDirectRoom({ ...newDirectRoom, username: e.target.value })} />
+      <button onClick={() => createNewDirectChat(newDirectRoom)}>Create Direct Message</button>
       <button onClick={() => setNewDirectOpened(false)}>Cancel</button>
     </div>
   );

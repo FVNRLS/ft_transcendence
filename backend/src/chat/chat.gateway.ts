@@ -88,6 +88,14 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.join(`room-${userRoom.roomId}`);
       });
 
+      const userDirectRooms = await this.prisma.directRoomUser.findMany({
+        where: { userId: session.userId },
+      });
+
+      userDirectRooms.forEach((userDirectRooms) => {
+        client.join(`directRoom-${userDirectRooms.directRoomId}`);
+      });
+
       client.emit('connection_success', { message: 'Reconnected and rooms rejoined' });
       client.emit('user_verified', { message: 'User has been verified' });
 
@@ -98,6 +106,8 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.getCurrentUser(client);
       await this.delay2(120); // Delay of 1 second
       await this.getUserRooms(client);
+      await this.delay2(120); // Delay of 1 second
+      await this.getUserDirectRooms(client);
       await this.delay2(130); // Delay of 1 second
       await this.getBlockedUsers(client);
 
@@ -166,9 +176,10 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // This function accepts any event name and data, and emits it to all users in a room
   emitToDirectRoom(roomId: number, eventName: string, data: any): void {
     const roomName = `directRoom-${roomId}`;
+    console.log("roomName");
+    console.log(roomName);
     this.emitToRoom(roomName, eventName, data)
   }
-
   
   //Direct Rooms
 
@@ -214,15 +225,16 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const userId = client.data.userId; // Get the userId from the client
       const userRooms = await this.directRoomsService.getUserDirectRooms(userId);
-      client.emit('getUserRooms', userRooms);
+      client.emit('getUserDirectRooms', userRooms);
       return { statusCode: 200, message: 'Success', data: userRooms };
     } catch(error) {
       return { statusCode: 500, message: 'An error occurred: ' + error.message };
     }
   }
 
+
   //Messaging
-  @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
+  @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('sendMessageToDirectRoom')
   async sendMessageToDirectRoom(
     @MessageBody() createMessageDto: CreateMessageDto,
@@ -232,7 +244,8 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const newMessage = await this.directMessagesService.create(createMessageDto, client);
 
       // Emit the new message to each recipient
-      this.emitToDirectRoom(newMessage.directRoomId, 'newMessage', newMessage);
+      console.log("newDirectMessage");
+      this.emitToDirectRoom(newMessage.directRoomId, 'newDirectMessage', newMessage);
 
       return {
         statusCode: 200,
@@ -247,6 +260,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       };
     }
   }
+
 
 
   //Group Rooms
@@ -564,6 +578,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('blockUser')
   async blockUser(@ConnectedSocket() client: Socket, @MessageBody() blockDto: { blockedId: number }) {
     try {
+      console.log("BlockUswer");
       const blockerId = client.data.userId; // Assuming the blocker's id is stored in the socket data
       
       const result = await this.blockService.blockUser(blockerId, blockDto.blockedId);
