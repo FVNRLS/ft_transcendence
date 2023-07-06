@@ -348,3 +348,65 @@ ul
 	font-style: italic;
   }
   
+  .user-profile-overlay {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background-color: rgba(0, 0, 0, 0.5);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 100;
+  }
+  
+  .user-profile {
+	background-color: #ffffff;
+	padding: 20px;
+	border-radius: 10px;
+	width: 30%;
+	max-width: 500px;  /* Maximum width */
+	height: 60%;       /* Adjust height */
+	max-height: 70%;   /* Maximum height */
+	overflow: auto;    /* Enable scrolling if content is too tall */
+	box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.25);  /* Optional: Add a box shadow for a "pop-out" effect */
+	display: flex;
+	justify-content: center;
+	align-items: center;
+  }
+  
+  .profile-content {
+	text-align: center;
+	width: 100%;
+	display: flex;
+	flex-direction: column;  /* Arrange children vertically */
+	justify-content: center; /* Center children vertically */
+	align-items: center;     /* Center children horizontally */
+  }
+  
+  
+  .user-profile img {
+	width: 100px;
+	height: 100px;
+	object-fit: cover;
+	border-radius: 50%;
+	display: block;
+	margin: 0 auto 20px;  /* Center the image */
+  }
+  
+  .user-profile h2 {
+	margin-bottom: 20px;
+  }
+  
+  .user-profile button {
+	display: block;
+	background-color: #333;
+	color: #fff;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 5px;
+	cursor: pointer;
+	margin: 0 auto;  /* Center the button */
+  }
+  

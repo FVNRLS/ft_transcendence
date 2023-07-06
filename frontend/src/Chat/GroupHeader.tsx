@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Room, User, BlockedUser } from './Chat';  // Import interfaces from Chat component
+import { Room, User, BlockedUser, userPic } from './Chat';  // Import interfaces from Chat component
 import { Socket } from 'socket.io-client';
+import UserProfile from './UserProfile'; // Adjust the path based on where you placed UserProfile.tsx
+
 
 interface ChatHeaderProps {
   selectedRoom: Room | null;
@@ -8,13 +10,16 @@ interface ChatHeaderProps {
   isChatHeaderClicked: boolean;
   blockedUsers: BlockedUser[];
   socketRef: React.MutableRefObject<Socket | null>;
+  userPics: userPic[];
+  currentUserPic: string | null; // Profile picture of the current user
   blockUser: (user_id: number) => void;
   unblockUser: (user_id: number) => void;
   setIsChatHeaderClicked: (clicked: boolean) => void;
 }
 
-const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, isChatHeaderClicked, blockedUsers, socketRef, blockUser, unblockUser, setIsChatHeaderClicked }) => {
+const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, isChatHeaderClicked, blockedUsers, socketRef, blockUser, unblockUser, setIsChatHeaderClicked, userPics, currentUserPic }) => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [showBannedUsers, setShowBannedUsers] = useState(false);
 
@@ -78,6 +83,12 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
     socketRef.current?.emit('setUserRole', {userId: user.id, roomId: selectedRoom.id, role});
   };
 
+  const handleViewProfile = (user: User) => {
+    setSelectedUser(user);
+    setShowUserProfile(true);
+  };
+
+
 
 
   return (
@@ -136,7 +147,8 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
                           {selectedUser?.id === user?.user.id &&
                             <div className="user-actions">
                               {/* <button onClick={(event) => handleMsgClick(user.user, event)}>Send Message</button> */}
-                              {currentUser?.user.id != user.user.id && user.role !== 'OWNER' &&
+                              <button onClick={() => handleViewProfile(user.user)}>View Profile</button>
+                              {currentUser?.user.id != user.user.id &&
                                 <>
                                  {user.role !== 'OWNER' &&
                                    <>
@@ -201,6 +213,11 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
           )}
         </div>
       }
+      {showUserProfile && selectedUser && (
+          <UserProfile user={selectedUser} closeProfile={() => setShowUserProfile(false)} userPics={userPics} currentUserPic={currentUserPic} loggedInUser={loggedInUser} />
+
+      )}
+
     </>
   );
 }

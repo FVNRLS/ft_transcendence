@@ -46,7 +46,7 @@ interface DirectMessage {
   content: string;
 }
 
-interface userPic {
+export interface userPic {
   pic: string,
   username: string
 }
@@ -665,9 +665,11 @@ const Chat = () => {
                 isChatHeaderClicked={isChatHeaderClicked}
                 isUserBlocked={isUserBlocked}
                 loggedInUser={loggedInUser}
+                setIsChatHeaderClicked={setIsChatHeaderClicked}
+                userPics={userPics}
+                currentUserPic={profPic}
                 blockUser={blockUser}
                 unblockUser={unblockUser}
-                setIsChatHeaderClicked={setIsChatHeaderClicked}
               />
             }
 
@@ -679,9 +681,11 @@ const Chat = () => {
                 isChatHeaderClicked={isChatHeaderClicked}
                 blockedUsers={blockedUsers}
                 socketRef={socketRef}
+                setIsChatHeaderClicked={setIsChatHeaderClicked}
+                userPics={userPics}
+                currentUserPic={profPic}
                 blockUser={blockUser}
                 unblockUser={unblockUser}
-                setIsChatHeaderClicked={setIsChatHeaderClicked}
 
               />
             }
