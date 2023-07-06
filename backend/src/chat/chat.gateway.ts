@@ -417,7 +417,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return "Success";
   }
   
-  @HasRoomPermission('ADMIN')
+  @HasRoomPermission('OWNER')
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('setUserRole')
   async setUserRole(
@@ -425,12 +425,23 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // @ConnectedSocket() client: Socket,
   ) {
     try {
-      return await this.roomsService.setUserRole(setUserRoleDto.userId, setUserRoleDto.roomId, setUserRoleDto.role);
+      const updatedUser = await this.roomsService.setUserRole(setUserRoleDto.userId, setUserRoleDto.roomId, setUserRoleDto.role);
+      
+      // Assuming the setUserRole returns the updated user
+      if(updatedUser) {
+        this.emitToGroupRoom(
+          setUserRoleDto.roomId, 
+          'setUserRole', 
+          { userId: setUserRoleDto.userId, roomId: setUserRoleDto.roomId, role: setUserRoleDto.role }
+        );
+        return updatedUser;
+      }
     } catch (error) {
       console.log('Error:', error.message);
       return {error: error.message};
     }
   }
+  
 
   @UseGuards(WsJwtAuthGuard, WsIsUserRoomCreatorGuard)
   @SubscribeMessage('updateRoomPassword')
@@ -625,8 +636,8 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
   }
-  
-  
+
+
   @UseGuards(WsJwtAuthGuard, WsIsUserInRoomGuard)
   @SubscribeMessage('sendMessageToRoom')
   async sendMessageToRoom(

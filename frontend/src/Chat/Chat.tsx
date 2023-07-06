@@ -15,13 +15,6 @@ import GroupHeader from './GroupHeader';
 import axios from 'axios';
 
 
-// // Defining interface for User and Room
-// export interface User {
-//   id: number;
-//   username: string;
-//   role: string;
-// }
-
 export interface User {
   id: number;
   username: string;
@@ -75,8 +68,6 @@ export interface Room {
   roomType: 'PUBLIC' | 'PRIVATE' | 'PASSWORD' | 'DIRECT';
   password?: string;
   userId: number;
-  clientUser: User;
-  receivingUser: User;
   messages: Message[]; // Adding the messages array to the Room interface
   users: RoomUser[];
   bannedUsers: BannedUser[];
@@ -410,7 +401,31 @@ const Chat = () => {
             mutedUsers: room.mutedUsers.filter(mutedUser => mutedUser.user.id !== data.userId)
           } : room
         ));
-      });      
+      });     
+      
+      const setUserRoleInState = (userId: number, roomId: number, role: string) => {
+        setChannels(prevChannels => {
+          const updatedChannels = [...prevChannels];  // make a shallow copy of the channels array
+          const roomIndex = updatedChannels.findIndex(channel => channel.id === roomId);  // find the index of the room
+          if (roomIndex > -1) {
+            const userIndex = updatedChannels[roomIndex].users.findIndex(user => user.user.id === userId);  // find the index of the user in the room
+            if (userIndex > -1) {
+              updatedChannels[roomIndex].users[userIndex].role = role;  // update the user's role
+            }
+          }
+          return updatedChannels;
+        });
+      };
+      
+      
+      const handleSetUserRole = (data: { userId: number, roomId: number, role: string }) => {
+        const { userId, roomId, role } = data;
+        // A function that updates the role of the user in your state
+        setUserRoleInState(userId, roomId, role);
+      };
+      
+      // When the component mounts, subscribe to 'setUserRole' event
+      socketRef.current?.on('setUserRole', handleSetUserRole);
     };
 
     handleSocketEvents();

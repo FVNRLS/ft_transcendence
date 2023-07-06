@@ -74,6 +74,11 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
     }
   };
 
+  const setUserRole = (user: User, role: string) => {
+    socketRef.current?.emit('setUserRole', {userId: user.id, roomId: selectedRoom.id, role});
+  };
+
+
 
   return (
     <>
@@ -86,9 +91,11 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
           {isChatHeaderClicked && (
             <div className="members-overlay">
               <div className="members-menu">
+              {currentUser?.role === 'OWNER' && (
                 <button onClick={(event) => {event.stopPropagation(); setShowBannedUsers(!showBannedUsers)}}>
                   {showBannedUsers ? 'Show Members' : 'Show Banned Users'}
                 </button>
+              )}
                 <ul>
                   {showBannedUsers 
                     ? selectedRoom.bannedUsers.map((user, index) => {
@@ -128,28 +135,43 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
                           </div>
                           {selectedUser?.id === user?.user.id &&
                             <div className="user-actions">
-                              <button onClick={(event) => handleMsgClick(user.user, event)}>Send Message</button>
-                              {!isUserBlocked 
-                                ? <button onClick={() => handleBlockUserClick(user.user)}>Block User</button> 
-                                : <button onClick={() => handleUnblockUserClick(user.user)}>Unblock User</button>
-                              }
-                              {currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'OWNER') &&
+                              {/* <button onClick={(event) => handleMsgClick(user.user, event)}>Send Message</button> */}
+                              {currentUser?.user.id != user.user.id && user.role !== 'OWNER' &&
                                 <>
-                                  {!isUserMuted 
-                                    ? <button onClick={(event) => {event.stopPropagation(); handleMuteUser(user.user)}}>Mute User</button>
-                                    : <button onClick={(event) => {event.stopPropagation(); handleUnmuteUser(user.user)}}>Unmute User</button>
+                                 {user.role !== 'OWNER' &&
+                                   <>
+                                  {
+                                  !isUserBlocked
+                                    ? <button onClick={() => handleBlockUserClick(user.user)}>Block User</button> 
+                                    : <button onClick={() => handleUnblockUserClick(user.user)}>Unblock User</button>
                                   }
-                                  {!isUserBanned
-                                    ? <button onClick={(event) => {event.stopPropagation(); handleBanUser(user.user)}}>Ban User</button>
-                                    : <button onClick={(event) => {event.stopPropagation(); handleUnbanUser(user.user)}}>Unban User</button>
+                                  {currentUser && (currentUser.role === 'OWNER' || currentUser.role === 'ADMIN') &&
+                                    <>
+                                      {!isUserMuted 
+                                        ? <button onClick={(event) => {event.stopPropagation(); handleMuteUser(user.user)}}>Mute User</button>
+                                        : <button onClick={(event) => {event.stopPropagation(); handleUnmuteUser(user.user)}}>Unmute User</button>
+                                      }
+                                      {!isUserBanned
+                                        ? <button onClick={(event) => {event.stopPropagation(); handleBanUser(user.user)}}>Ban User</button>
+                                        : <button onClick={(event) => {event.stopPropagation(); handleUnbanUser(user.user)}}>Unban User</button>
+                                      }
+                                      <button onClick={(event) => {event.stopPropagation(); handleKickUser(user.user)}}>Kick User</button>
+                                    </>
                                   }
-                                  <button onClick={(event) => {event.stopPropagation(); handleKickUser(user.user)}}>Kick User</button>
-                                </>
-                              }
 
+                                  {currentUser && currentUser.role === 'OWNER' &&
+                                    <>
+                                      <button onClick={(event) => {event.stopPropagation(); setUserRole(user.user, 'ADMIN')}}>Make Admin</button>
+                                      <button onClick={(event) => {event.stopPropagation(); setUserRole(user.user, 'MEMBER')}}>Make Member</button>
+                                    </>
+                                  }
+                                  </>
+                               }
+                              </>
+                          }
+                            
                             </div>
                           }
-
                         </li>
                       )}
                     )
