@@ -148,6 +148,9 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
                             <div className="user-actions">
                               {/* <button onClick={(event) => handleMsgClick(user.user, event)}>Send Message</button> */}
                               <button onClick={() => handleViewProfile(user.user)}>View Profile</button>
+                                {currentUser?.user.id == user.user.id &&
+                                <button onClick={(event) => {event.stopPropagation(); handleKickUser(user.user)}}>Leave Room</button>
+                                }
                               {currentUser?.user.id != user.user.id &&
                                 <>
                                  {user.role !== 'OWNER' &&
