@@ -13,6 +13,8 @@ import NewDirectMessageCreation from './NewDirectRoomCreation';
 import DirectMessagesHeader from './DirectMessagesHeader';
 import GroupHeader from './GroupHeader';
 import axios from 'axios';
+import RoomsList from './RoomsList';
+
 
 
 export interface User {
@@ -115,6 +117,8 @@ const Chat = () => {
   const [isChatHeaderClicked, setIsChatHeaderClicked] = useState(false);
   const [profPic, setProfPic] = useState('');
   const [userPics, setUserPics] = useState<userPic[]>([]);
+  const [visibleRooms, setVisibleRooms] = useState([]);
+
 
   // Reference for the socket
   const socketRef = useRef<Socket | null>(null);
@@ -447,6 +451,26 @@ const Chat = () => {
 
   }, [navigate, session, selectedRoom, selectedDirectRoom]);
 
+      
+  // Find Visible Rooms
+  useEffect(() => {
+    console.log("Hook should run on refresh IN PARENT");
+    console.log(socketRef);
+        if (socketRef.current) {
+            socketRef.current.on('findVisibleRooms', (visibleRooms) => {
+                console.log("findVisibleRooms");
+                setVisibleRooms(visibleRooms.data.sort((a, b) => a.roomName.localeCompare(b.roomName)));
+            });
+        }
+
+        // Clean up the event listener
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.off('findVisibleRooms');
+            }
+        };
+    }, []);
+
   useEffect(() => {
     // Scroll to the bottom when a new message appears
     if (messagesContainerRef.current) {
@@ -654,7 +678,6 @@ const Chat = () => {
               </>
           </div>
 
-
           {/* Chat Section */}
           <div className="chat">
             {/* Chat Header */}
@@ -722,6 +745,18 @@ const Chat = () => {
               {<button onClick={handleSendClick}>Send</button>}
             </div>
           </div>
+
+
+          {/* Visible Rooms Sidebar */}
+          <div className="sidebar-right">
+            <div className="chat-section">
+              <div className='sec-name'>
+                <h3>Visible Rooms</h3>
+              </div>
+              <RoomsList socketRef={socketRef} visibleRooms={visibleRooms} />
+            </div>
+          </div>
+
         </div>
       </div>
     </>

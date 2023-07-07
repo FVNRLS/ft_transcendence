@@ -665,7 +665,7 @@ export class RoomsService extends BaseRoomService {
 
     if (!userOnRoom) throw new NotFoundException('User or room not found');
 
-    if (userOnRoom.role === 'OWNER') throw new BadRequestException("Can't kick the owner of the room");
+    if (userOnRoom.role === 'OWNER' && userOnRoom.userId != client.data.userId) throw new BadRequestException("Can't kick the owner of the room");
   
     // Here you can add logic to use the `client` object, if needed.
   
@@ -846,5 +846,22 @@ export class RoomsService extends BaseRoomService {
       },
     });
   }
+
+  async findVisibleRooms(): Promise<{id: number, roomName: string, roomType: RoomType}[]> {
+    return this.prisma.room.findMany({
+      where: {
+        OR: [
+          { roomType: RoomType.PUBLIC },
+          { roomType: RoomType.PASSWORD },
+        ],
+      },
+      select: {
+        id: true,
+        roomName: true,
+        roomType: true,
+      },
+    });
+  }
+  
 
 }

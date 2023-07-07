@@ -48,6 +48,8 @@ const GroupHeader: React.FC<ChatHeaderProps> = ({ selectedRoom, loggedInUser, is
   
   
   const handleKickUser = (user: User) => {
+    console.log("Kick User");
+    console.log(socketRef.current);
     socketRef.current?.emit('kickUser', {userId: user.id, roomId: selectedRoom.id});
   };
   

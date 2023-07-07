@@ -410,3 +410,48 @@ ul
 	margin: 0 auto;  /* Center the button */
   }
   
+/* Right Sidebar */
+.sidebar-right {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background-color: #ffffffce;
+    height: 100%;
+    margin-left: auto; /* New attribute to align the sidebar to the right */
+}
+
+.rooms-container {
+    max-height: 500px; /* Define a suitable height according to your needs */
+    overflow-y: auto; /* Enables vertical scrolling when the content exceeds the height */
+    padding-right: 1em; /* Prevents scrollbar overlapping content */
+}
+
+.joinableRoom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 10px;  /* Increase the height of the rooms */
+    padding: 10px;
+    border-bottom: 1px solid #ddd;  /* Optional: add a bottom border */
+    cursor: pointer;
+}
+
+.joinableRoom-name {
+    /* Styles for the room name here */
+}
+
+.joinableRoom-type {
+    font-size: 0.8em;
+    color: #888;
+}
+
+.join-popup {
+    position: fixed; /* Use 'fixed' positioning */
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Correct the positioning so that the center of the popup aligns with the center of the screen */
+    background-color: white;
+    padding: 20px;
+    border: 1px solid #333;
+    z-index: 2; /* Make sure the popup is on top */
+}

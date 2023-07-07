@@ -96,9 +96,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.join(`directRoom-${userDirectRooms.directRoomId}`);
       });
 
-      client.emit('connection_success', { message: 'Reconnected and rooms rejoined' });
-      client.emit('user_verified', { message: 'User has been verified' });
-
+      
       
       // Call those methods after successful verification
       // Dealy2 is temporary fix of segmentation fault caused by prisma
@@ -110,6 +108,13 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.getUserDirectRooms(client);
       await this.delay2(130); // Delay of 1 second
       await this.getBlockedUsers(client);
+      await this.delay2(130); // Delay of 1 second
+      await this.handleFindVisibleRooms(client);
+
+
+      client.emit('connection_success', { message: 'Reconnected and rooms rejoined' });
+      client.emit('user_verified', { message: 'User has been verified' });
+
 
     } catch (error) {
       console.error('Error during client connection:', error.message);
@@ -160,7 +165,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   getUserIdFromClient(client: Socket): number {
     return client.data.userId;
   }
-
   
   // This function accepts any event name and data, and emits it to all users in a room
   emitToRoom(roomName: string, eventName: string, data: any): void {
@@ -176,8 +180,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // This function accepts any event name and data, and emits it to all users in a room
   emitToDirectRoom(roomId: number, eventName: string, data: any): void {
     const roomName = `directRoom-${roomId}`;
-    console.log("roomName");
-    console.log(roomName);
     this.emitToRoom(roomName, eventName, data)
   }
   
@@ -244,7 +246,6 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const newMessage = await this.directMessagesService.create(createMessageDto, client);
 
       // Emit the new message to each recipient
-      console.log("newDirectMessage");
       this.emitToDirectRoom(newMessage.directRoomId, 'newDirectMessage', newMessage);
 
       return {
@@ -470,12 +471,12 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   //Mute, Ban, Kick
 
   @UseGuards(WsJwtAuthGuard)
-  @HasRoomPermission("ADMIN")
   @SubscribeMessage('kickUser')
   async kickUser(
     @MessageBody() kickDto: KickDto,
     @ConnectedSocket() client: Socket,
   ) {
+    console.log("Kick User");
     try {
       await this.roomsService.kickUser(kickDto.userId, kickDto.roomId, client);
   
@@ -693,4 +694,32 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   getRoomMessages(@MessageBody() { roomId, limit = 100, offset = 0 }: GetRoomMessagesDto) {
     return this.messagesService.getRoomMessages(roomId, limit, offset);
   }
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('findVisibleRooms')
+  async handleFindVisibleRooms(client: any): Promise<WsResponse> {
+    try {
+      const visibleRooms = await this.roomsService.findVisibleRooms();
+
+      client.emit('findVisibleRooms', {
+        statusCode: 200,
+        message: 'Success',
+        data: visibleRooms,
+      });
+      
+
+      return {
+        statusCode: 200,
+        message: 'Success',
+        data: visibleRooms,
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Failed to retrieve visible rooms.',
+      };
+    }
+  }
+
+
 }
