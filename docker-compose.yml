@@ -41,7 +41,7 @@ services:
     networks:
     - internal
     restart: unless-stopped
-    #init: true
+    init: true
 
   nest_js:
     container_name: nest_js
@@ -75,15 +75,12 @@ services:
       - ${GAME_PORT}:${GAME_PORT}
     volumes:
     - nest_vol:/nest/
-    - react_vol:/react/
-    - /nest/node_modules
-    - /react/node_modules
     networks:
     - internal
     depends_on:
     - postgres
     restart: unless-stopped
-    #init: true
+    init: true
   
   react_js:
     container_name: react_js
@@ -99,11 +96,7 @@ services:
     networks:
     - internal
     volumes:
-    - nest_vol:/nest/
     - react_vol:/react/
-    - /nest/node_modules
-    - /react/node_modules
     depends_on:
     - nest_js
     restart: unless-stopped
-    #init: true
