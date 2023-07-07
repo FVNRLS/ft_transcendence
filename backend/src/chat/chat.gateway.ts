@@ -184,6 +184,7 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
   
   //Direct Rooms
+  
 
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('createDirectRoom')
@@ -720,6 +721,38 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       };
     }
   }
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('getDirectRoomId')
+  async handleGetDirectRoomId(client: Socket, recipientUserId: number): Promise<WsResponse> {
+      // Check if the recipientUserId is provided
+      if (!recipientUserId) {
+          return {
+              statusCode: 400,
+              message: 'Recipient user ID is required.',
+          };
+      }
+  
+      // Fetch the direct room ID with the recipient user ID and client user ID
+      const directRoom = await this.directRoomsService.findDirectRoomWithUsers(client.data.userId, recipientUserId);
+    
+      // If the direct room doesn't exist, return a "Not Found" response
+      if (!directRoom) {
+          return {
+              statusCode: 404,
+              message: 'No direct room found with the provided user IDs.',
+          };
+      }
+  
+      // Return the room ID in a successful response
+      return {
+          statusCode: 200,
+          message: 'Direct room found.',
+          data: { roomId: directRoom.id },
+      };
+  }
+  
+  
 
 
 }

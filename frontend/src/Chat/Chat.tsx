@@ -9,7 +9,7 @@ import { Socket } from 'socket.io-client';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import NewChannelCreation from './NewChannelCreation';
-import NewDirectMessageCreation from './NewDirectRoomCreation';
+import NewDirectMessageCreation, { ChatDetails } from './NewDirectRoomCreation';
 import DirectMessagesHeader from './DirectMessagesHeader';
 import GroupHeader from './GroupHeader';
 import axios from 'axios';
@@ -27,12 +27,19 @@ export interface RoomUser {
   role: string;
 }
 
+interface WsResponse {
+  statusCode: number;
+  message: string;
+  data?: any;
+}
+
 
 interface Message {
   id: number;
   // userId: number;
   user: User;  // Add this line to include User in Message
   username: string;
+  recipientUserId: number;
   roomId: number;
   createdAt: Date;
   content: string;
@@ -154,7 +161,7 @@ const Chat = () => {
       // Clear the input field
       setMessageInput("");
     }
-  };  
+  };
 
   const blockUser = (user_id: number) => {
         socketRef.current?.emit('blockUser', { blockedId: user_id }, (response: any) => {
@@ -177,6 +184,34 @@ const Chat = () => {
           }
         });
   }
+
+  const inviteToGame = (userId: number) => {
+    // Emit the 'createDirectRoom' event to ensure that the room is created
+    const createRoomDto: ChatDetails = { receivingUserId: userId };
+    socketRef.current?.emit('createDirectRoom', createRoomDto, (response: WsResponse) => {
+        // Emit the 'getDirectRoomId' event to get the room ID, regardless of whether the room was just created or already existed
+        socketRef.current?.emit('getDirectRoomId', userId, (response: WsResponse) => {
+            // Check if the operation was successful
+            if (response.statusCode === 200) {
+                // Prepare the message data
+                const messageData: Partial<Message> = {
+                    roomId: response.data.roomId, // use the room ID returned by the 'getDirectRoomId' event
+                    content: "I invite you to play a game",
+                };
+
+                // Emit the 'sendMessageToDirectRoom' event
+                socketRef.current?.emit('sendMessageToDirectRoom', messageData);
+            } else {
+                // Handle the error here
+                console.error(response.message);
+            }
+        });
+    });
+};
+
+
+
+  
 
   // UseEffect hook for initializing socket connection, fetching user and rooms data
   useEffect(() => {
@@ -609,6 +644,8 @@ const Chat = () => {
       </div>
     );
   };
+
+
   
 
   // Return JSX for the chat page
@@ -693,6 +730,7 @@ const Chat = () => {
                 currentUserPic={profPic}
                 blockUser={blockUser}
                 unblockUser={unblockUser}
+                inviteToGame={inviteToGame}
               />
             }
 

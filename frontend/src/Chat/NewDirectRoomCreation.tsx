@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Socket } from 'socket.io-client';
 
-interface ChatDetails {
+export interface ChatDetails {
   // roomType: 'DIRECT';
   // roomName: string;
   receivingUserId: number;

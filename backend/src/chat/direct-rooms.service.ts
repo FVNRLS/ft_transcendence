@@ -32,7 +32,7 @@ export class DirectRoomsService extends BaseRoomService {
     }
 
     // Helper method to find a direct room with given user IDs
-    private async findDirectRoomWithUsers(clientId: number, user1Id: number): Promise<DirectRoom | null> {
+    async findDirectRoomWithUsers(clientId: number, user1Id: number): Promise<DirectRoom | null> {
         return this.prisma.directRoom.findFirst({
             where: {
                 AND: [

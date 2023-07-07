@@ -13,10 +13,11 @@ interface ChatHeaderProps {
   blockUser: (user_id: number) => void
   unblockUser: (user_id: number) => void;
   setIsChatHeaderClicked: (clicked: boolean) => void;
+  inviteToGame: (user_id: number) => void
 }
 
 
-const DirectMessagesHeader: React.FC<ChatHeaderProps> = ({ selectedDirectRoom, isChatHeaderClicked, isUserBlocked, loggedInUser, blockUser, unblockUser, setIsChatHeaderClicked, userPics, currentUserPic }) => {
+const DirectMessagesHeader: React.FC<ChatHeaderProps> = ({ selectedDirectRoom, isChatHeaderClicked, isUserBlocked, loggedInUser, blockUser, unblockUser, setIsChatHeaderClicked, userPics, currentUserPic, inviteToGame }) => {
     const [showUserProfile, setShowUserProfile] = useState(false);
 
     const handleViewProfile = () => {
@@ -44,6 +45,14 @@ const DirectMessagesHeader: React.FC<ChatHeaderProps> = ({ selectedDirectRoom, i
             }
         }
       };
+
+      const handleInviteToGameClick = () => {
+        console.log("Invite to game click");
+        if (selectedDirectRoom && selectedDirectRoom.receivingUser) {
+        console.log("Invite to game click2");
+          inviteToGame(selectedDirectRoom.receivingUser.user.id);
+        }
+      };
       return (
         <>
           {selectedDirectRoom && 
@@ -59,6 +68,7 @@ const DirectMessagesHeader: React.FC<ChatHeaderProps> = ({ selectedDirectRoom, i
                       : <button onClick={handleUnblockUserClick}>Unblock User</button>
                     }
                     <button onClick={() => handleViewProfile()}>View Profile</button>
+                    <button onClick={handleInviteToGameClick}>Invite to Game</button> 
                   </div>
                 </div>
               )}
