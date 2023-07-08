@@ -196,7 +196,7 @@ const Chat = () => {
                 // Prepare the message data
                 const messageData: Partial<Message> = {
                     roomId: response.data.roomId, // use the room ID returned by the 'getDirectRoomId' event
-                    content: "I invite you to play a game",
+                    content: "Let's play Ping Pong!",
                 };
 
                 // Emit the 'sendMessageToDirectRoom' event
