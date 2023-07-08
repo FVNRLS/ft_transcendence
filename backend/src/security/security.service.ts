@@ -41,10 +41,10 @@ export class SecurityService {
 		if (!usernameValid) {
 			throw new HttpException("Invalid username!", HttpStatus.BAD_REQUEST);
 		}
-		const passwordValid = this.validatePassword(dto.password);
-		if (!passwordValid) {
-			throw new HttpException("Please choose a stronger password!", HttpStatus.BAD_REQUEST);
-		}
+		// const passwordValid = this.validatePassword(dto.password);
+		// if (!passwordValid) {
+		// 	throw new HttpException("Please choose a stronger password!", HttpStatus.BAD_REQUEST);
+		// }
 			
 		return ;
 	}
@@ -61,7 +61,7 @@ export class SecurityService {
 		At least one Digit: The password must contain at least one digit (0-9).
 		Allowed Characters: The password must contain at least one alphabetic character.
 	*/
-	private validatePassword(password: string): boolean {
+	async validatePassword(password: string): Promise<boolean>{
     const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
     return regex.test(password);
   }

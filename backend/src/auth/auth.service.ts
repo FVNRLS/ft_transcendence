@@ -128,6 +128,7 @@ export class AuthService {
       }
 
       this.securityService.validateCredentials(dto);
+      console.log("LOOOOOOO");
       const user: User = await this.securityService.getVerifiedUserData(dto);
       const existingSession = await this.prisma.session.findFirst({ where: { userId: user.id } });
       if (existingSession) {
