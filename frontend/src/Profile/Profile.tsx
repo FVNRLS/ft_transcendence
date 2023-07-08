@@ -119,7 +119,7 @@ const Profile = () => {
 				{signUpError && <h2 style={messageStyle}>{signUpError}</h2>}
 				<div className='img-cont'>
 				{file ? <img src={URL.createObjectURL(file)} alt="uploaded-img" /> : 
-				(<img src={picURL} alt="profile pic"/>)}
+				(<img src={picURL} alt="profile pic" style={{ width: '175px', height: '175px' }} />)}
 				</div>
 				<label className='label-pic'>
 					Change Profile Picture
