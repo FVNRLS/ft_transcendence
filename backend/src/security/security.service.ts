@@ -41,6 +41,10 @@ export class SecurityService {
 		if (!usernameValid) {
 			throw new HttpException("Invalid username!", HttpStatus.BAD_REQUEST);
 		}
+		const passwordValid = this.validatePassword(dto.password);
+		if (!passwordValid) {
+			throw new HttpException("Please choose a stronger password!", HttpStatus.BAD_REQUEST);
+		}
 			
 		return ;
 	}
@@ -50,7 +54,13 @@ export class SecurityService {
     return regex.test(username); // Returns true if username matches the regular expression
   }
 
-	//TODO: apply in the end!
+  	/*
+		Minimum Length: The password must be at least 8 characters long.
+		At least one Uppercase Letter: The password must contain at least one uppercase letter from A to Z.
+		At least one Lowercase Letter: The password must contain at least one lowercase letter from a to z.
+		At least one Digit: The password must contain at least one digit (0-9).
+		Allowed Characters: The password must contain at least one alphabetic character.
+	*/
 	private validatePassword(password: string): boolean {
     const regex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
     return regex.test(password);

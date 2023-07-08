@@ -223,6 +223,24 @@ input:checked + .slider:before {
   animation: spin 1s linear infinite;
 }
 
+.password-policy-btn {
+	background-color: #939393b5;
+	color: #f0ebeb;
+	border: none;
+	padding: 8px 16px;
+	margin-top: 10px;
+	cursor: pointer;
+}
+  
+  .password-policy {
+	margin-top: 10px;
+	padding: 10px;
+	background-color: #0fc384;
+	color: white;
+	border: 1px solid white;
+	border-radius: 4px;
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);

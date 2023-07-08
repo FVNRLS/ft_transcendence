@@ -27,9 +27,9 @@ const getColor = (score: string): string => {
   const [leftNum, rightNum] = score.split(':');
 
   if (leftNum > rightNum) {
-    return 'green';
-  } else if (leftNum < rightNum) {
     return 'red';
+  } else if (leftNum < rightNum) {
+    return 'green';
   }
 };
 
